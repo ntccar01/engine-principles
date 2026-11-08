@@ -312,7 +312,7 @@ function Player(cfg) {
   $('#next').onclick = () => { if (ci < chs.length - 1) go(ci + 1, true); };
   $('#step').onclick = () => { setPlay(false); t = Math.min(t + 1 / 15, chs[ci].loop ? 1e9 : chs[ci].dur); };
   $('#spd').onchange = e => speed = +e.target.value;
-  $('#tts').onchange = e => { if (!e.target.checked && window.speechSynthesis) speechSynthesis.cancel(); else { lastCap = ''; } };
+  $('#tts').onchange = e => { if (!e.target.checked && window.speechSynthesis) { stopTTS(); } else { lastCap = ''; } };
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT') return;
     if (e.code === 'Space') { e.preventDefault(); $('#play').click(); }
@@ -328,7 +328,7 @@ function Player(cfg) {
   function restart() { passed.fill(false); firstOk.fill(null); $('#end').classList.remove('show'); ended = false; go(0, false); setPlay(true); }
   function go(i, keepPlay) {
     ci = i; t = 0; lastCap = ''; ended = false; $('#end').classList.remove('show'); $('#quiz').classList.remove('show');
-    if (window.speechSynthesis) speechSynthesis.cancel();
+    stopTTS();
     const p = $('#panel'); p.innerHTML = ''; if (chs[i].panel) chs[i].panel(p, S);
     if (chs[i].enter) chs[i].enter(S);
     [...$('#list').children].forEach((li, k) => { li.classList.toggle('on', k === i); li.classList.toggle('ok', passed[k]); });
@@ -352,17 +352,32 @@ function Player(cfg) {
     if (ci < chs.length - 1) { go(ci + 1, true); setPlay(true); }
     else { ended = true; setPlay(false); $('#endsc').textContent = `${score()} / ${chs.filter(c => c.quiz).length}`; $('#end').classList.add('show'); [...$('#list').children].forEach((li, k) => li.classList.toggle('ok', passed[k])); }
   }
+  /* 語音旁白：依句號切成短句逐句念（避免瀏覽器念長句中途被截斷）；
+     旁白還沒念完時，動畫會停在下一句字幕（或本段結尾）前等待，不會跳段。 */
+  let ttsId = 0, speaking = false, spoken = 0, spokenMax = 0;
+  function stopTTS() { ttsId++; speaking = false; if (window.speechSynthesis) speechSynthesis.cancel(); }
   function speak(s) {
-    if (!$('#tts').checked || !window.speechSynthesis) return; speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(s.replace(/<[^>]+>/g, '')); u.lang = 'zh-TW'; u.rate = Math.min(1.3, .95 * Math.max(.8, speed));
-    const v = speechSynthesis.getVoices().find(v => /zh[-_]TW/i.test(v.lang)); if (v) u.voice = v; speechSynthesis.speak(u);
+    if (!$('#tts').checked || !window.speechSynthesis) return; stopTTS();
+    const txt = s.replace(/<[^>]+>/g, ''), id = ttsId, rate = Math.min(1.3, .95 * Math.max(.8, speed));
+    const parts = txt.split(/(?<=[。！？；])/).map(x => x.trim()).filter(Boolean);
+    const v = speechSynthesis.getVoices().find(v => /zh[-_]TW/i.test(v.lang));
+    speaking = true; spoken = 0; spokenMax = txt.length * .45 / rate + 5;
+    parts.forEach((ptxt, i) => {
+      const u = new SpeechSynthesisUtterance(ptxt); u.lang = 'zh-TW'; u.rate = rate; if (v) u.voice = v;
+      if (i === parts.length - 1) u.onend = u.onerror = () => { if (id === ttsId) speaking = false; };
+      speechSynthesis.speak(u);
+    });
   }
+  /* 目前字幕之後的下一個時間點（下一句字幕開始或本段結束） */
+  function nextMark(c, tt) { let m = c.dur; (c.captions || []).forEach(([at]) => { if (at > tt + 1e-6 && at < m) m = at; }); return m; }
   function frame(now) {
     const dt = Math.min(.1, (now - last) / 1000); last = now; const c = chs[ci];
-    if (playing) { t += dt * speed; if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } } }
+    if (playing) { let nt = t + dt * speed;
+      if (speaking && !c.loop && $('#tts').checked) { spoken += dt; const m = nextMark(c, t); if (nt >= m - .02 && spoken < spokenMax) nt = Math.max(t, m - .02); }
+      t = nt; if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } } }
     // 字幕
     let cap = ''; (c.captions || []).forEach(([at, s]) => { if (t >= at) cap = s; });
-    if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap) speak(cap); }
+    if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap) { try { speak(cap); } catch (e) { speaking = false; } } }
     ctx.clearRect(0, 0, W, HGT); ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, HGT);
     try { c.draw(ctx, t, S); } catch (err) { console.error(err); }
     const d = durOf(c), shown = c.loop ? (t % d) : t;
