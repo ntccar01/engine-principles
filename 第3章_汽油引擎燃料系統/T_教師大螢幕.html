@@ -25,6 +25,7 @@ tr.new td{animation:flash 2s}@keyframes flash{0%{background:#1f6b45}100%{}}
 .msg{color:var(--mut);text-align:center;padding:40px;font-size:20px}
 .err{color:var(--bad)}
 .big td{font-size:30px}
+@media(max-width:760px){td,.big td{font-size:17px;padding:10px 8px}td:first-child{width:44px}th{font-size:13px;padding:0 8px}th:nth-child(6),td:nth-child(6){display:none}.pct{display:none}.live{margin-left:0}.stat b{font-size:22px}}
 </style></head><body><div class="wrap">
 <header><a class="home" href="index.html">🏠 首頁</a><span class="tag">教師大螢幕</span><h1>互學挑戰排行榜</h1><span class="who" id="who"></span><span id="lgbox"><input id="em" type="email" placeholder="教師 Email" value="lin1102@gm.ntc.edu.tw" style="width:230px"> <input id="pw" type="password" placeholder="密碼" style="width:130px"> <button id="login" class="pri">登入</button> <button id="forgot" title="寄送重設密碼信">忘記密碼</button></span><button id="logout" style="display:none">登出</button></header>
 <div class="bar">
