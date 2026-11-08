@@ -1,0 +1,107 @@
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第2節 補課包｜內燃機的循環</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:12px 16px 32px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:15px}
+header h1{font-size:22px;margin:0}
+header .sub{color:var(--mut);font-size:14px}
+header .score{margin-left:auto;color:var(--mut);font-size:14px}
+.main{display:grid;grid-template-columns:1fr 260px;gap:14px}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+.stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:default}
+.chtitle{position:absolute;left:12px;top:10px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--acc)}
+.caption{min-height:62px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:10px;padding:12px 16px;font-size:19px;line-height:1.55}
+.caption b{color:var(--acc)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.controls button:hover{border-color:var(--acc2)}
+.controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:88px}
+.controls .time{color:var(--mut);font-size:14px;margin-left:auto;font-variant-numeric:tabular-nums}
+.controls label{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:4px;cursor:pointer}
+.bar{display:flex;gap:3px;margin-top:10px;height:12px;cursor:pointer}
+.bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
+.bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
+.bar div.done i{background:var(--ok)}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
+.side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
+.side ol{list-style:none;margin:0;padding:0}
+.side li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;gap:8px;align-items:center}
+.side li:hover{background:var(--panel2)}
+.side li.on{background:var(--panel2);outline:1px solid var(--acc)}
+.side li .n{width:22px;height:22px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:12px;flex:none}
+.side li.ok .n{background:var(--ok);color:#002010}
+.side .tips{color:var(--mut);font-size:13px;line-height:1.6;margin:10px 6px 2px;border-top:1px solid var(--line);padding-top:8px}
+.panel{margin-top:10px}
+.panel:empty{display:none}
+.panel .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.panel .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0}
+.panel input[type=number]{width:72px;font-size:17px;padding:6px;border-radius:6px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit}
+.panel input[type=range]{width:200px}
+.panel button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.panel button.pri{background:var(--acc);color:#1a1200;font-weight:700;border:none}
+.panel .res{font-size:17px;line-height:1.8}
+.panel .res b{color:var(--acc)}
+.panel .fb{font-weight:700}
+.panel .fb.ok{color:var(--ok)}.panel .fb.bad{color:var(--bad)}
+.quiz{position:absolute;inset:0;background:rgba(5,10,20,.82);display:none;align-items:center;justify-content:center;padding:16px}
+.quiz.show{display:flex}
+.quiz .card{background:var(--panel);border:2px solid var(--acc);border-radius:14px;max-width:640px;width:100%;padding:18px 20px}
+.quiz .card h4{margin:0 0 4px;color:var(--acc);font-size:15px}
+.quiz .card p{font-size:20px;margin:6px 0 12px;line-height:1.5}
+.quiz .opt{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;font-size:17px;cursor:pointer;font-family:inherit}
+.quiz .opt:hover{border-color:var(--acc2)}
+.quiz .opt.right{background:#16452d;border-color:var(--ok)}
+.quiz .opt.wrong{background:#4a1d1d;border-color:var(--bad)}
+.quiz .ex{font-size:15px;color:var(--mut);margin-top:8px;min-height:20px;line-height:1.5}
+.quiz .go{margin-top:10px;background:var(--ok);color:#002010;border:none;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;cursor:pointer;display:none;font-family:inherit}
+.endcard{position:absolute;inset:0;background:rgba(5,10,20,.85);display:none;align-items:center;justify-content:center;text-align:center}
+.endcard.show{display:flex}
+.endcard div{font-size:22px;line-height:1.8}
+.endcard b{color:var(--acc);font-size:30px}
+@media(max-width:600px){.caption{font-size:16px}header h1{font-size:18px}.quiz .card p{font-size:17px}.quiz .opt{font-size:15px;padding:8px}}
+.chtitle.hide{opacity:0}
+.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:15px;text-decoration:none;font-weight:700}
+.home:hover{border-color:var(--acc);color:var(--acc)}
+.home.big{margin-top:14px;font-size:18px;padding:10px 18px;background:var(--acc);color:#1a1200;border:none}
+/* 嵌入簡報模式（?embed=1）：隱藏標題列與章節欄，讓畫面完整放進投影片 */
+.embed header,.embed .side,.embed .tips{display:none}
+.embed .main{grid-template-columns:1fr}
+.embed .wrap{max-width:calc((100vh - 150px) * 16 / 9);padding:4px 8px 8px}
+.embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
+.embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
+
+.wrap{max-width:980px}.intro{color:var(--mut);line-height:1.7}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:14px 0;display:grid;grid-template-columns:44px 1fr;gap:12px}
+.step.done{border-color:var(--ok)}.num{width:40px;height:40px;border-radius:50%;background:var(--acc);color:#1a1200;font-weight:700;display:grid;place-items:center;font-size:20px}
+.step.done .num{background:var(--ok)}.step h2{margin:4px 0 6px;font-size:20px}.step p{margin:0 0 10px;color:var(--mut);line-height:1.6}
+.vid{position:relative;aspect-ratio:16/9;background:#0a1120;border:1px dashed var(--line);border-radius:10px;overflow:hidden;display:grid;place-items:center;color:var(--mut)}
+.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+a.b{display:inline-block;background:var(--acc);color:#1a1200;font-weight:700;text-decoration:none;border-radius:10px;padding:9px 16px;margin:4px 8px 4px 0}
+a.b.sec{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}a.b.off{background:#2a2f3a;color:#7c8598;pointer-events:none}
+label.ck{display:inline-flex;gap:6px;align-items:center;color:var(--ink);cursor:pointer;margin-top:4px}label.ck input{width:18px;height:18px}
+.goal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px}.goal li{line-height:1.8}
+.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:10px}.k{background:var(--panel2);border-radius:10px;padding:10px 12px}.k b{color:var(--acc);display:block;margin-bottom:4px}.k span{color:var(--ink);font-size:15px;line-height:1.5}
+.prog{height:10px;background:var(--panel2);border-radius:5px;overflow:hidden;margin:6px 0 2px}.prog i{display:block;height:100%;background:var(--ok);width:0;transition:width .4s}
+</style></head><body><div class="wrap">
+<header><a class="home" href="index.html">🏠 回首頁</a><span class="tag">補課包</span><h1>第 2 節　內燃機的循環</h1></header>
+<p class="intro">沒來上課沒關係！照著下面 4 個步驟完成，大約 25 分鐘。每完成一步就打勾，老師會從測驗成績確認你的學習狀況。</p>
+<div class="goal"><b>學完要會：</b><ol><li>看懂 P-V 圖：水平線是等壓、垂直線是等容</li><li>說出四種熱力循環的燃燒方式與使用的引擎</li><li>計算每秒動力次數（四行程 720° 一次、二行程 360° 一次）</li></ol><div class="keys"><div class="k"><b>奧圖循環</b><span>等容燃燒 → 四行程汽油引擎</span></div><div class="k"><b>狄塞爾／混合循環</b><span>等壓 → 低速柴油；先等容再等壓 → 高速柴油</span></div><div class="k"><b>米勒循環</b><span>進汽門晚關（約 70～80°），要裝機械增壓器</span></div></div></div>
+<p style="margin:16px 0 0;color:var(--mut)">完成進度 <b id="pt">0 / 4</b></p><div class="prog"><i id="pb"></i></div>
+<div class="step" data-k="1"><div class="num">1</div><div><h2>看重點影片（約 5～8 分鐘）</h2><p>先把影片看完，可以暫停、倒轉。</p><div class="vid" id="vid">影片準備中（老師尚未設定影片網址）</div><label class="ck"><input type="checkbox">我看完影片了</label></div></div>
+<div class="step" data-k="2"><div class="num">2</div><div><h2>影片小測驗（6 題）</h2><p>在影片中回答問題，答對才能繼續。老師看得到你的作答結果。</p><a class="b" data-link="edcafeR2" target="_blank">✏️ 開始影片測驗</a><br><label class="ck"><input type="checkbox">我完成影片測驗了</label></div></div>
+<div class="step" data-k="3"><div class="num">3</div><div><h2>操作動畫：V2 P-V 圖會說話</h2><p>每段結束有小問題，全部答對會出現完成畫面。</p><a class="b sec" href="V2_P-V圖會說話.html" target="_blank">▶ 開啟動畫</a><br><label class="ck"><input type="checkbox">我看完動畫並答完題目</label></div></div>
+<div class="step" data-k="4"><div class="num">4</div><div><h2>課後測驗＋學習單</h2><p>和上課同學寫同一份測驗。學習單 第 2 節（向老師領取或到 Google Classroom 下載）</p><a class="b" data-link="form2" target="_blank">✅ 課後測驗（Google 表單）</a><br><label class="ck"><input type="checkbox">我完成測驗與學習單</label></div></div>
+</div>
+<script>window.LINKS={};</script><script src="links.js"></script>
+<script>
+(function(){const L=window.LINKS||{},key='review2';
+document.querySelectorAll('a[data-link]').forEach(a=>{const u=L[a.dataset.link];if(u)a.href=u;else{a.classList.add('off');a.textContent+='（待設定）';}});
+const v=L['video2'];if(v){const m=v.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);if(m)document.getElementById('vid').innerHTML='<iframe src="https://www.youtube.com/embed/'+m[1]+'?rel=0" allowfullscreen allow="encrypted-media"></iframe>';}
+let st={};try{st=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+const steps=[...document.querySelectorAll('.step')];
+const upd=()=>{let c=0;steps.forEach(s=>{const on=!!st[s.dataset.k];s.classList.toggle('done',on);s.querySelector('input').checked=on;if(on)c++;});document.getElementById('pt').textContent=c+' / 4';document.getElementById('pb').style.width=c*25+'%';};
+steps.forEach(s=>s.querySelector('input').onchange=e=>{st[s.dataset.k]=e.target.checked;try{localStorage.setItem(key,JSON.stringify(st))}catch(_){}upd();});upd();})();
+</script></body></html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V1 熱機能量轉換之旅</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:12px 16px 32px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:15px}
+header h1{font-size:22px;margin:0}
+header .sub{color:var(--mut);font-size:14px}
+header .score{margin-left:auto;color:var(--mut);font-size:14px}
+.main{display:grid;grid-template-columns:1fr 260px;gap:14px}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+.stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:default}
+.chtitle{position:absolute;left:12px;top:10px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--acc)}
+.caption{min-height:62px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:10px;padding:12px 16px;font-size:19px;line-height:1.55}
+.caption b{color:var(--acc)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.controls button:hover{border-color:var(--acc2)}
+.controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:88px}
+.controls .time{color:var(--mut);font-size:14px;margin-left:auto;font-variant-numeric:tabular-nums}
+.controls label{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:4px;cursor:pointer}
+.bar{display:flex;gap:3px;margin-top:10px;height:12px;cursor:pointer}
+.bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
+.bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
+.bar div.done i{background:var(--ok)}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
+.side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
+.side ol{list-style:none;margin:0;padding:0}
+.side li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;gap:8px;align-items:center}
+.side li:hover{background:var(--panel2)}
+.side li.on{background:var(--panel2);outline:1px solid var(--acc)}
+.side li .n{width:22px;height:22px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:12px;flex:none}
+.side li.ok .n{background:var(--ok);color:#002010}
+.side .tips{color:var(--mut);font-size:13px;line-height:1.6;margin:10px 6px 2px;border-top:1px solid var(--line);padding-top:8px}
+.panel{margin-top:10px}
+.panel:empty{display:none}
+.panel .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.panel .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0}
+.panel input[type=number]{width:72px;font-size:17px;padding:6px;border-radius:6px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit}
+.panel input[type=range]{width:200px}
+.panel button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.panel button.pri{background:var(--acc);color:#1a1200;font-weight:700;border:none}
+.panel .res{font-size:17px;line-height:1.8}
+.panel .res b{color:var(--acc)}
+.panel .fb{font-weight:700}
+.panel .fb.ok{color:var(--ok)}.panel .fb.bad{color:var(--bad)}
+.quiz{position:absolute;inset:0;background:rgba(5,10,20,.82);display:none;align-items:center;justify-content:center;padding:16px}
+.quiz.show{display:flex}
+.quiz .card{background:var(--panel);border:2px solid var(--acc);border-radius:14px;max-width:640px;width:100%;padding:18px 20px}
+.quiz .card h4{margin:0 0 4px;color:var(--acc);font-size:15px}
+.quiz .card p{font-size:20px;margin:6px 0 12px;line-height:1.5}
+.quiz .opt{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;font-size:17px;cursor:pointer;font-family:inherit}
+.quiz .opt:hover{border-color:var(--acc2)}
+.quiz .opt.right{background:#16452d;border-color:var(--ok)}
+.quiz .opt.wrong{background:#4a1d1d;border-color:var(--bad)}
+.quiz .ex{font-size:15px;color:var(--mut);margin-top:8px;min-height:20px;line-height:1.5}
+.quiz .go{margin-top:10px;background:var(--ok);color:#002010;border:none;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;cursor:pointer;display:none;font-family:inherit}
+.endcard{position:absolute;inset:0;background:rgba(5,10,20,.85);display:none;align-items:center;justify-content:center;text-align:center}
+.endcard.show{display:flex}
+.endcard div{font-size:22px;line-height:1.8}
+.endcard b{color:var(--acc);font-size:30px}
+@media(max-width:600px){.caption{font-size:16px}header h1{font-size:18px}.quiz .card p{font-size:17px}.quiz .opt{font-size:15px;padding:8px}}
+.chtitle.hide{opacity:0}
+.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:15px;text-decoration:none;font-weight:700}
+.home:hover{border-color:var(--acc);color:var(--acc)}
+.home.big{margin-top:14px;font-size:18px;padding:10px 18px;background:var(--acc);color:#1a1200;border:none}
+/* 嵌入簡報模式（?embed=1）：隱藏標題列與章節欄，讓畫面完整放進投影片 */
+.embed header,.embed .side,.embed .tips{display:none}
+.embed .main{grid-template-columns:1fr}
+.embed .wrap{max-width:calc((100vh - 150px) * 16 / 9);padding:4px 8px 8px}
+.embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
+.embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
+</style></head><body>
+<script>
+/* 網頁式動畫影片播放框架（共用） */
+const W = 960, HGT = 540;
+const C = { bg:'#0a1120', ink:'#e8eef9', mut:'#9fb0cf', acc:'#ffb020', acc2:'#38c6ff', ok:'#3ddc84', bad:'#ff5d5d',
+  metal:'#8ea3bf', metalD:'#5c6f8a', metalL:'#c3d1e4', wall:'#3a4a66', mix:'#4fd1a5', air:'#7cc7ff', fire:'#ff7a1a', exh:'#8a8f99', oil:'#d8a31a', water:'#2f8fff' };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = k => k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k);
+const rad = d => d * Math.PI / 180;
+const mod = (a, n) => ((a % n) + n) % n;
+/* 0..1 進度 */
+const prog = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+
+const H = {
+  text(ctx, s, x, y, o = {}) {
+    ctx.save(); ctx.font = `${o.bold ? '700 ' : ''}${o.size || 20}px "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif`;
+    ctx.fillStyle = o.color || C.ink; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'middle';
+    ctx.globalAlpha = o.alpha ?? 1;
+    String(s).split('\n').forEach((ln, i) => ctx.fillText(ln, x, y + i * (o.size || 20) * 1.35)); ctx.restore();
+  },
+  rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); },
+  box(ctx, x, y, w, h, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; H.rr(ctx, x, y, w, h, o.r ?? 10);
+    ctx.fillStyle = o.fill || '#16223a'; ctx.fill(); ctx.lineWidth = o.lw || 2; ctx.strokeStyle = o.stroke || '#2c3f63'; ctx.stroke(); ctx.restore();
+  },
+  arrow(ctx, x1, y1, x2, y2, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = ctx.fillStyle = o.color || C.acc; ctx.lineWidth = o.lw || 4;
+    if (o.dash) { ctx.setLineDash(o.dash); ctx.lineDashOffset = o.offset || 0; }
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    const a = Math.atan2(y2 - y1, x2 - x1), s = o.head || 14;
+    ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - s * Math.cos(a - .45), y2 - s * Math.sin(a - .45));
+    ctx.lineTo(x2 - s * Math.cos(a + .45), y2 - s * Math.sin(a + .45)); ctx.closePath(); ctx.fill(); ctx.restore();
+  },
+  label(ctx, px, py, tx, ty, s, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = o.color || C.acc; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.fillStyle = o.color || C.acc; ctx.beginPath(); ctx.arc(px, py, 4, 0, 7); ctx.fill();
+    ctx.font = `700 ${o.size || 17}px "Microsoft JhengHei",sans-serif`; const w = ctx.measureText(s).width + 14;
+    const left = o.align === 'right' ? tx - w : o.align === 'center' ? tx - w / 2 : tx;
+    H.rr(ctx, left, ty - 14, w, 28, 6); ctx.fillStyle = 'rgba(10,17,32,.9)'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.ink; ctx.textBaseline = 'middle'; ctx.fillText(s, left + 7, ty + 1); ctx.restore();
+  },
+  particles(ctx, n, x, y, w, h, color, t, o = {}) {
+    ctx.save(); ctx.fillStyle = color; ctx.globalAlpha = o.alpha ?? .85;
+    for (let i = 0; i < n; i++) {
+      const sx = (Math.sin(i * 12.9898) * 43758.5453) % 1, sy = (Math.sin(i * 78.233) * 12543.21) % 1;
+      const px = x + Math.abs(sx) * w + Math.sin(t * 3 + i) * (o.jit ?? 4), py = y + Math.abs(sy) * h + Math.cos(t * 2.6 + i * 1.7) * (o.jit ?? 4);
+      if (px < x || px > x + w || py < y || py > y + h) continue;
+      ctx.beginPath(); ctx.arc(px, py, o.r || 3.2, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  },
+  spark(ctx, x, y, k) {
+    if (k <= 0) return; ctx.save(); ctx.globalAlpha = k; ctx.strokeStyle = '#fff6a0'; ctx.lineWidth = 3;
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + k; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * 18 * k, y + Math.sin(a) * 18 * k); ctx.stroke(); }
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, 5 * k, 0, 7); ctx.fill(); ctx.restore();
+  },
+  flame(ctx, x, y, s, t) {
+    ctx.save(); for (let i = 0; i < 3; i++) {
+      const f = 1 - i * .28; ctx.fillStyle = ['#ff5a1a', '#ff9a1a', '#ffe060'][i]; ctx.beginPath();
+      const w = 22 * s * f, h = (46 + Math.sin(t * 10 + i) * 6) * s * f;
+      ctx.moveTo(x - w, y); ctx.quadraticCurveTo(x - w, y - h * .6, x, y - h); ctx.quadraticCurveTo(x + w, y - h * .6, x + w, y); ctx.closePath(); ctx.fill();
+    } ctx.restore();
+  },
+  /* 曲柄滑塊：回傳活塞銷距曲軸中心之距離 */
+  pinDist(r, l, th) { return r * Math.cos(th) + Math.sqrt(l * l - (r * Math.sin(th)) ** 2); },
+  /* 四行程引擎剖面：phi = 0..720（0 = 進氣行程開始之上死點） */
+  engine4(ctx, cx, top, phi, o = {}) {
+    const s = o.scale || 1, bore = 150 * s, r = 52 * s, l = 170 * s, headH = 70 * s, clr = 24 * s, crownToPin = 34 * s, pistonH = 70 * s;
+    const headBot = top + headH, cy = headBot + clr + crownToPin + r + l, cylBot = headBot + clr + 2 * r + pistonH * .8;
+    const th = rad(phi), pinY = cy - H.pinDist(r, l, th), pTop = pinY - crownToPin;
+    const IO = o.IO ?? 8, IC = o.IC ?? 40, EO = o.EO ?? 50, EC = o.EC ?? 12;
+    const lift = (a, b) => { let p = mod(phi - a, 720), span = mod(b - a, 720); return p <= span ? Math.sin(Math.PI * p / span) : 0; };
+    const iL = o.iLift ?? lift(-IO, 180 + IC), eL = o.eLift ?? lift(540 - EO, 720 + EC);
+    const x0 = cx - bore / 2, x1 = cx + bore / 2;
+    // 汽缸壁與水套
+    ctx.save();
+    ctx.fillStyle = C.wall; ctx.fillRect(x0 - 34 * s, headBot, 34 * s, cylBot - headBot); ctx.fillRect(x1, headBot, 34 * s, cylBot - headBot);
+    if (o.water) { ctx.fillStyle = 'rgba(47,143,255,.55)'; ctx.fillRect(x0 - 26 * s, headBot + 8 * s, 14 * s, (cylBot - headBot) * .6); ctx.fillRect(x1 + 12 * s, headBot + 8 * s, 14 * s, (cylBot - headBot) * .6); }
+    // 汽缸內氣體
+    const gas = o.gas || 'none';
+    const gcol = { mix: 'rgba(79,209,165,.30)', air: 'rgba(124,199,255,.25)', comp: 'rgba(79,209,165,.55)', fire: 'rgba(255,122,26,.75)', exh: 'rgba(138,143,153,.45)', none: 'rgba(0,0,0,0)' }[gas] || gas;
+    ctx.fillStyle = gcol; ctx.fillRect(x0, headBot - 8 * s, bore, pTop - headBot + 8 * s);
+    if (o.particles) H.particles(ctx, o.particles, x0 + 4, headBot, bore - 8, pTop - headBot - 4, o.pColor || C.mix, o.t || 0, { r: 3 * s });
+    // 汽缸蓋
+    ctx.fillStyle = '#4a5d7d'; H.rr(ctx, x0 - 34 * s, top, bore + 68 * s, headH, 8 * s); ctx.fill();
+    // 燃燒室凹槽
+    ctx.fillStyle = gcol === 'rgba(0,0,0,0)' ? C.bg : C.bg; ctx.beginPath(); ctx.moveTo(x0, headBot); ctx.quadraticCurveTo(cx, headBot - 34 * s, x1, headBot); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = gcol; ctx.fill();
+    // 進排氣道
+    const port = (side, L, col) => {
+      const sx = side < 0 ? x0 + 26 * s : x1 - 26 * s, d = side;
+      ctx.fillStyle = C.bg; ctx.beginPath(); ctx.moveTo(sx - 16 * s, headBot - 12 * s); ctx.lineTo(sx + 16 * s, headBot - 12 * s);
+      ctx.lineTo(sx + 16 * s + d * 50 * s, top - 2); ctx.lineTo(sx - 16 * s + d * 50 * s, top - 2); ctx.closePath(); ctx.fill();
+      if (L > .05) { ctx.fillStyle = col; ctx.fill(); }
+      // 汽門
+      const vy = headBot - 12 * s + L * 16 * s; ctx.fillStyle = C.metalL;
+      ctx.fillRect(sx - 3 * s, top - 30 * s + L * 16 * s, 6 * s, vy - top + 30 * s - L * 16 * s);
+      ctx.beginPath(); ctx.moveTo(sx - 20 * s, vy + 4 * s); ctx.lineTo(sx + 20 * s, vy + 4 * s); ctx.lineTo(sx + 6 * s, vy - 4 * s); ctx.lineTo(sx - 6 * s, vy - 4 * s); ctx.closePath(); ctx.fill();
+      return { x: sx, y: vy };
+    };
+    const vi = port(-1, iL, o.inCol || 'rgba(79,209,165,.6)'), ve = port(1, eL, 'rgba(138,143,153,.6)');
+    if (o.flow) {
+      const off = -(o.t || 0) * 40;
+      if (iL > .15) H.arrow(ctx, vi.x - 70 * s, top - 10 * s, vi.x - 6 * s, headBot + 6 * s, { color: C.mix, lw: 3, dash: [8, 6], offset: off, alpha: iL });
+      if (eL > .15) H.arrow(ctx, ve.x + 6 * s, headBot + 6 * s, ve.x + 70 * s, top - 10 * s, { color: '#b5bac4', lw: 3, dash: [8, 6], offset: off, alpha: eL });
+    }
+    // 火星塞
+    if (o.plug !== false) { ctx.fillStyle = '#d9dee8'; ctx.fillRect(cx - 5 * s, top - 26 * s, 10 * s, headH - 4 * s); ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 9 * s, top - 34 * s, 18 * s, 12 * s); }
+    if (o.spark) H.spark(ctx, cx, headBot - 12 * s, o.spark);
+    // 活塞
+    const g = ctx.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, C.metalD); g.addColorStop(.5, C.metalL); g.addColorStop(1, C.metalD);
+    ctx.fillStyle = g; H.rr(ctx, x0 + 3, pTop, bore - 6, pistonH, 4 * s); ctx.fill();
+    ctx.fillStyle = '#44536b'; for (let i = 0; i < 3; i++) ctx.fillRect(x0 + 3, pTop + (8 + i * 10) * s, bore - 6, 3 * s);
+    // 連桿與曲軸（曲軸臂＋平衡配重會跟著旋轉）
+    const cpx = cx + r * Math.sin(th), cpy = cy - r * Math.cos(th);
+    H.crank(ctx, cx, cy, r, th, s, o.t || 0);
+    ctx.strokeStyle = '#aab8cc'; ctx.lineWidth = 16 * s; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx, pinY); ctx.lineTo(cpx, cpy); ctx.stroke();
+    ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, pinY, 7 * s, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(cpx, cpy, 9 * s, 0, 7); ctx.fill(); ctx.strokeStyle = '#7a5a00'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    return { cx, top, headBot, cy, r, l, bore, pTop, pinY, x0, x1, cylBot, crankPin: [cpx, cpy], vi, ve, tdcY: headBot + clr, bdcY: headBot + clr + 2 * r };
+  },
+  /* 曲軸：曲柄圓（虛線）、曲軸臂、平衡配重、主軸頸記號、旋轉方向箭頭 */
+  crank(ctx, cx, cy, r, th, s = 1, t = 0) {
+    ctx.save();
+    ctx.setLineDash([6, 6]); ctx.strokeStyle = 'rgba(255,209,102,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.translate(cx, cy); ctx.rotate(th);
+    // 平衡配重（在曲柄銷的反方向）
+    const g = ctx.createLinearGradient(0, 0, 0, r + 26 * s); g.addColorStop(0, '#7f93b2'); g.addColorStop(1, '#55678a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-14 * s, 0); ctx.arc(0, 0, r + 22 * s, rad(35), rad(145)); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#9fb2cf'; ctx.lineWidth = 2; ctx.stroke();
+    // 曲軸臂（主軸頸 → 曲柄銷）
+    ctx.fillStyle = '#8ea3c2'; ctx.beginPath(); ctx.moveTo(-20 * s, 4 * s); ctx.lineTo(-14 * s, -r); ctx.arc(0, -r, 14 * s, Math.PI, 0); ctx.lineTo(20 * s, 4 * s); ctx.arc(0, 4 * s, 20 * s, 0, Math.PI); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#c3d1e4'; ctx.stroke();
+    // 主軸頸與旋轉記號
+    ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(0, 0, 11 * s, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 10 * s); ctx.stroke();
+    ctx.restore();
+    // 旋轉方向（順時針）
+    ctx.save(); ctx.strokeStyle = 'rgba(56,198,255,.8)'; ctx.fillStyle = 'rgba(56,198,255,.8)'; ctx.lineWidth = 3;
+    const R = r + 34 * s, a0 = rad(-60), a1 = rad(10); ctx.beginPath(); ctx.arc(cx, cy, R, a0, a1); ctx.stroke();
+    const ex = cx + R * Math.cos(a1), ey = cy + R * Math.sin(a1); ctx.beginPath(); ctx.moveTo(ex + 7, ey - 6); ctx.lineTo(ex - 8, ey - 3); ctx.lineTo(ex + 1, ey + 9); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  },
+  strokeName(phi) { phi = mod(phi, 720); return phi < 180 ? '進氣行程' : phi < 360 ? '壓縮行程' : phi < 540 ? '動力行程' : '排氣行程'; },
+  dial(ctx, x, y, R, ang, label) {
+    ctx.save(); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.strokeStyle = '#2c3f63'; ctx.stroke();
+    ctx.strokeStyle = C.acc; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + R * Math.sin(rad(ang)), y - R * Math.cos(rad(ang))); ctx.stroke();
+    H.text(ctx, label, x, y + R + 18, { size: 15, align: 'center', color: C.mut }); ctx.restore();
+  },
+};
+
+function Player(cfg) {
+  const $ = s => document.querySelector(s);
+  document.title = cfg.code + ' ' + cfg.title;
+  document.body.innerHTML = `<div class="wrap">
+  <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span></header>
+  <div class="main"><div>
+    <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
+      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br><a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
+    </div>
+    <div class="bar" id="bar"></div>
+    <div class="controls">
+      <button id="prev" title="上一段">⏮</button><button class="main-btn" id="play">▶ 播放</button><button id="step" title="逐格（暫停時）">逐格 ▸</button><button id="next" title="下一段">⏭</button>
+      <select id="spd"><option value=".25">0.25x</option><option value=".5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+      <label><input type="checkbox" id="tts">🔊 語音旁白</label><span class="time" id="tm"></span>
+    </div>
+    <div class="caption" id="cap"></div>
+    <div class="panel" id="panel"></div>
+  </div>
+  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>每段結束有小問題，答對才會繼續。</div></aside></div></div>`;
+  const cv = $('#cv'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * dpr; cv.height = HGT * dpr; ctx.scale(dpr, dpr);
+  const chs = cfg.chapters, S = Object.assign({}, cfg.state || {}), passed = chs.map(() => false), firstOk = chs.map(() => null);
+  let ci = 0, t = 0, playing = false, speed = 1, lastCap = '', last = performance.now(), ended = false;
+  const durOf = c => c.loop ? (c.nominal || 20) : c.dur;
+  // 章節清單與進度條
+  $('#list').innerHTML = chs.map((c, i) => `<li data-i="${i}"><span class="n">${i + 1}</span>${c.title}</li>`).join('');
+  const tot = chs.reduce((a, c) => a + durOf(c), 0);
+  $('#bar').innerHTML = chs.map(c => `<div style="flex:${durOf(c) / tot}"><i></i></div>`).join('');
+  $('#list').onclick = e => { const li = e.target.closest('li'); if (li) go(+li.dataset.i, true); };
+  $('#bar').onclick = e => { const d = e.target.closest('div'); const i = [...$('#bar').children].indexOf(d); if (i >= 0) go(i, true); };
+  const setPlay = p => { playing = p; $('#play').textContent = p ? '⏸ 暫停' : '▶ 播放'; if (!p && window.speechSynthesis) speechSynthesis.pause(); else if (window.speechSynthesis) speechSynthesis.resume(); };
+  $('#play').onclick = () => { if (ended) { restart(); return; } if ($('#quiz').classList.contains('show')) return; setPlay(!playing); };
+  $('#prev').onclick = () => go(Math.max(0, ci - 1), true);
+  $('#next').onclick = () => { if (ci < chs.length - 1) go(ci + 1, true); };
+  $('#step').onclick = () => { setPlay(false); t = Math.min(t + 1 / 15, chs[ci].loop ? 1e9 : chs[ci].dur); };
+  $('#spd').onchange = e => speed = +e.target.value;
+  $('#tts').onchange = e => { if (!e.target.checked && window.speechSynthesis) speechSynthesis.cancel(); else { lastCap = ''; } };
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); $('#play').click(); }
+    if (e.code === 'ArrowRight') $('#next').click(); if (e.code === 'ArrowLeft') $('#prev').click(); if (e.key === 'r' || e.key === 'R') restart();
+  });
+  cv.addEventListener('click', e => {
+    const c = chs[ci]; if (!c.onClick) return; const b = cv.getBoundingClientRect();
+    c.onClick((e.clientX - b.left) * W / b.width, (e.clientY - b.top) * HGT / b.height, S);
+  });
+  cv.addEventListener('mousemove', e => {
+    const c = chs[ci]; if (!c.onClick) { cv.style.cursor = 'default'; return; } cv.style.cursor = 'pointer';
+  });
+  function restart() { passed.fill(false); firstOk.fill(null); $('#end').classList.remove('show'); ended = false; go(0, false); setPlay(true); }
+  function go(i, keepPlay) {
+    ci = i; t = 0; lastCap = ''; ended = false; $('#end').classList.remove('show'); $('#quiz').classList.remove('show');
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    const p = $('#panel'); p.innerHTML = ''; if (chs[i].panel) chs[i].panel(p, S);
+    if (chs[i].enter) chs[i].enter(S);
+    [...$('#list').children].forEach((li, k) => { li.classList.toggle('on', k === i); li.classList.toggle('ok', passed[k]); });
+    $('#cht').textContent = `第 ${i + 1} 段｜${chs[i].title}`; $('#cht').classList.remove('hide'); clearTimeout(window.__ht); window.__ht = setTimeout(() => $('#cht').classList.add('hide'), 2500);
+    if (!keepPlay) setPlay(false);
+  }
+  function score() { const n = firstOk.filter(x => x === true).length, q = chs.filter(c => c.quiz).length; $('#score').textContent = `首次答對 ${n} / ${q}`; return n; }
+  function showQuiz() {
+    const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
+    $('#qq').textContent = q.q; $('#qe').textContent = ''; $('#qgo').style.display = 'none';
+    $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
+    $('#qo').onclick = e => {
+      const b = e.target.closest('.opt'); if (!b || passed[ci]) return; const k = +b.dataset.k;
+      if (firstOk[ci] === null) firstOk[ci] = (k === q.ans);
+      if (k === q.ans) { b.classList.add('right'); passed[ci] = true; $('#qe').textContent = '✔ 答對了！' + (q.ex || ''); $('#qgo').style.display = 'inline-block'; score(); }
+      else { b.classList.add('wrong'); $('#qe').textContent = '✘ 再想想看。' + (q.hint || '可以按「上一段」或點章節重看。'); }
+    };
+  }
+  $('#qgo').onclick = () => { $('#quiz').classList.remove('show'); nextOrEnd(); };
+  function nextOrEnd() {
+    if (ci < chs.length - 1) { go(ci + 1, true); setPlay(true); }
+    else { ended = true; setPlay(false); $('#endsc').textContent = `${score()} / ${chs.filter(c => c.quiz).length}`; $('#end').classList.add('show'); [...$('#list').children].forEach((li, k) => li.classList.toggle('ok', passed[k])); }
+  }
+  function speak(s) {
+    if (!$('#tts').checked || !window.speechSynthesis) return; speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(s.replace(/<[^>]+>/g, '')); u.lang = 'zh-TW'; u.rate = Math.min(1.3, .95 * Math.max(.8, speed));
+    const v = speechSynthesis.getVoices().find(v => /zh[-_]TW/i.test(v.lang)); if (v) u.voice = v; speechSynthesis.speak(u);
+  }
+  function frame(now) {
+    const dt = Math.min(.1, (now - last) / 1000); last = now; const c = chs[ci];
+    if (playing) { t += dt * speed; if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } } }
+    // 字幕
+    let cap = ''; (c.captions || []).forEach(([at, s]) => { if (t >= at) cap = s; });
+    if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap) speak(cap); }
+    ctx.clearRect(0, 0, W, HGT); ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, HGT);
+    try { c.draw(ctx, t, S); } catch (err) { console.error(err); }
+    const d = durOf(c), shown = c.loop ? (t % d) : t;
+    $('#tm').textContent = c.loop ? '互動模式' : `${shown.toFixed(1)} / ${d.toFixed(0)} 秒`;
+    [...$('#bar').children].forEach((b, k) => { b.firstChild.style.width = (k < ci ? 100 : k === ci ? (c.loop ? 100 : 100 * t / d) : 0) + '%'; b.classList.toggle('done', passed[k]); });
+    requestAnimationFrame(frame);
+  }
+  // 互動章節：「完成本段」按鈕
+  window.finishLoop = () => { if (chs[ci].quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } };
+  window.__seek = (i, tt) => { go(i, false); t = tt; };
+  go(0, false); score(); requestAnimationFrame(frame);
+  if (window.speechSynthesis) speechSynthesis.getVoices();
+  if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('embed');
+  return { S, go };
+}
+
+/* V1 熱機能量轉換之旅 */
+function wheel(ctx, x, y, R, a, col) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(a); ctx.strokeStyle = col || C.metalL; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.stroke();
+  for (let i = 0; i < 6; i++) { ctx.rotate(Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R, 0); ctx.stroke(); }
+  ctx.fillStyle = col || C.metalL; ctx.beginPath(); ctx.arc(0, 0, 8, 0, 7); ctx.fill(); ctx.restore();
+}
+function fuelCan(ctx, x, y) {
+  ctx.save(); ctx.fillStyle = '#c0392b'; H.rr(ctx, x - 34, y - 44, 68, 88, 8); ctx.fill();
+  ctx.fillStyle = '#e8eef9'; ctx.fillRect(x - 10, y - 58, 20, 16); H.text(ctx, '燃料', x, y + 4, { size: 20, bold: true, align: 'center' }); ctx.restore();
+}
+function flowDots(ctx, x1, x2, y, t, col, n = 6) {
+  for (let i = 0; i < n; i++) { const k = ((t * .5 + i / n) % 1); ctx.fillStyle = col; ctx.globalAlpha = Math.sin(k * Math.PI); ctx.beginPath(); ctx.arc(lerp(x1, x2, k), y + Math.sin(k * 12 + i) * 6, 6, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1;
+}
+/* 簡化蒸汽機（外燃機） */
+function steamEngine(ctx, x, y, t, k) {
+  // 鍋爐
+  H.box(ctx, x, y, 150, 120, { fill: '#5b4636', stroke: '#8a6d55', r: 14 });
+  ctx.fillStyle = 'rgba(47,143,255,.6)'; ctx.fillRect(x + 12, y + 50, 126, 58);
+  H.particles(ctx, 18, x + 14, y + 52, 122, 54, '#bfe0ff', t, { r: 3, jit: 6 });
+  H.text(ctx, '鍋爐（水→蒸汽）', x + 75, y + 26, { size: 16, align: 'center' });
+  H.flame(ctx, x + 45, y + 170, 1, t); H.flame(ctx, x + 105, y + 170, 1, t + 1);
+  H.text(ctx, '燃料在機器「外部」燃燒', x + 75, y + 196, { size: 16, align: 'center', color: C.fire });
+  // 蒸汽管
+  ctx.strokeStyle = '#9aa7ba'; ctx.lineWidth = 14; ctx.beginPath(); ctx.moveTo(x + 150, y + 30); ctx.lineTo(x + 230, y + 30); ctx.lineTo(x + 230, y + 70); ctx.stroke();
+  flowDots(ctx, x + 152, x + 228, y + 30, t, '#e6f3ff', 4);
+  // 汽缸（水平）
+  const cx = x + 230, cy = y + 70, ph = t * 3, pos = 40 + 36 * Math.cos(ph);
+  ctx.fillStyle = '#3a4a66'; ctx.fillRect(cx - 10, cy, 150, 70); ctx.fillStyle = 'rgba(200,230,255,.35)'; ctx.fillRect(cx, cy + 10, pos, 50);
+  ctx.fillStyle = C.metalL; ctx.fillRect(cx + pos, cy + 10, 26, 50);
+  // 連桿與飛輪
+  const wx = cx + 230, wy = cy + 35, R = 34, px = wx + R * Math.cos(ph + Math.PI), py = wy + R * Math.sin(ph + Math.PI);
+  ctx.strokeStyle = '#aab8cc'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(cx + pos + 26, cy + 35); ctx.lineTo(px, py); ctx.stroke();
+  wheel(ctx, wx, wy, 52, ph, C.metalL);
+  H.text(ctx, '工作介質：水蒸汽', cx + 70, cy + 92, { size: 16, align: 'center', color: C.acc2 });
+}
+const V1 = {
+  code: 'V1', title: '熱機能量轉換之旅', sub: '第 1 節｜1-1 熱機的定義與分類',
+  chapters: [
+    { title: '什麼是熱機？', dur: 18,
+      captions: [[0, '機車、汽車、蒸汽火車……它們的<b>動力</b>都從哪裡來？'], [5, '燃料裡藏著<b>化學能</b>，燃燒後變成<b>熱能</b>。'], [10, '再用機械裝置把熱能轉成往復或旋轉運動，也就是<b>機械能</b>。'], [14, '能把「燃料燃燒的熱」變成「動力」的機械，就叫做<b>熱機</b>。']],
+      draw(ctx, t) {
+        H.text(ctx, '熱機：化學能 → 熱能 → 機械能', W / 2, 50, { size: 28, bold: true, align: 'center', color: C.acc });
+        const a1 = ease(prog(t, 0, 2)), a2 = ease(prog(t, 4.5, 6.5)), a3 = ease(prog(t, 9.5, 11.5));
+        ctx.globalAlpha = a1; fuelCan(ctx, 170, 270); H.text(ctx, '化學能', 170, 360, { size: 24, bold: true, align: 'center', color: '#ff8c7a' }); ctx.globalAlpha = 1;
+        if (a2 > 0) { ctx.globalAlpha = a2; flowDots(ctx, 220, 400, 270, t, '#ff8c7a'); H.flame(ctx, 480, 300, 1.6, t); H.text(ctx, '熱能', 480, 360, { size: 24, bold: true, align: 'center', color: C.fire }); ctx.globalAlpha = 1; }
+        if (a3 > 0) { ctx.globalAlpha = a3; flowDots(ctx, 540, 720, 270, t, C.fire); wheel(ctx, 790, 270, 60, t * 2.5); H.text(ctx, '機械能', 790, 360, { size: 24, bold: true, align: 'center', color: C.acc2 }); ctx.globalAlpha = 1; }
+        if (t > 14) H.box(ctx, 230, 420, 500, 70, { stroke: C.acc, alpha: ease(prog(t, 14, 15)) }), H.text(ctx, '熱機 heat engine', 480, 455, { size: 26, bold: true, align: 'center', alpha: ease(prog(t, 14, 15)) });
+      },
+      quiz: { q: '熱機是把燃料中的哪一種能量，最後轉換成機械能？', opts: ['電能', '化學能', '核能', '光能'], ans: 1, ex: '燃料含化學能 → 燃燒成熱能 → 轉成機械能。' } },
+    { title: '內燃機：在汽缸裡燃燒', dur: 18,
+      captions: [[0, '<b>內燃機</b>（ICE）：燃料在引擎<b>內部</b>的汽缸裡燃燒。'], [5, '燃燒後的高溫高壓氣體膨脹，直接推動活塞，經曲軸轉成旋轉運動。'], [10, '所以內燃機的<b>工作介質就是燃燒氣體</b>。'], [14, '優點：構造簡單、體積小、重量輕、熱效率較高。例：汽油、柴油、燃氣渦輪、噴射引擎。']],
+      draw(ctx, t) {
+        const phi = (t * 240) % 720, sp = phi > 350 && phi < 372 ? 1 - Math.abs(phi - 361) / 11 : 0;
+        const gas = phi < 180 ? 'mix' : phi < 360 ? 'comp' : phi < 540 ? (phi < 420 ? 'fire' : 'rgba(255,122,26,.35)') : 'exh';
+        const e = H.engine4(ctx, 230, 62, phi, { scale: .9, gas, spark: sp, flow: true, t });
+        if (phi >= 360 && phi < 470) H.flame(ctx, e.cx, e.pTop - 4, .7, t);
+        H.box(ctx, 160, 478, 140, 40, { stroke: C.acc }); H.text(ctx, H.strokeName(phi), 230, 498, { size: 22, bold: true, align: 'center', color: C.acc });
+        H.box(ctx, 480, 80, 440, 380, {});
+        H.text(ctx, '內燃機 internal combustion engine', 500, 115, { size: 20, bold: true, color: C.acc });
+        const pts = ['燃料在「汽缸內部」燃燒', '工作介質：燃燒氣體', '構造簡單、體積小、重量輕', '熱效率較高、適用範圍廣', '例：汽油引擎、柴油引擎、\n　　燃氣渦輪、噴射引擎'];
+        pts.forEach((p, i) => { const a = ease(prog(t, 1 + i * 3, 2 + i * 3)); H.text(ctx, '● ' + p, 505, 170 + i * 56, { size: 21, alpha: a }); });
+      },
+      quiz: { q: '內燃機的「工作介質」是什麼？', opts: ['水蒸汽', '氦氣', '燃燒氣體', '冷卻水'], ans: 2, ex: '燃料在汽缸內燃燒，燃燒氣體直接推動活塞。' } },
+    { title: '外燃機：在外面燒、用蒸汽推', dur: 18,
+      captions: [[0, '<b>外燃機</b>（ECE）：燃料在機器<b>外部</b>燃燒。'], [5, '燃燒的熱把鍋爐裡的水加熱成高壓蒸汽，再把蒸汽送進汽缸推動活塞。'], [10, '工作介質是<b>水蒸汽或被加熱的氣體</b>，不是燃燒氣體。史特靈引擎則是用<b>氦氣</b>熱脹冷縮作功。'], [14, '外燃機構造複雜、體積大、熱效率較低，現在多用於火力、核能發電廠。']],
+      draw(ctx, t) {
+        steamEngine(ctx, 40, 110, t);
+        H.box(ctx, 600, 300, 340, 200, {});
+        H.text(ctx, '外燃機 external combustion engine', 615, 330, { size: 17, bold: true, color: C.acc });
+        ['蒸汽往復活塞引擎', '蒸汽渦輪（發電廠）', '史特靈引擎（氦氣）', '構造複雜、熱效率較低'].forEach((p, i) => H.text(ctx, '● ' + p, 620, 372 + i * 32, { size: 19, alpha: ease(prog(t, 4 + i * 3, 5 + i * 3)) }));
+      },
+      quiz: { q: '下列何者屬於「外燃機」？', opts: ['汽油引擎', '柴油引擎', '噴射引擎', '史特靈引擎'], ans: 3, ex: '史特靈引擎在外部加熱氦氣，屬外燃機。' } },
+    { title: '比一比：內燃機 vs 外燃機', dur: 14,
+      captions: [[0, '來整理一下兩者的差異。'], [4, '關鍵看「<b>燃料在哪裡燃燒</b>」和「<b>推動活塞的是什麼氣體</b>」。'], [9, '目前汽車的動力仍以內燃機為主，小型車以<b>汽油引擎</b>為主。']],
+      draw(ctx, t) {
+        const rows = [['比較項目', '內燃機 ICE', '外燃機 ECE'], ['燃燒位置', '機器內部（汽缸內）', '機器外部（鍋爐）'], ['工作介質', '燃燒氣體', '水蒸汽、氦氣等'], ['構造／體積', '簡單／較小、較輕', '複雜／較大、較重'], ['熱效率', '較高', '較低'], ['實例', '汽油、柴油、噴射引擎', '蒸汽機、蒸汽渦輪、史特靈']];
+        const x = 90, y = 70, cw = [200, 290, 290], rh = 62;
+        rows.forEach((r, i) => {
+          const a = ease(prog(t, i * 1.2, i * 1.2 + .8)); let xx = x;
+          r.forEach((c, j) => { H.box(ctx, xx, y + i * rh, cw[j], rh - 6, { fill: i === 0 ? '#2a3b5e' : '#16223a', alpha: a, r: 6 }); H.text(ctx, c, xx + cw[j] / 2, y + i * rh + rh / 2 - 3, { size: i === 0 ? 21 : 20, bold: i === 0 || j === 0, align: 'center', alpha: a, color: j === 1 && i ? '#ffd27a' : j === 2 && i ? '#9fdcff' : C.ink }); xx += cw[j] + 6; });
+        });
+      },
+      quiz: { q: '目前「小型車」的動力以哪一種為主？', opts: ['汽油引擎', '燃氣渦輪引擎', '蒸汽渦輪', '噴射引擎'], ans: 0, ex: '課本：現代小型車的動力仍以汽油引擎為主。' } },
+    { title: '想一想：電動車算熱機嗎？', dur: 14,
+      captions: [[0, '電動車沒有燃燒燃料，它的能量怎麼轉換？'], [5, '電池的<b>電能</b>直接由馬達轉成<b>機械能</b>，中間沒有「燃燒→熱能」這一步。'], [10, '所以電動車<b>不是熱機</b>。不同的能量轉換方式，效率與排放也不同。（能源教育）']],
+      draw(ctx, t) {
+        H.text(ctx, '熱機（汽油車）', 120, 120, { size: 22, bold: true, color: C.acc });
+        const chainA = [['化學能', '#ff8c7a'], ['熱能', C.fire], ['機械能', C.acc2]], chainB = [['電能', '#ffe066'], ['機械能', C.acc2]];
+        chainA.forEach(([s, c], i) => { H.box(ctx, 120 + i * 260, 150, 170, 70, { stroke: c }); H.text(ctx, s, 205 + i * 260, 185, { size: 24, bold: true, align: 'center', color: c }); if (i) H.arrow(ctx, 30 + i * 260, 185, 110 + i * 260, 185, { color: C.mut }); });
+        const a = ease(prog(t, 4, 5.5));
+        H.text(ctx, '電動車', 120, 300, { size: 22, bold: true, color: C.ok, alpha: a });
+        ctx.globalAlpha = a; chainB.forEach(([s, c], i) => { H.box(ctx, 120 + i * 520, 330, 170, 70, { stroke: c }); H.text(ctx, s, 205 + i * 520, 365, { size: 24, bold: true, align: 'center', color: c }); });
+        H.arrow(ctx, 300, 365, 630, 365, { color: C.mut }); H.text(ctx, '馬達直接轉換（沒有燃燒）', 465, 340, { size: 17, align: 'center', color: C.mut }); ctx.globalAlpha = 1;
+        if (t > 10) H.text(ctx, '討論：哪一種轉換過程損失的能量較少？', W / 2, 470, { size: 22, bold: true, align: 'center', color: C.ok, alpha: ease(prog(t, 10, 11)) });
+      },
+      quiz: { q: '電動車把電池的電能直接轉成機械能，它屬於熱機嗎？', opts: ['是，因為會發熱', '不是，因為沒有「燃料燃燒產生熱能」再轉成動力的過程', '是，屬於外燃機', '是，屬於內燃機'], ans: 1, ex: '熱機的關鍵是「燃燒產生熱能 → 機械能」。' } },
+  ],
+};
+
+Player(V1);
+</script></body></html>

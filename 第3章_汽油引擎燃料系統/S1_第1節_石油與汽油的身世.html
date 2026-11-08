@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第1節 石油與汽油的身世｜引擎原理第3章上課簡報</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d;
+--自學:#38c6ff;--共學:#3ddc84;--互學:#ffd166;--導學:#ff8a3d;--評量:#c79bff;--準備:#9fb0cf}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#050a14;color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;overflow:hidden}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:var(--bg);border-radius:6px;overflow:hidden;padding:84px 64px 56px;display:none}
+.slide.on{display:flex;flex-direction:column;justify-content:center;animation:fin .35s ease}
+@keyframes fin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* 頁首 */
+.shead{position:absolute;left:64px;right:64px;top:22px;display:flex;align-items:center;gap:12px;font-size:17px;color:var(--mut)}
+.chip{font-weight:700;border-radius:20px;padding:4px 14px;font-size:17px;color:#0d1526}
+.tchip{border:1px solid var(--line);border-radius:20px;padding:3px 12px;font-size:16px;color:var(--mut)}
+.shead .lesson{margin-left:auto}
+.sfoot{position:absolute;left:64px;right:64px;bottom:16px;display:flex;align-items:center;gap:10px;font-size:14px;color:#5f7299}
+.sfoot .prog{flex:1;height:4px;background:var(--panel2);border-radius:2px;overflow:hidden}.sfoot .prog i{display:block;height:100%;background:var(--acc)}
+/* 文字 */
+h1{font-size:54px;margin:0 0 18px;line-height:1.25}
+h2{font-size:46px;margin:0 0 26px;line-height:1.3}
+h3{font-size:28px;margin:0 0 12px;color:var(--acc)}
+p,li{font-size:28px;line-height:1.6;margin:0 0 10px}
+.mut{color:var(--mut)}.acc{color:var(--acc)}.blue{color:var(--acc2)}.green{color:var(--ok)}.red{color:var(--bad)}
+.small{font-size:20px}
+ul.clean{list-style:none;padding:0;margin:0}ul.clean li{padding-left:34px;position:relative}ul.clean li:before{content:"▸";position:absolute;left:4px;color:var(--acc)}
+/* 版面元件 */
+.row{display:flex;gap:24px}.col{flex:1;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card.hl{border-color:var(--acc)}
+.card .em{font-size:56px;line-height:1;margin-bottom:10px}
+.card h4{margin:0 0 6px;font-size:28px}
+.card p{font-size:23px;margin:0}
+.box{background:var(--panel);border:2px solid var(--acc);border-radius:16px;padding:20px 26px}
+.prompt{background:#0a1120;border:1px dashed var(--acc2);border-radius:12px;padding:16px 20px 52px;font-size:24px;line-height:1.6;position:relative}
+.copy{position:absolute;right:12px;bottom:10px;font-size:16px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit}
+table.t{width:100%;border-collapse:separate;border-spacing:0 8px}
+table.t th{font-size:26px;background:#2a3b5e;padding:10px 14px;text-align:center}
+table.t td{font-size:26px;background:var(--panel);padding:13px 14px;text-align:center}
+table.t th:first-child,table.t td:first-child{border-radius:10px 0 0 10px}table.t th:last-child,table.t td:last-child{border-radius:0 10px 10px 0}
+table.t td:first-child{font-weight:700;background:#1f2e4d}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;padding-left:54px;position:relative;margin-bottom:16px;font-size:27px}
+.steps li:before{content:counter(s);position:absolute;left:0;top:2px;width:38px;height:38px;border-radius:50%;background:var(--acc);color:#1a1200;font-weight:700;display:grid;place-items:center;font-size:20px}
+.flow{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap}
+.flow .node{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 24px;font-size:28px;font-weight:700;text-align:center}
+.flow .arr{font-size:34px;color:var(--mut)}
+.tl{display:flex;gap:8px;margin-top:10px}.tl div{border-radius:10px;padding:10px 8px;text-align:center;font-size:18px;color:#0d1526;font-weight:700}
+.tl div small{display:block;font-weight:400;font-size:15px}
+/* 按鈕連結 */
+a.btn{display:inline-flex;align-items:center;gap:8px;background:var(--acc);color:#1a1200;font-weight:700;text-decoration:none;border-radius:12px;padding:12px 20px;font-size:22px;margin:6px 10px 6px 0}
+a.btn.sec{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+a.btn.off{background:#2a2f3a;color:#7c8598;border:1px dashed #4a5263;pointer-events:none}
+/* 嵌入動畫 */
+.embed{position:absolute;left:64px;right:64px;top:76px;bottom:44px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0a1120}
+.embed iframe{width:100%;height:100%;border:0}
+/* 逐步顯示 */
+.frag{transition:opacity .35s,transform .35s}
+.frag.hid{opacity:0;transform:translateY(6px)}
+.kw{color:var(--acc);font-weight:700;border-bottom:3px solid var(--acc);padding:0 6px;transition:color .3s}
+.kw.frag.hid{opacity:1;transform:none;color:transparent}
+/* 封面 */
+.cover{display:flex;flex-direction:column;justify-content:center;height:100%}
+.cover .tag{display:inline-block;background:var(--acc);color:#1a1200;font-weight:700;border-radius:8px;padding:6px 14px;font-size:22px;margin-bottom:18px;width:max-content}
+/* 計時器 */
+.timer{position:absolute;right:64px;top:10px;background:var(--panel);border:2px solid var(--acc2);border-radius:12px;padding:2px 14px;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer;z-index:5;user-select:none}
+.timer.run{border-color:var(--ok)}.timer.done{border-color:var(--bad);color:var(--bad);animation:blink 1s infinite}
+.timer small{display:block;font-size:12px;color:var(--mut);font-weight:400;text-align:center}
+@keyframes blink{50%{opacity:.4}}
+/* 控制列與覆蓋層（不在 stage 內，不會被縮放） */
+#ctrl{position:fixed;right:14px;bottom:12px;display:flex;gap:6px;opacity:.25;transition:opacity .3s;z-index:20}
+#ctrl:hover{opacity:1}
+#ctrl button,#ctrl a{background:#1d2c4a;color:#e8eef9;border:1px solid #2c3f63;border-radius:8px;padding:7px 11px;font-size:15px;cursor:pointer;text-decoration:none;font-family:inherit}
+#notes{position:fixed;left:12px;right:12px;bottom:58px;max-height:34vh;overflow:auto;background:rgba(10,17,32,.96);border:1px solid #ffb020;border-radius:12px;padding:12px 16px;font-size:17px;line-height:1.6;display:none;z-index:19}
+#notes.show{display:block}#notes b{color:#ffb020}
+#ov{position:fixed;inset:0;background:rgba(5,10,20,.95);display:none;z-index:30;overflow:auto;padding:30px}
+#ov.show{display:block}
+#ov .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+#ov .it{background:#16223a;border:1px solid #2c3f63;border-radius:10px;padding:12px;cursor:pointer;font-size:16px}
+#ov .it:hover,#ov .it.cur{border-color:#ffb020}
+#ov .it b{display:block;color:#9fb0cf;font-size:13px;margin-bottom:4px}
+#qr{display:grid;place-items:center;background:#fff;border-radius:12px;padding:12px;width:max-content}
+.hastimer .shead .lesson{margin-right:150px}
+.slide.embedslide{display:none}.slide.embedslide.on{display:block}
+.card > b{font-size:21px;display:block;margin-bottom:4px}
+</style></head><body>
+<div id="stage">
+<section class="slide nohead" data-title="封面">
+  <div class="cover">
+    <span class="tag">引擎原理｜第三章 汽油引擎燃料系統｜第三單元 燃料與化油器</span>
+    <h1 style="font-size:62px">第 1 節　汽油從哪裡來？</h1>
+    <p class="mut" style="font-size:26px">本節目標：說出石油三大族 ・ 分辨三種汽油與含鉛／無鉛 ・ 依地區判斷揮發性 ・ 會算 API 度</p>
+    <div class="tl" style="margin-top:30px">
+      <div style="flex:3;background:#9fb0cf">準備<small>3 分</small></div>
+      <div style="flex:5;background:#ff8a3d">導學<small>5 分 引起動機</small></div>
+      <div style="flex:12;background:#38c6ff">自學<small>12 分 V1 動畫</small></div>
+      <div style="flex:10;background:#ff8a3d">導學<small>10 分 重點＋例題</small></div>
+      <div style="flex:12;background:#ffd166">互學<small>12 分 互學挑戰</small></div>
+      <div style="flex:8;background:#c79bff">評量<small>8 分 學習單</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tag="準備" data-time="3" data-title="課前準備：分組與開啟 V1"
+  data-notes="沿用 11 組（3 人一台平板），角色：操作者、說明者、記錄者，每個活動輪替。掃 QR 開啟本節簡報，或直接從首頁開 V1。發下第 3 章學習單。">
+  <h2>新章節開始：汽油引擎燃料系統 ⛽</h2>
+  <div class="row">
+    <div class="col">
+      <div class="grid3" style="margin-bottom:22px">
+        <div class="card"><div class="em">🖐️</div><h4>操作者</h4><p>操作平板</p></div>
+        <div class="card"><div class="em">🗣️</div><h4>說明者</h4><p>講給組員聽</p></div>
+        <div class="card"><div class="em">✍️</div><h4>記錄者</h4><p>寫學習單</p></div>
+      </div>
+      <p>今天的互學挑戰會<b class="acc">記錄小組成績</b>，請先記住你們的<b class="acc">組別號碼</b>！</p>
+      <a class="btn" href="V1_汽油從哪裡來.html" target="_blank">🎬 開啟 V1 動畫</a><a class="btn sec" data-link="classroom">📚 Google Classroom</a>
+    </div>
+    <div style="width:290px;text-align:center">
+      <div id="qr" style="margin:0 auto"></div>
+      <p class="small mut" style="margin-top:8px">掃描開啟本節簡報</p>
+      <p id="qrurl" class="mut" style="font-size:12px;word-break:break-all"></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tag="導學" data-time="5" data-title="引起動機：加油站的三個問題"
+  data-notes="生活情境提問，不急著給答案，讓各組先猜，答案都在 V1 動畫裡。Q3 可請家裡有車或騎機車的同學分享經驗。">
+  <h2>⛽ 加油站的三個問題，你答得出來嗎？</h2>
+  <div class="grid3">
+    <div class="card frag"><div class="em">🛢️</div><h4>Q1 汽油是怎麼來的？</h4><p>黑黑的原油，怎麼變成透明的汽油？</p></div>
+    <div class="card frag"><div class="em">☠️</div><h4>Q2 為什麼叫「無鉛」？</h4><p>以前的汽油裡有鉛？為什麼不加了？</p></div>
+    <div class="card frag"><div class="em">❄️</div><h4>Q3 寒流來車難發動？</h4><p>冬天和夏天，汽油的表現一樣嗎？</p></div>
+  </div>
+  <p class="frag" style="margin-top:26px">💡 答案都在 <b class="acc">V1 動畫</b>裡，看完各組要能回答！</p>
+</section>
+
+<section class="slide" data-tag="自學" data-time="12" data-timer="720" data-title="自學：V1 汽油從哪裡來"
+  data-notes="各組用平板看 V1（共 7 段），每段結束有小問題，答對才能繼續。提醒開啟語音旁白或調整速度。第 7 段是 API 度計算器，至少答對 2 題再按完成。教師巡視，注意第 6 段揮發性的兩個情境。">
+  <div class="embed"><iframe data-src="V1_汽油從哪裡來.html?embed=1" title="V1 汽油從哪裡來"></iframe></div>
+</section>
+
+<section class="slide" data-tag="導學" data-time="3" data-title="重點一：石油三大族"
+  data-notes="強調：汽油主要是石臘油族（鏈狀，揮發性佳、熱值高）。石腦油族燃燒穩定、防爆震；芳香油族的 α 甲基奈用來測柴油著火性（第 9 章柴油引擎會再用到）。">
+  <h2>重點一：石油的三大族</h2>
+  <table class="t">
+    <tr><th>族別</th><th>分子式</th><th>形狀</th><th>特性</th></tr>
+    <tr class="frag"><td>石臘油族</td><td>CₙH₂ₙ₊₂</td><td>鏈狀</td><td><b class="acc">揮發性佳、熱值高 → 內燃機燃料</b></td></tr>
+    <tr class="frag"><td>石腦油族</td><td>CₙH₂ₙ</td><td>環狀</td><td>燃燒穩定 → 防爆震燃料</td></tr>
+    <tr class="frag"><td>芳香油族</td><td>CₙH₂ₙ₋₆／CₙH₂ₙ₋₁₂</td><td>苯環</td><td>α 甲基奈 → 測柴油著火性</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-tag="導學" data-time="3" data-title="重點二：汽油的種類"
+  data-notes="依提煉方法：天然、直餾、裂煉；依含鉛量：含鉛、無鉛。議題融入（環境教育）：含鉛汽油因毒性與破壞觸媒轉化器，臺灣 2001/1/1 停用，是政策改善空氣品質的例子。">
+  <h2>重點二：汽油的種類</h2>
+  <div class="grid2">
+    <div class="card"><h3>依提煉方法</h3>
+      <ul class="clean"><li class="frag"><b>天然汽油</b>：天然氣加壓冷凝，揮發性<b class="acc">極高</b></li>
+      <li class="frag"><b>直餾汽油</b>：原油蒸餾，<b class="acc">37～223℃</b></li>
+      <li class="frag"><b>裂煉汽油</b>：高溫高壓分解重組，<b class="acc">抗爆性佳</b></li></ul></div>
+    <div class="card"><h3>依含鉛量</h3>
+      <ul class="clean"><li class="frag"><b>含鉛</b>：加四乙基鉛 → 抗爆、潤滑汽門座；<span class="red">有毒、損壞觸媒</span></li>
+      <li class="frag"><b>無鉛</b>：加 <b class="acc">MTBE</b>；臺灣 <b class="acc">2001.1.1</b> 起全面無鉛</li>
+      <li class="frag">🌏 <b class="green">環境教育</b>：一項政策，讓空氣裡的鉛大幅減少</li></ul></div>
+  </div>
+</section>
+
+<section class="slide" data-tag="導學" data-time="2" data-title="重點三：揮發性要配合地區"
+  data-notes="口訣：冷地高揮發、熱地低揮發。高揮發優點：冷車好發動、加速輕快、不易沖淡機油；缺點：高溫易氣阻。低揮發則相反。">
+  <h2>重點三：揮發性要「配合地區」</h2>
+  <div class="grid2">
+    <div class="card" style="border-color:#7cc7ff"><div class="em">❄️</div><h4>低溫地區 → <span class="blue">揮發性高</span></h4><p>冷車好發動、加速輕快、不易沖淡曲軸箱機油</p></div>
+    <div class="card" style="border-color:#ff7a1a"><div class="em">☀️</div><h4>高溫地區 → <span class="acc">揮發性低</span></h4><p>避免油管內汽油汽化成氣泡 → <b class="red">氣阻現象</b></p></div>
+  </div>
+  <p class="frag" style="margin-top:24px;text-align:center;font-size:34px">口訣：<b class="acc">冷地高揮發、熱地低揮發</b></p>
+</section>
+
+<section class="slide" data-tag="導學" data-time="2" data-title="重點四：API 度例題"
+  data-notes="先示範例題 1，再讓各組用 V1 第 7 段計算器自己算例題 2。提醒：比重與 API 度成反比；重量＝公升×比重。">
+  <h2>重點四：比重與 API 度（式 3-1）</h2>
+  <div class="row">
+    <div class="col box">
+      <p><b class="acc">API 度 ＝ 141.5 ÷ 比重 － 131.5</b></p>
+      <p><b class="blue">比重 ＝ 141.5 ÷（API 度 ＋ 131.5）</b></p>
+      <p class="small mut">車用汽油：比重 0.68～0.78、API 度 55～75，兩者成<b class="acc">反比</b></p>
+    </div>
+    <div class="col">
+      <p class="frag">例 1：比重 0.72 → API 度 ＝ 196.5 － 131.5 ＝ <b class="acc">65</b></p>
+      <p class="frag">例 2：20 公升、API 度 68.5 →<br>比重 ＝ 141.5 ÷ 200 ＝ 0.7075<br>重量 ＝ 20 × 0.7075 ＝ <b class="acc">14.15 kg</b></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tag="互學" data-time="12" data-timer="720" data-title="互學挑戰：石油與汽油大考驗"
+  data-notes="各組在 V1 頁面右上角按「🎮 互學挑戰」（或掃本頁按鈕），輸入班級與組別。4 關：三大族分類、汽油種類配對、揮發性情境、API 計算。規則：答案要 3 人取得共識再按；操作者每關輪換。第一次檢查就對才得分，錯的要改對才能過關。完成後舉手給老師看結果畫面。教師可按「🏆 排行榜」開啟大螢幕：登入後先按「① 準備」，各組填好班級組別後按「② 開始！」，全班同時開始，排行榜即時更新。">
+  <h2>🎮 互學挑戰：4 關小組闖關</h2>
+  <div class="row">
+    <div class="col">
+      <ol class="steps">
+        <li>V1 右上角按 <b class="green">🎮 互學挑戰</b>，填<b class="acc">班級＋組別</b></li>
+        <li>每關<b class="acc">換一位操作者</b>，3 人討論出共識才能按</li>
+        <li><b class="acc">第一次檢查</b>就對才得分，錯了要改對才能過關</li>
+        <li>完成後<b class="acc">舉手</b>，給老師看結果畫面</li>
+      </ol>
+      <a class="btn" href="V1_汽油從哪裡來.html?act=1" target="_blank">🎮 直接開啟互學挑戰</a><a class="btn sec" href="T_教師大螢幕.html?lesson=Ch3-V1" target="_blank">🏆 排行榜（教師）</a>
+    </div>
+    <div style="width:330px">
+      <div class="card"><b>4 關內容</b><p>① 三大族分類（10 分）<br>② 汽油種類配對（5 分）<br>③ 揮發性情境（4 分）<br>④ API 度計算（3 分）</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tag="評量" data-time="8" data-timer="480" data-title="評量：學習單＋回答開場三問"
+  data-notes="記錄者完成學習單第 1 節；請 3 組分別回答開場的 Q1～Q3。最後投影教師大螢幕，公布今日前三名。預告：下節「辛烷值」——92、95、98 到底差在哪？">
+  <h2>回到開場三個問題 ✍️</h2>
+  <div class="grid3">
+    <div class="card"><h4>Q1 汽油怎麼來？</h4><p class="frag">原油加熱進<b class="acc">分餾塔</b>，37～223℃ 收集＝直餾汽油</p></div>
+    <div class="card"><h4>Q2 為什麼無鉛？</h4><p class="frag">鉛<b class="red">有毒</b>、會<b class="red">損壞觸媒轉化器</b>，2001 年停用</p></div>
+    <div class="card"><h4>Q3 冬天難發動？</h4><p class="frag">低溫汽油不易汽化 → 冷地要用<b class="acc">高揮發性</b>汽油</p></div>
+  </div>
+  <p class="frag" style="margin-top:26px">📝 完成<b class="acc">學習單第 1 節</b>　🔜 下節預告：<b class="acc">92、95、98 到底差在哪？</b></p>
+</section>
+</div>
+<script>window.LINKS={};window.LESSON='引擎原理第3章｜第 1 節\u3000燃料的種類與汽油的性質';</script>
+<script src="links.js"></script>
+<script>/* 網頁式簡報框架（共用） */
+(function () {
+  const TAGC = { 自學: '#38c6ff', 共學: '#3ddc84', 互學: '#ffd166', 導學: '#ff8a3d', 評量: '#c79bff', 準備: '#9fb0cf', 議題: '#5ee0d0' };
+  const stage = document.getElementById('stage'), slides = [...stage.querySelectorAll('.slide')], L = window.LINKS || {}, LESSON = window.LESSON || '';
+  let cur = 0;
+  // 連結按鈕：data-link 對應 LINKS 設定；未設定則顯示「連結待設定」
+  document.querySelectorAll('a[data-link]').forEach(a => {
+    const u = L[a.dataset.link]; a.target = '_blank'; a.rel = 'noopener';
+    if (u) a.href = u; else { a.classList.add('off'); a.title = '請在檔案開頭 LINKS 設定網址'; a.innerHTML += '<small style="font-size:14px">（待設定）</small>'; }
+  });
+  // 嵌入動畫：延遲載入
+  slides.forEach((s, i) => {
+    const tag = s.dataset.tag, time = s.dataset.time;
+    const h = document.createElement('div'); h.className = 'shead';
+    h.innerHTML = (tag ? `<span class="chip" style="background:${TAGC[tag] || '#9fb0cf'}">${tag}</span>` : '') + (time ? `<span class="tchip">⏱ ${time} 分鐘</span>` : '') + `<span class="lesson">${LESSON}</span>`;
+    if (!s.classList.contains('nohead')) s.prepend(h);
+    const f = document.createElement('div'); f.className = 'sfoot'; f.innerHTML = `<span>${i + 1} / ${slides.length}</span><span class="prog"><i style="width:${(i + 1) / slides.length * 100}%"></i></span>`; s.append(f);
+    if (s.querySelector('.embed')) s.classList.add('embedslide');
+    if (s.dataset.timer) { s.classList.add('hastimer'); const tm = document.createElement('div'); tm.className = 'timer'; tm.dataset.sec = s.dataset.timer; s.append(tm); setupTimer(tm); }
+  });
+  function setupTimer(el) {
+    let left = +el.dataset.sec, run = false, iv = null;
+    const show = () => { const m = Math.floor(left / 60), s = left % 60; el.innerHTML = `${m}:${String(s).padStart(2, '0')}<small>${run ? '點一下暫停' : left === +el.dataset.sec ? '點一下開始計時' : '點一下繼續・雙擊重設'}</small>`; };
+    el.onclick = e => { e.stopPropagation(); run = !run; el.classList.toggle('run', run); if (run) iv = setInterval(() => { left--; if (left <= 0) { left = 0; clearInterval(iv); run = false; el.classList.remove('run'); el.classList.add('done'); beep(); } show(); }, 1000); else clearInterval(iv); show(); };
+    el.ondblclick = e => { e.stopPropagation(); clearInterval(iv); run = false; left = +el.dataset.sec; el.classList.remove('run', 'done'); show(); };
+    show();
+  }
+  function beep() { try { const a = new (window.AudioContext || window.webkitAudioContext)(); [0, .35, .7].forEach(t => { const o = a.createOscillator(), g = a.createGain(); o.frequency.value = 880; o.connect(g); g.connect(a.destination); g.gain.value = .15; o.start(a.currentTime + t); o.stop(a.currentTime + t + .2); }); } catch (e) { } }
+  // 縮放
+  function fit() { const k = Math.min(innerWidth / 1280, innerHeight / 720); stage.style.transform = `translate(-50%,-50%) scale(${k})`; }
+  addEventListener('resize', fit); fit();
+  // 逐步顯示
+  slides.forEach(s => s.querySelectorAll('.frag').forEach(f => f.classList.add('hid')));
+  function show(i, back) {
+    cur = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => s.classList.toggle('on', k === cur));
+    const s = slides[cur];
+    if (back) s.querySelectorAll('.frag').forEach(f => f.classList.remove('hid'));
+    s.querySelectorAll('iframe[data-src]').forEach(f => { if (!f.src) f.src = f.dataset.src; });
+    document.getElementById('notes').innerHTML = `<b>教師提示（第 ${cur + 1} 頁）</b><br>${s.dataset.notes || '—'}`;
+    history.replaceState(null, '', '#' + (cur + 1));
+    document.querySelectorAll('#ov .it').forEach((it, k) => it.classList.toggle('cur', k === cur));
+  }
+  function next() { const h = slides[cur].querySelector('.frag.hid'); if (h) { h.classList.remove('hid'); return; } if (cur < slides.length - 1) show(cur + 1); }
+  function prev() { const v = [...slides[cur].querySelectorAll('.frag:not(.hid)')]; if (v.length) { v[v.length - 1].classList.add('hid'); return; } if (cur > 0) show(cur - 1, true); }
+  // 控制列
+  const ctrl = document.createElement('div'); ctrl.id = 'ctrl';
+  ctrl.innerHTML = `<a href="index.html" title="回首頁">🏠 首頁</a><button id="bOv" title="全部頁面（O）">☰</button><button id="bN" title="教師提示（N）">📝</button><button id="bF" title="全螢幕（F）">⛶</button><button id="bP">◀</button><button id="bX">▶</button>`;
+  document.body.append(ctrl);
+  const notes = document.createElement('div'); notes.id = 'notes'; document.body.append(notes);
+  const ov = document.createElement('div'); ov.id = 'ov'; ov.innerHTML = `<h2 style="font-size:24px;margin:0 0 14px">${LESSON}｜全部頁面</h2><div class="g">${slides.map((s, i) => `<div class="it" data-i="${i}"><b>${i + 1}．${s.dataset.tag || ''}</b>${s.dataset.title || (s.querySelector('h1,h2') || {}).textContent || ''}</div>`).join('')}</div>`;
+  document.body.append(ov);
+  ov.onclick = e => { const it = e.target.closest('.it'); if (it) show(+it.dataset.i); ov.classList.remove('show'); };
+  const fs = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+  document.getElementById('bP').onclick = prev; document.getElementById('bX').onclick = next; document.getElementById('bF').onclick = fs;
+  document.getElementById('bN').onclick = () => notes.classList.toggle('show'); document.getElementById('bOv').onclick = () => ov.classList.toggle('show');
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === 'f' || e.key === 'F') fs(); else if (e.key === 'n' || e.key === 'N') notes.classList.toggle('show');
+    else if (e.key === 'o' || e.key === 'O' || e.key === 'Escape') ov.classList.toggle('show', e.key !== 'Escape' && !ov.classList.contains('show'));
+    else if (e.key === 'Home') show(0); else if (e.key === 'End') show(slides.length - 1);
+  });
+  // 點畫面右側 2/3 前進、左側 1/3 後退（按鈕、連結、輸入框除外）
+  stage.addEventListener('click', e => { if (e.target.closest('a,button,iframe,.timer,.copy,input,select')) return; (e.clientX < innerWidth / 3 ? prev : next)(); });
+  let tx = null; addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
+  addEventListener('touchend', e => { if (tx == null) return; const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 60) (d < 0 ? next : prev)(); tx = null; });
+  // 複製提示詞
+  document.querySelectorAll('.copy').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.parentElement.querySelector('.ptxt').innerText; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => b.textContent = '✔ 已複製').catch(() => b.textContent = '請手動選取複製'); });
+  // 學生連結 QR（需網路；無網路時只顯示網址）
+  const qr = document.getElementById('qr');
+  if (qr) { const url = location.href.split('#')[0]; const u = document.getElementById('qrurl'); if (u) u.textContent = url;
+    const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    sc.onload = () => { try { new QRCode(qr, { text: url, width: 220, height: 220 }); } catch (e) { } }; sc.onerror = () => qr.style.display = 'none'; document.head.append(sc); }
+  addEventListener('hashchange', () => { const n = parseInt(location.hash.slice(1)); if (n && n - 1 !== cur) show(n - 1); });
+  show(Math.max(0, (parseInt(location.hash.slice(1)) || 1) - 1));
+})();
+</script></body></html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V4 汽門正時圓盤計算器</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:12px 16px 32px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:15px}
+header h1{font-size:22px;margin:0}
+header .sub{color:var(--mut);font-size:14px}
+header .score{margin-left:auto;color:var(--mut);font-size:14px}
+.main{display:grid;grid-template-columns:1fr 260px;gap:14px}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+.stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:default}
+.chtitle{position:absolute;left:12px;top:10px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--acc)}
+.caption{min-height:62px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:10px;padding:12px 16px;font-size:19px;line-height:1.55}
+.caption b{color:var(--acc)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.controls button:hover{border-color:var(--acc2)}
+.controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:88px}
+.controls .time{color:var(--mut);font-size:14px;margin-left:auto;font-variant-numeric:tabular-nums}
+.controls label{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:4px;cursor:pointer}
+.bar{display:flex;gap:3px;margin-top:10px;height:12px;cursor:pointer}
+.bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
+.bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
+.bar div.done i{background:var(--ok)}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
+.side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
+.side ol{list-style:none;margin:0;padding:0}
+.side li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;gap:8px;align-items:center}
+.side li:hover{background:var(--panel2)}
+.side li.on{background:var(--panel2);outline:1px solid var(--acc)}
+.side li .n{width:22px;height:22px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:12px;flex:none}
+.side li.ok .n{background:var(--ok);color:#002010}
+.side .tips{color:var(--mut);font-size:13px;line-height:1.6;margin:10px 6px 2px;border-top:1px solid var(--line);padding-top:8px}
+.panel{margin-top:10px}
+.panel:empty{display:none}
+.panel .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.panel .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0}
+.panel input[type=number]{width:72px;font-size:17px;padding:6px;border-radius:6px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit}
+.panel input[type=range]{width:200px}
+.panel button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.panel button.pri{background:var(--acc);color:#1a1200;font-weight:700;border:none}
+.panel .res{font-size:17px;line-height:1.8}
+.panel .res b{color:var(--acc)}
+.panel .fb{font-weight:700}
+.panel .fb.ok{color:var(--ok)}.panel .fb.bad{color:var(--bad)}
+.quiz{position:absolute;inset:0;background:rgba(5,10,20,.82);display:none;align-items:center;justify-content:center;padding:16px}
+.quiz.show{display:flex}
+.quiz .card{background:var(--panel);border:2px solid var(--acc);border-radius:14px;max-width:640px;width:100%;padding:18px 20px}
+.quiz .card h4{margin:0 0 4px;color:var(--acc);font-size:15px}
+.quiz .card p{font-size:20px;margin:6px 0 12px;line-height:1.5}
+.quiz .opt{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;font-size:17px;cursor:pointer;font-family:inherit}
+.quiz .opt:hover{border-color:var(--acc2)}
+.quiz .opt.right{background:#16452d;border-color:var(--ok)}
+.quiz .opt.wrong{background:#4a1d1d;border-color:var(--bad)}
+.quiz .ex{font-size:15px;color:var(--mut);margin-top:8px;min-height:20px;line-height:1.5}
+.quiz .go{margin-top:10px;background:var(--ok);color:#002010;border:none;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;cursor:pointer;display:none;font-family:inherit}
+.endcard{position:absolute;inset:0;background:rgba(5,10,20,.85);display:none;align-items:center;justify-content:center;text-align:center}
+.endcard.show{display:flex}
+.endcard div{font-size:22px;line-height:1.8}
+.endcard b{color:var(--acc);font-size:30px}
+@media(max-width:600px){.caption{font-size:16px}header h1{font-size:18px}.quiz .card p{font-size:17px}.quiz .opt{font-size:15px;padding:8px}}
+.chtitle.hide{opacity:0}
+.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:15px;text-decoration:none;font-weight:700}
+.home:hover{border-color:var(--acc);color:var(--acc)}
+.home.big{margin-top:14px;font-size:18px;padding:10px 18px;background:var(--acc);color:#1a1200;border:none}
+/* 嵌入簡報模式（?embed=1）：隱藏標題列與章節欄，讓畫面完整放進投影片 */
+.embed header,.embed .side,.embed .tips{display:none}
+.embed .main{grid-template-columns:1fr}
+.embed .wrap{max-width:calc((100vh - 150px) * 16 / 9);padding:4px 8px 8px}
+.embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
+.embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
+</style></head><body>
+<script>
+/* 網頁式動畫影片播放框架（共用） */
+const W = 960, HGT = 540;
+const C = { bg:'#0a1120', ink:'#e8eef9', mut:'#9fb0cf', acc:'#ffb020', acc2:'#38c6ff', ok:'#3ddc84', bad:'#ff5d5d',
+  metal:'#8ea3bf', metalD:'#5c6f8a', metalL:'#c3d1e4', wall:'#3a4a66', mix:'#4fd1a5', air:'#7cc7ff', fire:'#ff7a1a', exh:'#8a8f99', oil:'#d8a31a', water:'#2f8fff' };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = k => k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k);
+const rad = d => d * Math.PI / 180;
+const mod = (a, n) => ((a % n) + n) % n;
+/* 0..1 進度 */
+const prog = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+
+const H = {
+  text(ctx, s, x, y, o = {}) {
+    ctx.save(); ctx.font = `${o.bold ? '700 ' : ''}${o.size || 20}px "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif`;
+    ctx.fillStyle = o.color || C.ink; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'middle';
+    ctx.globalAlpha = o.alpha ?? 1;
+    String(s).split('\n').forEach((ln, i) => ctx.fillText(ln, x, y + i * (o.size || 20) * 1.35)); ctx.restore();
+  },
+  rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); },
+  box(ctx, x, y, w, h, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; H.rr(ctx, x, y, w, h, o.r ?? 10);
+    ctx.fillStyle = o.fill || '#16223a'; ctx.fill(); ctx.lineWidth = o.lw || 2; ctx.strokeStyle = o.stroke || '#2c3f63'; ctx.stroke(); ctx.restore();
+  },
+  arrow(ctx, x1, y1, x2, y2, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = ctx.fillStyle = o.color || C.acc; ctx.lineWidth = o.lw || 4;
+    if (o.dash) { ctx.setLineDash(o.dash); ctx.lineDashOffset = o.offset || 0; }
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    const a = Math.atan2(y2 - y1, x2 - x1), s = o.head || 14;
+    ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - s * Math.cos(a - .45), y2 - s * Math.sin(a - .45));
+    ctx.lineTo(x2 - s * Math.cos(a + .45), y2 - s * Math.sin(a + .45)); ctx.closePath(); ctx.fill(); ctx.restore();
+  },
+  label(ctx, px, py, tx, ty, s, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = o.color || C.acc; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.fillStyle = o.color || C.acc; ctx.beginPath(); ctx.arc(px, py, 4, 0, 7); ctx.fill();
+    ctx.font = `700 ${o.size || 17}px "Microsoft JhengHei",sans-serif`; const w = ctx.measureText(s).width + 14;
+    const left = o.align === 'right' ? tx - w : o.align === 'center' ? tx - w / 2 : tx;
+    H.rr(ctx, left, ty - 14, w, 28, 6); ctx.fillStyle = 'rgba(10,17,32,.9)'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.ink; ctx.textBaseline = 'middle'; ctx.fillText(s, left + 7, ty + 1); ctx.restore();
+  },
+  particles(ctx, n, x, y, w, h, color, t, o = {}) {
+    ctx.save(); ctx.fillStyle = color; ctx.globalAlpha = o.alpha ?? .85;
+    for (let i = 0; i < n; i++) {
+      const sx = (Math.sin(i * 12.9898) * 43758.5453) % 1, sy = (Math.sin(i * 78.233) * 12543.21) % 1;
+      const px = x + Math.abs(sx) * w + Math.sin(t * 3 + i) * (o.jit ?? 4), py = y + Math.abs(sy) * h + Math.cos(t * 2.6 + i * 1.7) * (o.jit ?? 4);
+      if (px < x || px > x + w || py < y || py > y + h) continue;
+      ctx.beginPath(); ctx.arc(px, py, o.r || 3.2, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  },
+  spark(ctx, x, y, k) {
+    if (k <= 0) return; ctx.save(); ctx.globalAlpha = k; ctx.strokeStyle = '#fff6a0'; ctx.lineWidth = 3;
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + k; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * 18 * k, y + Math.sin(a) * 18 * k); ctx.stroke(); }
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, 5 * k, 0, 7); ctx.fill(); ctx.restore();
+  },
+  flame(ctx, x, y, s, t) {
+    ctx.save(); for (let i = 0; i < 3; i++) {
+      const f = 1 - i * .28; ctx.fillStyle = ['#ff5a1a', '#ff9a1a', '#ffe060'][i]; ctx.beginPath();
+      const w = 22 * s * f, h = (46 + Math.sin(t * 10 + i) * 6) * s * f;
+      ctx.moveTo(x - w, y); ctx.quadraticCurveTo(x - w, y - h * .6, x, y - h); ctx.quadraticCurveTo(x + w, y - h * .6, x + w, y); ctx.closePath(); ctx.fill();
+    } ctx.restore();
+  },
+  /* 曲柄滑塊：回傳活塞銷距曲軸中心之距離 */
+  pinDist(r, l, th) { return r * Math.cos(th) + Math.sqrt(l * l - (r * Math.sin(th)) ** 2); },
+  /* 四行程引擎剖面：phi = 0..720（0 = 進氣行程開始之上死點） */
+  engine4(ctx, cx, top, phi, o = {}) {
+    const s = o.scale || 1, bore = 150 * s, r = 52 * s, l = 170 * s, headH = 70 * s, clr = 24 * s, crownToPin = 34 * s, pistonH = 70 * s;
+    const headBot = top + headH, cy = headBot + clr + crownToPin + r + l, cylBot = headBot + clr + 2 * r + pistonH * .8;
+    const th = rad(phi), pinY = cy - H.pinDist(r, l, th), pTop = pinY - crownToPin;
+    const IO = o.IO ?? 8, IC = o.IC ?? 40, EO = o.EO ?? 50, EC = o.EC ?? 12;
+    const lift = (a, b) => { let p = mod(phi - a, 720), span = mod(b - a, 720); return p <= span ? Math.sin(Math.PI * p / span) : 0; };
+    const iL = o.iLift ?? lift(-IO, 180 + IC), eL = o.eLift ?? lift(540 - EO, 720 + EC);
+    const x0 = cx - bore / 2, x1 = cx + bore / 2;
+    // 汽缸壁與水套
+    ctx.save();
+    ctx.fillStyle = C.wall; ctx.fillRect(x0 - 34 * s, headBot, 34 * s, cylBot - headBot); ctx.fillRect(x1, headBot, 34 * s, cylBot - headBot);
+    if (o.water) { ctx.fillStyle = 'rgba(47,143,255,.55)'; ctx.fillRect(x0 - 26 * s, headBot + 8 * s, 14 * s, (cylBot - headBot) * .6); ctx.fillRect(x1 + 12 * s, headBot + 8 * s, 14 * s, (cylBot - headBot) * .6); }
+    // 汽缸內氣體
+    const gas = o.gas || 'none';
+    const gcol = { mix: 'rgba(79,209,165,.30)', air: 'rgba(124,199,255,.25)', comp: 'rgba(79,209,165,.55)', fire: 'rgba(255,122,26,.75)', exh: 'rgba(138,143,153,.45)', none: 'rgba(0,0,0,0)' }[gas] || gas;
+    ctx.fillStyle = gcol; ctx.fillRect(x0, headBot - 8 * s, bore, pTop - headBot + 8 * s);
+    if (o.particles) H.particles(ctx, o.particles, x0 + 4, headBot, bore - 8, pTop - headBot - 4, o.pColor || C.mix, o.t || 0, { r: 3 * s });
+    // 汽缸蓋
+    ctx.fillStyle = '#4a5d7d'; H.rr(ctx, x0 - 34 * s, top, bore + 68 * s, headH, 8 * s); ctx.fill();
+    // 燃燒室凹槽
+    ctx.fillStyle = gcol === 'rgba(0,0,0,0)' ? C.bg : C.bg; ctx.beginPath(); ctx.moveTo(x0, headBot); ctx.quadraticCurveTo(cx, headBot - 34 * s, x1, headBot); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = gcol; ctx.fill();
+    // 進排氣道
+    const port = (side, L, col) => {
+      const sx = side < 0 ? x0 + 26 * s : x1 - 26 * s, d = side;
+      ctx.fillStyle = C.bg; ctx.beginPath(); ctx.moveTo(sx - 16 * s, headBot - 12 * s); ctx.lineTo(sx + 16 * s, headBot - 12 * s);
+      ctx.lineTo(sx + 16 * s + d * 50 * s, top - 2); ctx.lineTo(sx - 16 * s + d * 50 * s, top - 2); ctx.closePath(); ctx.fill();
+      if (L > .05) { ctx.fillStyle = col; ctx.fill(); }
+      // 汽門
+      const vy = headBot - 12 * s + L * 16 * s; ctx.fillStyle = C.metalL;
+      ctx.fillRect(sx - 3 * s, top - 30 * s + L * 16 * s, 6 * s, vy - top + 30 * s - L * 16 * s);
+      ctx.beginPath(); ctx.moveTo(sx - 20 * s, vy + 4 * s); ctx.lineTo(sx + 20 * s, vy + 4 * s); ctx.lineTo(sx + 6 * s, vy - 4 * s); ctx.lineTo(sx - 6 * s, vy - 4 * s); ctx.closePath(); ctx.fill();
+      return { x: sx, y: vy };
+    };
+    const vi = port(-1, iL, o.inCol || 'rgba(79,209,165,.6)'), ve = port(1, eL, 'rgba(138,143,153,.6)');
+    if (o.flow) {
+      const off = -(o.t || 0) * 40;
+      if (iL > .15) H.arrow(ctx, vi.x - 70 * s, top - 10 * s, vi.x - 6 * s, headBot + 6 * s, { color: C.mix, lw: 3, dash: [8, 6], offset: off, alpha: iL });
+      if (eL > .15) H.arrow(ctx, ve.x + 6 * s, headBot + 6 * s, ve.x + 70 * s, top - 10 * s, { color: '#b5bac4', lw: 3, dash: [8, 6], offset: off, alpha: eL });
+    }
+    // 火星塞
+    if (o.plug !== false) { ctx.fillStyle = '#d9dee8'; ctx.fillRect(cx - 5 * s, top - 26 * s, 10 * s, headH - 4 * s); ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 9 * s, top - 34 * s, 18 * s, 12 * s); }
+    if (o.spark) H.spark(ctx, cx, headBot - 12 * s, o.spark);
+    // 活塞
+    const g = ctx.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, C.metalD); g.addColorStop(.5, C.metalL); g.addColorStop(1, C.metalD);
+    ctx.fillStyle = g; H.rr(ctx, x0 + 3, pTop, bore - 6, pistonH, 4 * s); ctx.fill();
+    ctx.fillStyle = '#44536b'; for (let i = 0; i < 3; i++) ctx.fillRect(x0 + 3, pTop + (8 + i * 10) * s, bore - 6, 3 * s);
+    // 連桿與曲軸（曲軸臂＋平衡配重會跟著旋轉）
+    const cpx = cx + r * Math.sin(th), cpy = cy - r * Math.cos(th);
+    H.crank(ctx, cx, cy, r, th, s, o.t || 0);
+    ctx.strokeStyle = '#aab8cc'; ctx.lineWidth = 16 * s; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx, pinY); ctx.lineTo(cpx, cpy); ctx.stroke();
+    ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, pinY, 7 * s, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(cpx, cpy, 9 * s, 0, 7); ctx.fill(); ctx.strokeStyle = '#7a5a00'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    return { cx, top, headBot, cy, r, l, bore, pTop, pinY, x0, x1, cylBot, crankPin: [cpx, cpy], vi, ve, tdcY: headBot + clr, bdcY: headBot + clr + 2 * r };
+  },
+  /* 曲軸：曲柄圓（虛線）、曲軸臂、平衡配重、主軸頸記號、旋轉方向箭頭 */
+  crank(ctx, cx, cy, r, th, s = 1, t = 0) {
+    ctx.save();
+    ctx.setLineDash([6, 6]); ctx.strokeStyle = 'rgba(255,209,102,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.translate(cx, cy); ctx.rotate(th);
+    // 平衡配重（在曲柄銷的反方向）
+    const g = ctx.createLinearGradient(0, 0, 0, r + 26 * s); g.addColorStop(0, '#7f93b2'); g.addColorStop(1, '#55678a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-14 * s, 0); ctx.arc(0, 0, r + 22 * s, rad(35), rad(145)); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#9fb2cf'; ctx.lineWidth = 2; ctx.stroke();
+    // 曲軸臂（主軸頸 → 曲柄銷）
+    ctx.fillStyle = '#8ea3c2'; ctx.beginPath(); ctx.moveTo(-20 * s, 4 * s); ctx.lineTo(-14 * s, -r); ctx.arc(0, -r, 14 * s, Math.PI, 0); ctx.lineTo(20 * s, 4 * s); ctx.arc(0, 4 * s, 20 * s, 0, Math.PI); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#c3d1e4'; ctx.stroke();
+    // 主軸頸與旋轉記號
+    ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(0, 0, 11 * s, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 10 * s); ctx.stroke();
+    ctx.restore();
+    // 旋轉方向（順時針）
+    ctx.save(); ctx.strokeStyle = 'rgba(56,198,255,.8)'; ctx.fillStyle = 'rgba(56,198,255,.8)'; ctx.lineWidth = 3;
+    const R = r + 34 * s, a0 = rad(-60), a1 = rad(10); ctx.beginPath(); ctx.arc(cx, cy, R, a0, a1); ctx.stroke();
+    const ex = cx + R * Math.cos(a1), ey = cy + R * Math.sin(a1); ctx.beginPath(); ctx.moveTo(ex + 7, ey - 6); ctx.lineTo(ex - 8, ey - 3); ctx.lineTo(ex + 1, ey + 9); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  },
+  strokeName(phi) { phi = mod(phi, 720); return phi < 180 ? '進氣行程' : phi < 360 ? '壓縮行程' : phi < 540 ? '動力行程' : '排氣行程'; },
+  dial(ctx, x, y, R, ang, label) {
+    ctx.save(); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.strokeStyle = '#2c3f63'; ctx.stroke();
+    ctx.strokeStyle = C.acc; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + R * Math.sin(rad(ang)), y - R * Math.cos(rad(ang))); ctx.stroke();
+    H.text(ctx, label, x, y + R + 18, { size: 15, align: 'center', color: C.mut }); ctx.restore();
+  },
+};
+
+function Player(cfg) {
+  const $ = s => document.querySelector(s);
+  document.title = cfg.code + ' ' + cfg.title;
+  document.body.innerHTML = `<div class="wrap">
+  <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span></header>
+  <div class="main"><div>
+    <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
+      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br><a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
+    </div>
+    <div class="bar" id="bar"></div>
+    <div class="controls">
+      <button id="prev" title="上一段">⏮</button><button class="main-btn" id="play">▶ 播放</button><button id="step" title="逐格（暫停時）">逐格 ▸</button><button id="next" title="下一段">⏭</button>
+      <select id="spd"><option value=".25">0.25x</option><option value=".5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+      <label><input type="checkbox" id="tts">🔊 語音旁白</label><span class="time" id="tm"></span>
+    </div>
+    <div class="caption" id="cap"></div>
+    <div class="panel" id="panel"></div>
+  </div>
+  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>每段結束有小問題，答對才會繼續。</div></aside></div></div>`;
+  const cv = $('#cv'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * dpr; cv.height = HGT * dpr; ctx.scale(dpr, dpr);
+  const chs = cfg.chapters, S = Object.assign({}, cfg.state || {}), passed = chs.map(() => false), firstOk = chs.map(() => null);
+  let ci = 0, t = 0, playing = false, speed = 1, lastCap = '', last = performance.now(), ended = false;
+  const durOf = c => c.loop ? (c.nominal || 20) : c.dur;
+  // 章節清單與進度條
+  $('#list').innerHTML = chs.map((c, i) => `<li data-i="${i}"><span class="n">${i + 1}</span>${c.title}</li>`).join('');
+  const tot = chs.reduce((a, c) => a + durOf(c), 0);
+  $('#bar').innerHTML = chs.map(c => `<div style="flex:${durOf(c) / tot}"><i></i></div>`).join('');
+  $('#list').onclick = e => { const li = e.target.closest('li'); if (li) go(+li.dataset.i, true); };
+  $('#bar').onclick = e => { const d = e.target.closest('div'); const i = [...$('#bar').children].indexOf(d); if (i >= 0) go(i, true); };
+  const setPlay = p => { playing = p; $('#play').textContent = p ? '⏸ 暫停' : '▶ 播放'; if (!p && window.speechSynthesis) speechSynthesis.pause(); else if (window.speechSynthesis) speechSynthesis.resume(); };
+  $('#play').onclick = () => { if (ended) { restart(); return; } if ($('#quiz').classList.contains('show')) return; setPlay(!playing); };
+  $('#prev').onclick = () => go(Math.max(0, ci - 1), true);
+  $('#next').onclick = () => { if (ci < chs.length - 1) go(ci + 1, true); };
+  $('#step').onclick = () => { setPlay(false); t = Math.min(t + 1 / 15, chs[ci].loop ? 1e9 : chs[ci].dur); };
+  $('#spd').onchange = e => speed = +e.target.value;
+  $('#tts').onchange = e => { if (!e.target.checked && window.speechSynthesis) speechSynthesis.cancel(); else { lastCap = ''; } };
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); $('#play').click(); }
+    if (e.code === 'ArrowRight') $('#next').click(); if (e.code === 'ArrowLeft') $('#prev').click(); if (e.key === 'r' || e.key === 'R') restart();
+  });
+  cv.addEventListener('click', e => {
+    const c = chs[ci]; if (!c.onClick) return; const b = cv.getBoundingClientRect();
+    c.onClick((e.clientX - b.left) * W / b.width, (e.clientY - b.top) * HGT / b.height, S);
+  });
+  cv.addEventListener('mousemove', e => {
+    const c = chs[ci]; if (!c.onClick) { cv.style.cursor = 'default'; return; } cv.style.cursor = 'pointer';
+  });
+  function restart() { passed.fill(false); firstOk.fill(null); $('#end').classList.remove('show'); ended = false; go(0, false); setPlay(true); }
+  function go(i, keepPlay) {
+    ci = i; t = 0; lastCap = ''; ended = false; $('#end').classList.remove('show'); $('#quiz').classList.remove('show');
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    const p = $('#panel'); p.innerHTML = ''; if (chs[i].panel) chs[i].panel(p, S);
+    if (chs[i].enter) chs[i].enter(S);
+    [...$('#list').children].forEach((li, k) => { li.classList.toggle('on', k === i); li.classList.toggle('ok', passed[k]); });
+    $('#cht').textContent = `第 ${i + 1} 段｜${chs[i].title}`; $('#cht').classList.remove('hide'); clearTimeout(window.__ht); window.__ht = setTimeout(() => $('#cht').classList.add('hide'), 2500);
+    if (!keepPlay) setPlay(false);
+  }
+  function score() { const n = firstOk.filter(x => x === true).length, q = chs.filter(c => c.quiz).length; $('#score').textContent = `首次答對 ${n} / ${q}`; return n; }
+  function showQuiz() {
+    const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
+    $('#qq').textContent = q.q; $('#qe').textContent = ''; $('#qgo').style.display = 'none';
+    $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
+    $('#qo').onclick = e => {
+      const b = e.target.closest('.opt'); if (!b || passed[ci]) return; const k = +b.dataset.k;
+      if (firstOk[ci] === null) firstOk[ci] = (k === q.ans);
+      if (k === q.ans) { b.classList.add('right'); passed[ci] = true; $('#qe').textContent = '✔ 答對了！' + (q.ex || ''); $('#qgo').style.display = 'inline-block'; score(); }
+      else { b.classList.add('wrong'); $('#qe').textContent = '✘ 再想想看。' + (q.hint || '可以按「上一段」或點章節重看。'); }
+    };
+  }
+  $('#qgo').onclick = () => { $('#quiz').classList.remove('show'); nextOrEnd(); };
+  function nextOrEnd() {
+    if (ci < chs.length - 1) { go(ci + 1, true); setPlay(true); }
+    else { ended = true; setPlay(false); $('#endsc').textContent = `${score()} / ${chs.filter(c => c.quiz).length}`; $('#end').classList.add('show'); [...$('#list').children].forEach((li, k) => li.classList.toggle('ok', passed[k])); }
+  }
+  function speak(s) {
+    if (!$('#tts').checked || !window.speechSynthesis) return; speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(s.replace(/<[^>]+>/g, '')); u.lang = 'zh-TW'; u.rate = Math.min(1.3, .95 * Math.max(.8, speed));
+    const v = speechSynthesis.getVoices().find(v => /zh[-_]TW/i.test(v.lang)); if (v) u.voice = v; speechSynthesis.speak(u);
+  }
+  function frame(now) {
+    const dt = Math.min(.1, (now - last) / 1000); last = now; const c = chs[ci];
+    if (playing) { t += dt * speed; if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } } }
+    // 字幕
+    let cap = ''; (c.captions || []).forEach(([at, s]) => { if (t >= at) cap = s; });
+    if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap) speak(cap); }
+    ctx.clearRect(0, 0, W, HGT); ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, HGT);
+    try { c.draw(ctx, t, S); } catch (err) { console.error(err); }
+    const d = durOf(c), shown = c.loop ? (t % d) : t;
+    $('#tm').textContent = c.loop ? '互動模式' : `${shown.toFixed(1)} / ${d.toFixed(0)} 秒`;
+    [...$('#bar').children].forEach((b, k) => { b.firstChild.style.width = (k < ci ? 100 : k === ci ? (c.loop ? 100 : 100 * t / d) : 0) + '%'; b.classList.toggle('done', passed[k]); });
+    requestAnimationFrame(frame);
+  }
+  // 互動章節：「完成本段」按鈕
+  window.finishLoop = () => { if (chs[ci].quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } };
+  window.__seek = (i, tt) => { go(i, false); t = tt; };
+  go(0, false); score(); requestAnimationFrame(frame);
+  if (window.speechSynthesis) speechSynthesis.getVoices();
+  if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('embed');
+  return { S, go };
+}
+
+/* V4 汽門正時圓盤計算器 */
+const DC = { x: 300, y: 274 };
+const calc = v => ({ in: v.IO + 180 + v.IC, comp: 180 - v.IC, pow: 180 - v.EO, ex: v.EO + 180 + v.EC, ov: v.IO + v.EC });
+function arcDeg(ctx, R, a, b, col, lw, alpha = 1) {
+  ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'butt';
+  ctx.beginPath(); ctx.arc(DC.x, DC.y, R, rad(a - 90), rad(b - 90)); ctx.stroke(); ctx.restore();
+}
+const pt = (R, a) => [DC.x + R * Math.sin(rad(a)), DC.y - R * Math.cos(rad(a))];
+function tick(ctx, R, a, s, col) {
+  const [x, y] = pt(226, a); const sn = Math.sin(rad(a)); ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 2; const [x0, y0] = pt(R - 10, a), [x1, y1] = pt(R + 8, a);
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.restore();
+  H.text(ctx, s, x + (sn < 0 ? -4 : 4), y, { size: 15, bold: true, align: sn < 0 ? 'right' : 'left', color: col });
+}
+/* show: {in, comp, pow, ex, ov, labels, hi} */
+function dial(ctx, v, show, t, o = {}) {
+  ctx.save(); ctx.strokeStyle = '#2c3f63'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(DC.x, DC.y, 214, 0, 7); ctx.stroke();
+  ctx.setLineDash([5, 6]); ctx.beginPath(); ctx.moveTo(DC.x, DC.y - 225); ctx.lineTo(DC.x, DC.y + 225); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+  H.text(ctx, 'TDC 上死點', DC.x, DC.y - 254, { size: 16, bold: true, align: 'center', color: C.acc });
+  H.text(ctx, 'BDC 下死點', DC.x, DC.y + 254, { size: 16, bold: true, align: 'center', color: C.acc });
+  const hi = show.hi || '';
+  const A = (k, R, a, b, col) => { if (show[k]) arcDeg(ctx, R, a, b, col, hi === k ? 20 : 14, (hi && hi !== k) ? .35 : show[k]); };
+  A('in', 195, -v.IO, 180 + v.IC, C.mix); A('ex', 168, 180 - v.EO, 360 + v.EC, '#b5bac4'); A('comp', 138, 180 + v.IC, 360, C.acc2); A('pow', 112, 0, 180 - v.EO, C.fire);
+  if (show.ov) { ctx.save(); ctx.globalAlpha = .35 + .25 * Math.sin(t * 5); ctx.fillStyle = C.bad; ctx.beginPath(); ctx.moveTo(DC.x, DC.y); ctx.arc(DC.x, DC.y, 210, rad(-v.IO - 90), rad(v.EC - 90)); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  if (show.labels) {
+    if (show.in) { tick(ctx, 195, -v.IO, `進開 ${Math.round(v.IO)}°`, C.mix); tick(ctx, 195, 180 + v.IC, `進關 ${Math.round(v.IC)}°`, C.mix); }
+    if (show.ex) { tick(ctx, 168, 180 - v.EO, `排開 ${Math.round(v.EO)}°`, '#c9ced8'); tick(ctx, 168, 360 + v.EC, `排關 ${Math.round(v.EC)}°`, '#c9ced8'); }
+  }
+  // 圖例
+  [['進氣', C.mix, 'in'], ['排氣', '#b5bac4', 'ex'], ['壓縮', C.acc2, 'comp'], ['動力', C.fire, 'pow']].forEach(([s, c, k], i) => { if (!show[k]) return; ctx.fillStyle = c; ctx.fillRect(560 + i * 92, 520, 26, 12); H.text(ctx, s, 592 + i * 92, 526, { size: 15, color: C.mut }); });
+  if (o.pointer != null) { const a = o.pointer; ctx.save(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; const [x, y] = pt(205, a); ctx.beginPath(); ctx.moveTo(DC.x, DC.y); ctx.lineTo(x, y); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(DC.x, DC.y, 6, 0, 7); ctx.fill(); ctx.restore(); }
+}
+function formulaBox(ctx, lines, a = 1, y = 60) {
+  H.box(ctx, 540, y, 400, 54 + lines.length * 44, { alpha: a });
+  lines.forEach(([s, c, sz], i) => H.text(ctx, s, 560, y + 34 + i * 44, { size: sz || 21, bold: !i, color: c || C.ink, alpha: a }));
+}
+const EX = { IO: 8, IC: 40, EO: 50, EC: 12 };
+const V4 = {
+  code: 'V4', title: '汽門正時圓盤計算器', sub: '第 5 節｜1-4 汽門正時、汽門重疊',
+  state: { v: { IO: 8, IC: 40, EO: 50, EC: 12 }, hide: false },
+  chapters: [
+    { title: '為什麼要早開晚關？', dur: 18,
+      captions: [[0, '理論上，汽門在活塞到<b>上死點、下死點</b>時才開關，每個行程剛好 180°。'], [6, '實際上，汽門會<b>早開晚關</b>：利用氣流的慣性，讓<b>排氣更乾淨、進氣更充分</b>。'], [12, '目的就是提高<b>容積效率</b>，提升引擎性能。以下用課本例題：進汽門早開 8°、晚關 40°，排汽門早開 50°、晚關 12°。']],
+      draw(ctx, t) {
+        const k = ease(prog(t, 6, 10)), v = { IO: 8 * k, IC: 40 * k, EO: 50 * k, EC: 12 * k };
+        dial(ctx, v, { in: 1, ex: 1, comp: 1, pow: 1, labels: t >= 6 }, t);
+        formulaBox(ctx, k < .5 ? [['理想：每行程 180°', C.acc], ['進氣 0° → 180°'], ['排氣 540° → 720°'], ['汽門在死點開關']] : [['實際：早開晚關', C.acc], ['進汽門：早開 8°、晚關 40°', C.mix], ['排汽門：早開 50°、晚關 12°', '#c9ced8'], ['→ 排氣乾淨、進氣充分'], ['→ 提高容積效率', C.ok]]);
+      },
+      quiz: { q: '汽門「早開晚關」的主要目的為何？', opts: ['減少噪音', '排氣乾淨、進氣充分、提高容積效率', '降低轉速', '減少機油消耗'], ans: 1 } },
+    { title: '進氣行程度數', dur: 15,
+      captions: [[0, '進汽門在 TDC 前 8° 打開，到 BDC 後 40° 才關閉。'], [5, '進氣行程度數 ＝ <b>進汽門早開 ＋ 180° ＋ 進汽門晚關</b>'], [10, '＝ 8° ＋ 180° ＋ 40° ＝ <b>228°</b>']],
+      draw(ctx, t) {
+        dial(ctx, EX, { in: 1, labels: 1, hi: 'in' }, t, { pointer: -8 + 228 * ease(prog(t, 1, 9)) });
+        formulaBox(ctx, [['進氣行程度數', C.mix], ['＝ 早開 ＋ 180° ＋ 晚關'], ['＝ 8° ＋ 180° ＋ 40°'], ['＝ 228°', C.acc, 28]], ease(prog(t, 4, 5)));
+      },
+      quiz: { q: '某引擎進汽門早開 12°、晚關 36°，進氣行程度數為？', opts: ['48°', '144°', '218°', '228°'], ans: 3, ex: '12＋180＋36＝228°。' } },
+    { title: '壓縮與動力行程度數', dur: 16,
+      captions: [[0, '進汽門<b>完全關閉後</b>才真正開始壓縮。'], [4, '壓縮行程度數 ＝ <b>180° － 進汽門晚關</b> ＝ 180 － 40 ＝ <b>140°</b>'], [9, '排汽門一打開，動力行程就結束。動力行程度數 ＝ <b>180° － 排汽門早開</b> ＝ 180 － 50 ＝ <b>130°</b>']],
+      draw(ctx, t) {
+        const second = t > 9; dial(ctx, EX, { in: .3, ex: second ? .3 : 0, comp: 1, pow: second ? 1 : 0, labels: 1, hi: second ? 'pow' : 'comp' }, t, { pointer: second ? 130 * ease(prog(t, 9.5, 14)) : 220 + 140 * ease(prog(t, 4, 8.5)) });
+        formulaBox(ctx, [['壓縮行程度數', C.acc2], ['＝ 180° － 進汽門晚關'], ['＝ 180° － 40° ＝ 140°', C.acc]], ease(prog(t, 3.5, 4.5)), 50);
+        if (second) formulaBox(ctx, [['動力行程度數', C.fire], ['＝ 180° － 排汽門早開'], ['＝ 180° － 50° ＝ 130°', C.acc]], ease(prog(t, 9, 10)), 290);
+      },
+      quiz: { q: '某引擎排汽門早開 44°，動力行程度數為？', opts: ['136°', '150°', '224°', '256°'], ans: 0, ex: '180－44＝136°。' } },
+    { title: '排氣行程度數', dur: 13,
+      captions: [[0, '排汽門在 BDC 前 50° 打開，到 TDC 後 12° 才關閉。'], [5, '排氣行程度數 ＝ <b>排汽門早開 ＋ 180° ＋ 排汽門晚關</b> ＝ 50 ＋ 180 ＋ 12 ＝ <b>242°</b>']],
+      draw(ctx, t) {
+        dial(ctx, EX, { ex: 1, labels: 1, hi: 'ex' }, t, { pointer: 130 + 242 * ease(prog(t, 1, 9)) });
+        formulaBox(ctx, [['排氣行程度數', '#c9ced8'], ['＝ 早開 ＋ 180° ＋ 晚關'], ['＝ 50° ＋ 180° ＋ 12°'], ['＝ 242°', C.acc, 28]], ease(prog(t, 4, 5)));
+      },
+      quiz: { q: '排汽門早開 40°、晚關 8°，排氣行程度數為？', opts: ['48°', '212°', '228°', '242°'], ans: 2, ex: '40＋180＋8＝228°。' } },
+    { title: '汽門重疊', dur: 18,
+      captions: [[0, '在 TDC 附近，<b>進、排汽門同時打開</b>的曲軸角度，叫做<b>汽門重疊</b>（紅色區域）。'], [5, '汽門重疊 ＝ <b>進汽門早開 ＋ 排汽門晚關</b> ＝ 8 ＋ 12 ＝ <b>20°</b>；也等於四個行程度數總和 － 720°。'], [11, '重疊太大：新鮮混合氣隨廢氣跑掉，<b>耗油、HC 污染</b>；太小：排氣不乾淨、進氣不足。<b>可變汽門正時</b>會依轉速調整，兼顧省油與動力。']],
+      draw(ctx, t) {
+        dial(ctx, EX, { in: 1, ex: 1, comp: .4, pow: .4, labels: 1, ov: 1 }, t);
+        formulaBox(ctx, [['汽門重疊', C.bad], ['＝ 進汽門早開 ＋ 排汽門晚關'], ['＝ 8° ＋ 12° ＝ 20°', C.acc], ['驗算：228＋140＋130＋242', C.mut, 18], ['　　　＝ 740 － 720 ＝ 20°', C.mut, 18]], ease(prog(t, 4, 5)));
+      },
+      quiz: { q: '進汽門早開 10°、晚關 36°；排汽門早開 40°、晚關 8°，汽門重疊為？', opts: ['18°', '24°', '28°', '36°'], ans: 0, ex: '10＋8＝18°。' } },
+    { title: '互動計算器＋隨機練習', loop: true, nominal: 20,
+      captions: [[0, '換你操作！輸入四個角度，圓盤會即時畫出各行程。按「隨機出題」練習，答完按「完成本段」。']],
+      panel(el, S) {
+        el.innerHTML = `<div class="box"><div class="row">進汽門 早開 <input type="number" id="io" value="${S.v.IO}"> 晚關 <input type="number" id="ic" value="${S.v.IC}">　排汽門 早開 <input type="number" id="eo" value="${S.v.EO}"> 晚關 <input type="number" id="ec" value="${S.v.EC}"> <button id="ex1">課本例題</button></div>
+        <div class="res" id="res"></div>
+        <div class="row"><button class="pri" id="nq">🎲 隨機出題</button><span id="qt" style="font-size:17px"></span><input type="number" id="qa" placeholder="答案"><button id="chk">檢查</button><span class="fb" id="fb"></span></div>
+        <div class="row"><span style="color:#9fb0cf">已答對 <b id="cnt">0</b> 題</span><button onclick="finishLoop()">完成本段 ✔</button></div></div>`;
+        const g = id => el.querySelector('#' + id); let cur = null, n = 0;
+        const upd = () => { ['io', 'ic', 'eo', 'ec'].forEach((k, i) => S.v[['IO', 'IC', 'EO', 'EC'][i]] = clamp(+g(k).value || 0, 0, 90)); const r = calc(S.v);
+          g('res').innerHTML = S.hide ? '<span style="color:#9fb0cf">（練習中，答案隱藏）</span>' : `進氣 <b>${r.in}°</b>｜壓縮 <b>${r.comp}°</b>｜動力 <b>${r.pow}°</b>｜排氣 <b>${r.ex}°</b>｜汽門重疊 <b>${r.ov}°</b>`; };
+        ['io', 'ic', 'eo', 'ec'].forEach(k => g(k).oninput = () => { S.hide = false; cur = null; g('qt').textContent = ''; upd(); });
+        g('ex1').onclick = () => { Object.assign(S.v, EX); ['io', 'ic', 'eo', 'ec'].forEach((k, i) => g(k).value = S.v[['IO', 'IC', 'EO', 'EC'][i]]); S.hide = false; upd(); };
+        g('nq').onclick = () => { const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1)); Object.assign(S.v, { IO: R(5, 20), IC: R(30, 60), EO: R(35, 55), EC: R(5, 20) });
+          ['io', 'ic', 'eo', 'ec'].forEach((k, i) => g(k).value = S.v[['IO', 'IC', 'EO', 'EC'][i]]); const ks = [['in', '進氣行程度數'], ['comp', '壓縮行程度數'], ['pow', '動力行程度數'], ['ex', '排氣行程度數'], ['ov', '汽門重疊度數']];
+          cur = ks[R(0, 4)]; S.hide = true; g('qt').textContent = `請算出「${cur[1]}」＝`; g('qa').value = ''; g('fb').textContent = ''; upd(); g('qa').focus(); };
+        g('chk').onclick = () => { if (!cur) return; const ans = calc(S.v)[cur[0]];
+          if (+g('qa').value === ans) { g('fb').className = 'fb ok'; g('fb').textContent = `✔ 正確！${ans}°`; n++; g('cnt').textContent = n; S.hide = false; cur = null; upd(); }
+          else { g('fb').className = 'fb bad'; g('fb').textContent = '✘ 再算一次（想想公式）'; } };
+        upd();
+      },
+      draw(ctx, t, S) {
+        const r = calc(S.v); dial(ctx, S.v, { in: 1, ex: 1, comp: 1, pow: 1, labels: 1, ov: 1 }, t, { pointer: (t * 60) % 720 });
+        formulaBox(ctx, S.hide ? [['公式小抄', C.acc], ['進氣＝早開＋180＋晚關', C.mix, 19], ['壓縮＝180－進汽門晚關', C.acc2, 19], ['動力＝180－排汽門早開', C.fire, 19], ['排氣＝早開＋180＋晚關', '#c9ced8', 19], ['重疊＝進早開＋排晚關', C.bad, 19]]
+          : [['計算結果', C.acc], [`進氣 ${r.in}°`, C.mix], [`壓縮 ${r.comp}°`, C.acc2], [`動力 ${r.pow}°`, C.fire], [`排氣 ${r.ex}°`, '#c9ced8'], [`汽門重疊 ${r.ov}°`, C.bad]]);
+        const p = (t * 60) % 720; H.text(ctx, `指針：${Math.round(p)}°（第 ${p < 360 ? 1 : 2} 圈）`, 740, 470, { size: 17, align: 'center', color: C.mut });
+      },
+      quiz: { q: '四行程汽油引擎的凸輪軸與曲軸轉速比為？', opts: ['1：1', '1：2（凸輪軸轉一圈，曲軸轉兩圈）', '2：1', '1：4'], ans: 1, ex: '凸輪軸正時齒輪齒數是曲軸的 2 倍，曲軸轉速為凸輪軸的 2 倍。' } },
+  ],
+};
+
+Player(V4);
+</script></body></html>

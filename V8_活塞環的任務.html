@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>V8 活塞環的任務</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:12px 16px 32px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:15px}
+header h1{font-size:22px;margin:0}
+header .sub{color:var(--mut);font-size:14px}
+header .score{margin-left:auto;color:var(--mut);font-size:14px}
+.main{display:grid;grid-template-columns:1fr 260px;gap:14px}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+.stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:default}
+.chtitle{position:absolute;left:12px;top:10px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--acc)}
+.caption{min-height:62px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:10px;padding:12px 16px;font-size:19px;line-height:1.55}
+.caption b{color:var(--acc)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.controls button:hover{border-color:var(--acc2)}
+.controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:88px}
+.controls .time{color:var(--mut);font-size:14px;margin-left:auto;font-variant-numeric:tabular-nums}
+.controls label{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:4px;cursor:pointer}
+.bar{display:flex;gap:3px;margin-top:10px;height:12px;cursor:pointer}
+.bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
+.bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
+.bar div.done i{background:var(--ok)}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
+.side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
+.side ol{list-style:none;margin:0;padding:0}
+.side li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;gap:8px;align-items:center}
+.side li:hover{background:var(--panel2)}
+.side li.on{background:var(--panel2);outline:1px solid var(--acc)}
+.side li .n{width:22px;height:22px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:12px;flex:none}
+.side li.ok .n{background:var(--ok);color:#002010}
+.side .tips{color:var(--mut);font-size:13px;line-height:1.6;margin:10px 6px 2px;border-top:1px solid var(--line);padding-top:8px}
+.panel{margin-top:10px}
+.panel:empty{display:none}
+.panel .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.panel .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0}
+.panel input[type=number]{width:72px;font-size:17px;padding:6px;border-radius:6px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit}
+.panel input[type=range]{width:200px}
+.panel button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.panel button.pri{background:var(--acc);color:#1a1200;font-weight:700;border:none}
+.panel .res{font-size:17px;line-height:1.8}
+.panel .res b{color:var(--acc)}
+.panel .fb{font-weight:700}
+.panel .fb.ok{color:var(--ok)}.panel .fb.bad{color:var(--bad)}
+.quiz{position:absolute;inset:0;background:rgba(5,10,20,.82);display:none;align-items:center;justify-content:center;padding:16px}
+.quiz.show{display:flex}
+.quiz .card{background:var(--panel);border:2px solid var(--acc);border-radius:14px;max-width:640px;width:100%;padding:18px 20px}
+.quiz .card h4{margin:0 0 4px;color:var(--acc);font-size:15px}
+.quiz .card p{font-size:20px;margin:6px 0 12px;line-height:1.5}
+.quiz .opt{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;font-size:17px;cursor:pointer;font-family:inherit}
+.quiz .opt:hover{border-color:var(--acc2)}
+.quiz .opt.right{background:#16452d;border-color:var(--ok)}
+.quiz .opt.wrong{background:#4a1d1d;border-color:var(--bad)}
+.quiz .ex{font-size:15px;color:var(--mut);margin-top:8px;min-height:20px;line-height:1.5}
+.quiz .go{margin-top:10px;background:var(--ok);color:#002010;border:none;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;cursor:pointer;display:none;font-family:inherit}
+.endcard{position:absolute;inset:0;background:rgba(5,10,20,.85);display:none;align-items:center;justify-content:center;text-align:center}
+.endcard.show{display:flex}
+.endcard div{font-size:22px;line-height:1.8}
+.endcard b{color:var(--acc);font-size:30px}
+@media(max-width:600px){.caption{font-size:16px}header h1{font-size:18px}.quiz .card p{font-size:17px}.quiz .opt{font-size:15px;padding:8px}}
+.chtitle.hide{opacity:0}
+.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:15px;text-decoration:none;font-weight:700}
+.home:hover{border-color:var(--acc);color:var(--acc)}
+.home.big{margin-top:14px;font-size:18px;padding:10px 18px;background:var(--acc);color:#1a1200;border:none}
+/* 嵌入簡報模式（?embed=1）：隱藏標題列與章節欄，讓畫面完整放進投影片 */
+.embed header,.embed .side,.embed .tips{display:none}
+.embed .main{grid-template-columns:1fr}
+.embed .wrap{max-width:calc((100vh - 150px) * 16 / 9);padding:4px 8px 8px}
+.embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
+.embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
+</style></head><body>
+<script>
+/* 網頁式動畫影片播放框架（共用） */
+const W = 960, HGT = 540;
+const C = { bg:'#0a1120', ink:'#e8eef9', mut:'#9fb0cf', acc:'#ffb020', acc2:'#38c6ff', ok:'#3ddc84', bad:'#ff5d5d',
+  metal:'#8ea3bf', metalD:'#5c6f8a', metalL:'#c3d1e4', wall:'#3a4a66', mix:'#4fd1a5', air:'#7cc7ff', fire:'#ff7a1a', exh:'#8a8f99', oil:'#d8a31a', water:'#2f8fff' };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = k => k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k);
+const rad = d => d * Math.PI / 180;
+const mod = (a, n) => ((a % n) + n) % n;
+/* 0..1 進度 */
+const prog = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+
+const H = {
+  text(ctx, s, x, y, o = {}) {
+    ctx.save(); ctx.font = `${o.bold ? '700 ' : ''}${o.size || 20}px "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif`;
+    ctx.fillStyle = o.color || C.ink; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'middle';
+    ctx.globalAlpha = o.alpha ?? 1;
+    String(s).split('\n').forEach((ln, i) => ctx.fillText(ln, x, y + i * (o.size || 20) * 1.35)); ctx.restore();
+  },
+  rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); },
+  box(ctx, x, y, w, h, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; H.rr(ctx, x, y, w, h, o.r ?? 10);
+    ctx.fillStyle = o.fill || '#16223a'; ctx.fill(); ctx.lineWidth = o.lw || 2; ctx.strokeStyle = o.stroke || '#2c3f63'; ctx.stroke(); ctx.restore();
+  },
+  arrow(ctx, x1, y1, x2, y2, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = ctx.fillStyle = o.color || C.acc; ctx.lineWidth = o.lw || 4;
+    if (o.dash) { ctx.setLineDash(o.dash); ctx.lineDashOffset = o.offset || 0; }
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    const a = Math.atan2(y2 - y1, x2 - x1), s = o.head || 14;
+    ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - s * Math.cos(a - .45), y2 - s * Math.sin(a - .45));
+    ctx.lineTo(x2 - s * Math.cos(a + .45), y2 - s * Math.sin(a + .45)); ctx.closePath(); ctx.fill(); ctx.restore();
+  },
+  label(ctx, px, py, tx, ty, s, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = o.color || C.acc; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.fillStyle = o.color || C.acc; ctx.beginPath(); ctx.arc(px, py, 4, 0, 7); ctx.fill();
+    ctx.font = `700 ${o.size || 17}px "Microsoft JhengHei",sans-serif`; const w = ctx.measureText(s).width + 14;
+    const left = o.align === 'right' ? tx - w : o.align === 'center' ? tx - w / 2 : tx;
+    H.rr(ctx, left, ty - 14, w, 28, 6); ctx.fillStyle = 'rgba(10,17,32,.9)'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.ink; ctx.textBaseline = 'middle'; ctx.fillText(s, left + 7, ty + 1); ctx.restore();
+  },
+  particles(ctx, n, x, y, w, h, color, t, o = {}) {
+    ctx.save(); ctx.fillStyle = color; ctx.globalAlpha = o.alpha ?? .85;
+    for (let i = 0; i < n; i++) {
+      const sx = (Math.sin(i * 12.9898) * 43758.5453) % 1, sy = (Math.sin(i * 78.233) * 12543.21) % 1;
+      const px = x + Math.abs(sx) * w + Math.sin(t * 3 + i) * (o.jit ?? 4), py = y + Math.abs(sy) * h + Math.cos(t * 2.6 + i * 1.7) * (o.jit ?? 4);
+      if (px < x || px > x + w || py < y || py > y + h) continue;
+      ctx.beginPath(); ctx.arc(px, py, o.r || 3.2, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  },
+  spark(ctx, x, y, k) {
+    if (k <= 0) return; ctx.save(); ctx.globalAlpha = k; ctx.strokeStyle = '#fff6a0'; ctx.lineWidth = 3;
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + k; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * 18 * k, y + Math.sin(a) * 18 * k); ctx.stroke(); }
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, 5 * k, 0, 7); ctx.fill(); ctx.restore();
+  },
+  flame(ctx, x, y, s, t) {
+    ctx.save(); for (let i = 0; i < 3; i++) {
+      const f = 1 - i * .28; ctx.fillStyle = ['#ff5a1a', '#ff9a1a', '#ffe060'][i]; ctx.beginPath();
+      const w = 22 * s * f, h = (46 + Math.sin(t * 10 + i) * 6) * s * f;
+      ctx.moveTo(x - w, y); ctx.quadraticCurveTo(x - w, y - h * .6, x, y - h); ctx.quadraticCurveTo(x + w, y - h * .6, x + w, y); ctx.closePath(); ctx.fill();
+    } ctx.restore();
+  },
+  /* 曲柄滑塊：回傳活塞銷距曲軸中心之距離 */
+  pinDist(r, l, th) { return r * Math.cos(th) + Math.sqrt(l * l - (r * Math.sin(th)) ** 2); },
+  /* 四行程引擎剖面：phi = 0..720（0 = 進氣行程開始之上死點） */
+  engine4(ctx, cx, top, phi, o = {}) {
+    const s = o.scale || 1, bore = 150 * s, r = 52 * s, l = 170 * s, headH = 70 * s, clr = 24 * s, crownToPin = 34 * s, pistonH = 70 * s;
+    const headBot = top + headH, cy = headBot + clr + crownToPin + r + l, cylBot = headBot + clr + 2 * r + pistonH * .8;
+    const th = rad(phi), pinY = cy - H.pinDist(r, l, th), pTop = pinY - crownToPin;
+    const IO = o.IO ?? 8, IC = o.IC ?? 40, EO = o.EO ?? 50, EC = o.EC ?? 12;
+    const lift = (a, b) => { let p = mod(phi - a, 720), span = mod(b - a, 720); return p <= span ? Math.sin(Math.PI * p / span) : 0; };
+    const iL = o.iLift ?? lift(-IO, 180 + IC), eL = o.eLift ?? lift(540 - EO, 720 + EC);
+    const x0 = cx - bore / 2, x1 = cx + bore / 2;
+    // 汽缸壁與水套
+    ctx.save();
+    ctx.fillStyle = C.wall; ctx.fillRect(x0 - 34 * s, headBot, 34 * s, cylBot - headBot); ctx.fillRect(x1, headBot, 34 * s, cylBot - headBot);
+    if (o.water) { ctx.fillStyle = 'rgba(47,143,255,.55)'; ctx.fillRect(x0 - 26 * s, headBot + 8 * s, 14 * s, (cylBot - headBot) * .6); ctx.fillRect(x1 + 12 * s, headBot + 8 * s, 14 * s, (cylBot - headBot) * .6); }
+    // 汽缸內氣體
+    const gas = o.gas || 'none';
+    const gcol = { mix: 'rgba(79,209,165,.30)', air: 'rgba(124,199,255,.25)', comp: 'rgba(79,209,165,.55)', fire: 'rgba(255,122,26,.75)', exh: 'rgba(138,143,153,.45)', none: 'rgba(0,0,0,0)' }[gas] || gas;
+    ctx.fillStyle = gcol; ctx.fillRect(x0, headBot - 8 * s, bore, pTop - headBot + 8 * s);
+    if (o.particles) H.particles(ctx, o.particles, x0 + 4, headBot, bore - 8, pTop - headBot - 4, o.pColor || C.mix, o.t || 0, { r: 3 * s });
+    // 汽缸蓋
+    ctx.fillStyle = '#4a5d7d'; H.rr(ctx, x0 - 34 * s, top, bore + 68 * s, headH, 8 * s); ctx.fill();
+    // 燃燒室凹槽
+    ctx.fillStyle = gcol === 'rgba(0,0,0,0)' ? C.bg : C.bg; ctx.beginPath(); ctx.moveTo(x0, headBot); ctx.quadraticCurveTo(cx, headBot - 34 * s, x1, headBot); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = gcol; ctx.fill();
+    // 進排氣道
+    const port = (side, L, col) => {
+      const sx = side < 0 ? x0 + 26 * s : x1 - 26 * s, d = side;
+      ctx.fillStyle = C.bg; ctx.beginPath(); ctx.moveTo(sx - 16 * s, headBot - 12 * s); ctx.lineTo(sx + 16 * s, headBot - 12 * s);
+      ctx.lineTo(sx + 16 * s + d * 50 * s, top - 2); ctx.lineTo(sx - 16 * s + d * 50 * s, top - 2); ctx.closePath(); ctx.fill();
+      if (L > .05) { ctx.fillStyle = col; ctx.fill(); }
+      // 汽門
+      const vy = headBot - 12 * s + L * 16 * s; ctx.fillStyle = C.metalL;
+      ctx.fillRect(sx - 3 * s, top - 30 * s + L * 16 * s, 6 * s, vy - top + 30 * s - L * 16 * s);
+      ctx.beginPath(); ctx.moveTo(sx - 20 * s, vy + 4 * s); ctx.lineTo(sx + 20 * s, vy + 4 * s); ctx.lineTo(sx + 6 * s, vy - 4 * s); ctx.lineTo(sx - 6 * s, vy - 4 * s); ctx.closePath(); ctx.fill();
+      return { x: sx, y: vy };
+    };
+    const vi = port(-1, iL, o.inCol || 'rgba(79,209,165,.6)'), ve = port(1, eL, 'rgba(138,143,153,.6)');
+    if (o.flow) {
+      const off = -(o.t || 0) * 40;
+      if (iL > .15) H.arrow(ctx, vi.x - 70 * s, top - 10 * s, vi.x - 6 * s, headBot + 6 * s, { color: C.mix, lw: 3, dash: [8, 6], offset: off, alpha: iL });
+      if (eL > .15) H.arrow(ctx, ve.x + 6 * s, headBot + 6 * s, ve.x + 70 * s, top - 10 * s, { color: '#b5bac4', lw: 3, dash: [8, 6], offset: off, alpha: eL });
+    }
+    // 火星塞
+    if (o.plug !== false) { ctx.fillStyle = '#d9dee8'; ctx.fillRect(cx - 5 * s, top - 26 * s, 10 * s, headH - 4 * s); ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 9 * s, top - 34 * s, 18 * s, 12 * s); }
+    if (o.spark) H.spark(ctx, cx, headBot - 12 * s, o.spark);
+    // 活塞
+    const g = ctx.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, C.metalD); g.addColorStop(.5, C.metalL); g.addColorStop(1, C.metalD);
+    ctx.fillStyle = g; H.rr(ctx, x0 + 3, pTop, bore - 6, pistonH, 4 * s); ctx.fill();
+    ctx.fillStyle = '#44536b'; for (let i = 0; i < 3; i++) ctx.fillRect(x0 + 3, pTop + (8 + i * 10) * s, bore - 6, 3 * s);
+    // 連桿與曲軸（曲軸臂＋平衡配重會跟著旋轉）
+    const cpx = cx + r * Math.sin(th), cpy = cy - r * Math.cos(th);
+    H.crank(ctx, cx, cy, r, th, s, o.t || 0);
+    ctx.strokeStyle = '#aab8cc'; ctx.lineWidth = 16 * s; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx, pinY); ctx.lineTo(cpx, cpy); ctx.stroke();
+    ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, pinY, 7 * s, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(cpx, cpy, 9 * s, 0, 7); ctx.fill(); ctx.strokeStyle = '#7a5a00'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    return { cx, top, headBot, cy, r, l, bore, pTop, pinY, x0, x1, cylBot, crankPin: [cpx, cpy], vi, ve, tdcY: headBot + clr, bdcY: headBot + clr + 2 * r };
+  },
+  /* 曲軸：曲柄圓（虛線）、曲軸臂、平衡配重、主軸頸記號、旋轉方向箭頭 */
+  crank(ctx, cx, cy, r, th, s = 1, t = 0) {
+    ctx.save();
+    ctx.setLineDash([6, 6]); ctx.strokeStyle = 'rgba(255,209,102,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.translate(cx, cy); ctx.rotate(th);
+    // 平衡配重（在曲柄銷的反方向）
+    const g = ctx.createLinearGradient(0, 0, 0, r + 26 * s); g.addColorStop(0, '#7f93b2'); g.addColorStop(1, '#55678a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-14 * s, 0); ctx.arc(0, 0, r + 22 * s, rad(35), rad(145)); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#9fb2cf'; ctx.lineWidth = 2; ctx.stroke();
+    // 曲軸臂（主軸頸 → 曲柄銷）
+    ctx.fillStyle = '#8ea3c2'; ctx.beginPath(); ctx.moveTo(-20 * s, 4 * s); ctx.lineTo(-14 * s, -r); ctx.arc(0, -r, 14 * s, Math.PI, 0); ctx.lineTo(20 * s, 4 * s); ctx.arc(0, 4 * s, 20 * s, 0, Math.PI); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#c3d1e4'; ctx.stroke();
+    // 主軸頸與旋轉記號
+    ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(0, 0, 11 * s, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 10 * s); ctx.stroke();
+    ctx.restore();
+    // 旋轉方向（順時針）
+    ctx.save(); ctx.strokeStyle = 'rgba(56,198,255,.8)'; ctx.fillStyle = 'rgba(56,198,255,.8)'; ctx.lineWidth = 3;
+    const R = r + 34 * s, a0 = rad(-60), a1 = rad(10); ctx.beginPath(); ctx.arc(cx, cy, R, a0, a1); ctx.stroke();
+    const ex = cx + R * Math.cos(a1), ey = cy + R * Math.sin(a1); ctx.beginPath(); ctx.moveTo(ex + 7, ey - 6); ctx.lineTo(ex - 8, ey - 3); ctx.lineTo(ex + 1, ey + 9); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  },
+  strokeName(phi) { phi = mod(phi, 720); return phi < 180 ? '進氣行程' : phi < 360 ? '壓縮行程' : phi < 540 ? '動力行程' : '排氣行程'; },
+  dial(ctx, x, y, R, ang, label) {
+    ctx.save(); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.strokeStyle = '#2c3f63'; ctx.stroke();
+    ctx.strokeStyle = C.acc; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + R * Math.sin(rad(ang)), y - R * Math.cos(rad(ang))); ctx.stroke();
+    H.text(ctx, label, x, y + R + 18, { size: 15, align: 'center', color: C.mut }); ctx.restore();
+  },
+};
+
+function Player(cfg) {
+  const $ = s => document.querySelector(s);
+  document.title = cfg.code + ' ' + cfg.title;
+  document.body.innerHTML = `<div class="wrap">
+  <header><a class="home" href="index.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span></header>
+  <div class="main"><div>
+    <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
+      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br><a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
+    </div>
+    <div class="bar" id="bar"></div>
+    <div class="controls">
+      <button id="prev" title="上一段">⏮</button><button class="main-btn" id="play">▶ 播放</button><button id="step" title="逐格（暫停時）">逐格 ▸</button><button id="next" title="下一段">⏭</button>
+      <select id="spd"><option value=".25">0.25x</option><option value=".5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+      <label><input type="checkbox" id="tts">🔊 語音旁白</label><span class="time" id="tm"></span>
+    </div>
+    <div class="caption" id="cap"></div>
+    <div class="panel" id="panel"></div>
+  </div>
+  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>每段結束有小問題，答對才會繼續。</div></aside></div></div>`;
+  const cv = $('#cv'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * dpr; cv.height = HGT * dpr; ctx.scale(dpr, dpr);
+  const chs = cfg.chapters, S = Object.assign({}, cfg.state || {}), passed = chs.map(() => false), firstOk = chs.map(() => null);
+  let ci = 0, t = 0, playing = false, speed = 1, lastCap = '', last = performance.now(), ended = false;
+  const durOf = c => c.loop ? (c.nominal || 20) : c.dur;
+  // 章節清單與進度條
+  $('#list').innerHTML = chs.map((c, i) => `<li data-i="${i}"><span class="n">${i + 1}</span>${c.title}</li>`).join('');
+  const tot = chs.reduce((a, c) => a + durOf(c), 0);
+  $('#bar').innerHTML = chs.map(c => `<div style="flex:${durOf(c) / tot}"><i></i></div>`).join('');
+  $('#list').onclick = e => { const li = e.target.closest('li'); if (li) go(+li.dataset.i, true); };
+  $('#bar').onclick = e => { const d = e.target.closest('div'); const i = [...$('#bar').children].indexOf(d); if (i >= 0) go(i, true); };
+  const setPlay = p => { playing = p; $('#play').textContent = p ? '⏸ 暫停' : '▶ 播放'; if (!p && window.speechSynthesis) speechSynthesis.pause(); else if (window.speechSynthesis) speechSynthesis.resume(); };
+  $('#play').onclick = () => { if (ended) { restart(); return; } if ($('#quiz').classList.contains('show')) return; setPlay(!playing); };
+  $('#prev').onclick = () => go(Math.max(0, ci - 1), true);
+  $('#next').onclick = () => { if (ci < chs.length - 1) go(ci + 1, true); };
+  $('#step').onclick = () => { setPlay(false); t = Math.min(t + 1 / 15, chs[ci].loop ? 1e9 : chs[ci].dur); };
+  $('#spd').onchange = e => speed = +e.target.value;
+  $('#tts').onchange = e => { if (!e.target.checked && window.speechSynthesis) speechSynthesis.cancel(); else { lastCap = ''; } };
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); $('#play').click(); }
+    if (e.code === 'ArrowRight') $('#next').click(); if (e.code === 'ArrowLeft') $('#prev').click(); if (e.key === 'r' || e.key === 'R') restart();
+  });
+  cv.addEventListener('click', e => {
+    const c = chs[ci]; if (!c.onClick) return; const b = cv.getBoundingClientRect();
+    c.onClick((e.clientX - b.left) * W / b.width, (e.clientY - b.top) * HGT / b.height, S);
+  });
+  cv.addEventListener('mousemove', e => {
+    const c = chs[ci]; if (!c.onClick) { cv.style.cursor = 'default'; return; } cv.style.cursor = 'pointer';
+  });
+  function restart() { passed.fill(false); firstOk.fill(null); $('#end').classList.remove('show'); ended = false; go(0, false); setPlay(true); }
+  function go(i, keepPlay) {
+    ci = i; t = 0; lastCap = ''; ended = false; $('#end').classList.remove('show'); $('#quiz').classList.remove('show');
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    const p = $('#panel'); p.innerHTML = ''; if (chs[i].panel) chs[i].panel(p, S);
+    if (chs[i].enter) chs[i].enter(S);
+    [...$('#list').children].forEach((li, k) => { li.classList.toggle('on', k === i); li.classList.toggle('ok', passed[k]); });
+    $('#cht').textContent = `第 ${i + 1} 段｜${chs[i].title}`; $('#cht').classList.remove('hide'); clearTimeout(window.__ht); window.__ht = setTimeout(() => $('#cht').classList.add('hide'), 2500);
+    if (!keepPlay) setPlay(false);
+  }
+  function score() { const n = firstOk.filter(x => x === true).length, q = chs.filter(c => c.quiz).length; $('#score').textContent = `首次答對 ${n} / ${q}`; return n; }
+  function showQuiz() {
+    const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
+    $('#qq').textContent = q.q; $('#qe').textContent = ''; $('#qgo').style.display = 'none';
+    $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
+    $('#qo').onclick = e => {
+      const b = e.target.closest('.opt'); if (!b || passed[ci]) return; const k = +b.dataset.k;
+      if (firstOk[ci] === null) firstOk[ci] = (k === q.ans);
+      if (k === q.ans) { b.classList.add('right'); passed[ci] = true; $('#qe').textContent = '✔ 答對了！' + (q.ex || ''); $('#qgo').style.display = 'inline-block'; score(); }
+      else { b.classList.add('wrong'); $('#qe').textContent = '✘ 再想想看。' + (q.hint || '可以按「上一段」或點章節重看。'); }
+    };
+  }
+  $('#qgo').onclick = () => { $('#quiz').classList.remove('show'); nextOrEnd(); };
+  function nextOrEnd() {
+    if (ci < chs.length - 1) { go(ci + 1, true); setPlay(true); }
+    else { ended = true; setPlay(false); $('#endsc').textContent = `${score()} / ${chs.filter(c => c.quiz).length}`; $('#end').classList.add('show'); [...$('#list').children].forEach((li, k) => li.classList.toggle('ok', passed[k])); }
+  }
+  function speak(s) {
+    if (!$('#tts').checked || !window.speechSynthesis) return; speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(s.replace(/<[^>]+>/g, '')); u.lang = 'zh-TW'; u.rate = Math.min(1.3, .95 * Math.max(.8, speed));
+    const v = speechSynthesis.getVoices().find(v => /zh[-_]TW/i.test(v.lang)); if (v) u.voice = v; speechSynthesis.speak(u);
+  }
+  function frame(now) {
+    const dt = Math.min(.1, (now - last) / 1000); last = now; const c = chs[ci];
+    if (playing) { t += dt * speed; if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } } }
+    // 字幕
+    let cap = ''; (c.captions || []).forEach(([at, s]) => { if (t >= at) cap = s; });
+    if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap) speak(cap); }
+    ctx.clearRect(0, 0, W, HGT); ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, HGT);
+    try { c.draw(ctx, t, S); } catch (err) { console.error(err); }
+    const d = durOf(c), shown = c.loop ? (t % d) : t;
+    $('#tm').textContent = c.loop ? '互動模式' : `${shown.toFixed(1)} / ${d.toFixed(0)} 秒`;
+    [...$('#bar').children].forEach((b, k) => { b.firstChild.style.width = (k < ci ? 100 : k === ci ? (c.loop ? 100 : 100 * t / d) : 0) + '%'; b.classList.toggle('done', passed[k]); });
+    requestAnimationFrame(frame);
+  }
+  // 互動章節：「完成本段」按鈕
+  window.finishLoop = () => { if (chs[ci].quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } };
+  window.__seek = (i, tt) => { go(i, false); t = tt; };
+  go(0, false); score(); requestAnimationFrame(frame);
+  if (window.speechSynthesis) speechSynthesis.getVoices();
+  if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('embed');
+  return { S, go };
+}
+
+/* V8 活塞環的任務 */
+function pistonView(ctx, cx, bw, pTop, t, o = {}) {
+  const wallT = 30, x0 = cx - bw / 2, x1 = cx + bw / 2, top = o.top ?? 70, bot = o.bot ?? 510, ph = o.ph ?? 250;
+  // 燃燒室氣體
+  ctx.fillStyle = o.gasCol || 'rgba(79,209,165,.4)'; ctx.fillRect(x0, top, bw, pTop - top);
+  if (o.gasP) H.particles(ctx, o.gasP, x0 + 6, top + 4, bw - 12, pTop - top - 8, o.pCol || C.mix, t, { r: 3.4 });
+  // 汽缸壁
+  ctx.fillStyle = C.wall; ctx.fillRect(x0 - wallT, top, wallT, bot - top); ctx.fillRect(x1, top, wallT, bot - top);
+  ctx.fillStyle = '#4a5d7d'; ctx.fillRect(x0 - wallT, top - 26, bw + 2 * wallT, 26);
+  // 油膜
+  if (o.oil !== false) { ctx.fillStyle = C.oil; const thin = 2, thick = o.worn ? 5 : 4, ringY = pTop + 84;
+    ctx.globalAlpha = .9; ctx.fillRect(x0 - 1, top, thin, ringY - top); ctx.fillRect(x1 - 1, top, thin, ringY - top);
+    ctx.fillRect(x0 - 2, ringY, thick, bot - ringY); ctx.fillRect(x1 - 2, ringY, thick, bot - ringY); ctx.globalAlpha = 1; }
+  // 活塞
+  const gr = ctx.createLinearGradient(x0, 0, x1, 0); gr.addColorStop(0, C.metalD); gr.addColorStop(.5, C.metalL); gr.addColorStop(1, C.metalD);
+  ctx.fillStyle = gr; H.rr(ctx, x0 + 5, pTop, bw - 10, ph, 6); ctx.fill();
+  // 環槽與環
+  const rings = [[22, '#e6ecf5', 'c1'], [48, '#a7b0bb', 'c2'], [80, '#7d8794', 'oil']];
+  rings.forEach(([dy, col, k], i) => {
+    const y = pTop + dy, h = k === 'oil' ? 16 : 10; ctx.fillStyle = '#36435a'; ctx.fillRect(x0 + 5, y - 1, 22, h + 2); ctx.fillRect(x1 - 27, y - 1, 22, h + 2);
+    const gap = o.worn && i < 2 ? 7 : 0; ctx.fillStyle = (o.hiRing === k) ? C.acc : col; ctx.fillRect(x0 + 1 + gap, y, 22 - gap, h); ctx.fillRect(x1 - 23, y, 22 - gap, h);
+    if (k === 'oil') { ctx.fillStyle = '#20293a'; for (const xx of [x0 + 12, x1 - 12]) { ctx.fillRect(xx - 3, y + 4, 6, 8); } }
+  });
+  // 活塞銷
+  const pinY = pTop + 150; ctx.fillStyle = '#5c6f8a'; ctx.beginPath(); ctx.arc(cx, pinY, 34, 0, 7); ctx.fill(); ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, pinY, 24, 0, 7); ctx.fill();
+  ctx.fillStyle = '#d8e2f0'; ctx.beginPath(); ctx.arc(cx, pinY, 18, 0, 7); ctx.fill(); ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, pinY, 8, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#aab8cc'; ctx.lineWidth = 26; ctx.beginPath(); ctx.moveTo(cx, pinY + 30); ctx.lineTo(cx + 10 * Math.sin(t * 2), bot + 40); ctx.stroke();
+  return { x0, x1, pinY, top, bot, ringY: pTop + 22 };
+}
+function pinDiagram(ctx, x, title, kind, t, a) {
+  ctx.globalAlpha = a; H.box(ctx, x, 70, 290, 420, {}); H.text(ctx, title, x + 145, 100, { size: 23, bold: true, align: 'center', color: C.acc });
+  const cx = x + 145, cy = 230;
+  ctx.fillStyle = '#5c6f8a'; H.rr(ctx, cx - 120, cy - 70, 240, 140, 16); ctx.fill(); // 活塞（俯視剖面）
+  ctx.fillStyle = '#7d90ad'; ctx.fillRect(cx - 105, cy - 30, 55, 60); ctx.fillRect(cx + 50, cy - 30, 55, 60); // 銷轂
+  ctx.fillStyle = '#aab8cc'; ctx.fillRect(cx - 30, cy - 34, 60, 68); // 連桿小端
+  const bush = (bx, w) => { ctx.fillStyle = '#d08a3a'; ctx.fillRect(bx, cy - 18, w, 36); };
+  if (kind === 0) bush(cx - 30, 60); if (kind === 1) { bush(cx - 105, 55); bush(cx + 50, 55); }
+  ctx.fillStyle = '#e6ecf5'; ctx.fillRect(cx - 112, cy - 14, 224, 28); // 活塞銷
+  const rot = (rx) => { ctx.save(); ctx.strokeStyle = C.ok; ctx.lineWidth = 3; ctx.beginPath(); const s = t * 3; ctx.arc(rx, cy, 30, s, s + 4.2); ctx.stroke(); const ex = rx + 30 * Math.cos(s + 4.2), ey = cy + 30 * Math.sin(s + 4.2); ctx.fillStyle = C.ok; ctx.beginPath(); ctx.arc(ex, ey, 5, 0, 7); ctx.fill(); ctx.restore(); };
+  const fix = (fx, s) => { ctx.fillStyle = C.bad; ctx.beginPath(); ctx.arc(fx, cy - 44, 8, 0, 7); ctx.fill(); H.text(ctx, s, fx, cy - 62, { size: 14, align: 'center', color: C.bad, alpha: a }); };
+  if (kind === 0) { fix(cx - 78, '固定'); fix(cx + 78, '固定'); rot(cx); }
+  if (kind === 1) { fix(cx, '固定'); rot(cx - 78); rot(cx + 78); }
+  if (kind === 2) { rot(cx - 78); rot(cx); rot(cx + 78); ctx.fillStyle = C.acc; ctx.fillRect(cx - 116, cy - 18, 5, 36); ctx.fillRect(cx + 111, cy - 18, 5, 36); }
+  const txt = [['銷固定在活塞銷轂', '連桿小端裝銅套轉動', '銅套面積小易磨損，少用'], ['銷固定在連桿小端', '活塞銷轂壓入銅套轉動', '少部分汽油引擎採用'], ['銷不固定，兩端用扣環', '不易咬死', '大多數汽油、柴油引擎採用']][kind];
+  txt.forEach((s, i) => H.text(ctx, s, cx, 345 + i * 34, { size: 17, align: 'center', alpha: a, color: i === 2 ? C.acc2 : C.ink }));
+  ctx.globalAlpha = 1;
+}
+const V8 = {
+  code: 'V8', title: '活塞環的任務', sub: '第 8 節｜2-2 活塞、活塞銷與活塞環',
+  chapters: [
+    { title: '活塞的構造與要求', dur: 18,
+      captions: [[0, '活塞頂部和汽缸蓋構成燃燒室，動力行程時承受高溫高壓氣體的衝擊，再經連桿推動曲軸。'], [6, '活塞分為<b>頭部</b>（有 2～3 道環槽）和<b>裙部</b>（引導活塞做直線運動）。'], [12, '活塞必須：<b>重量輕、摩擦係數小、強度大、散熱快、膨脹係數小、耐磨</b>。']],
+      draw(ctx, t) {
+        const p = pistonView(ctx, 300, 300, 150, t, { gasCol: 'rgba(0,0,0,0)', oil: false });
+        [[0, p.x1 - 60, 152, 560, 110, '活塞頂部（構成燃燒室）'], [1, p.x1 - 12, 175, 560, 170, '壓縮環（2 道）'], [2, p.x1 - 12, 236, 560, 230, '油環'], [3, 300, p.pinY, 560, 300, '活塞銷'], [4, p.x1 - 30, 360, 560, 370, '活塞裙部（引導直線運動）']]
+          .forEach(([i, px, py, tx, ty, s]) => H.label(ctx, px, py, tx, ty, s, { alpha: ease(prog(t, 1 + i * 1.2, 1.8 + i * 1.2)) }));
+        if (t > 12) { const a = ease(prog(t, 12, 13)); H.box(ctx, 560, 410, 380, 100, { alpha: a, stroke: C.acc }); H.text(ctx, '重量輕・摩擦小・強度大\n散熱快・膨脹小・耐磨', 580, 445, { size: 20, bold: true, alpha: a }); }
+      },
+      quiz: { q: '活塞「散熱要快」的主要目的是？', opts: ['減少慣性損失', '防止溫度過高而造成爆震', '減少運動阻力', '延長壽命'], ans: 1 } },
+    { title: '活塞材料與橢圓形活塞', dur: 20,
+      captions: [[0, '<b>鑄鐵活塞</b>：強度大、耐磨、膨脹係數小，但重、散熱慢 → 用於中低速柴油引擎。'], [5, '<b>鋁合金活塞</b>：重量輕、散熱快、摩擦小 → 廣用於現代高速汽油引擎；缺點是膨脹係數較大。'], [11, '所以鋁合金活塞的裙部做成<b>橢圓形</b>：活塞銷方向為<b>短徑</b>。冷車時只有長徑接觸汽缸，熱了以後膨脹成<b>正圓形</b>全面接觸。']],
+      draw(ctx, t) {
+        const rows = [['', '鑄鐵活塞', '鋁合金活塞'], ['重量', '較重', '較輕'], ['散熱', '較慢', '較快'], ['膨脹係數', '小', '大'], ['用途', '中低速柴油', '高速汽油']];
+        rows.forEach((r, i) => r.forEach((c, j) => { const a = ease(prog(t, i * .6, i * .6 + .5)); H.box(ctx, 40 + j * 140, 70 + i * 58, 134, 52, { fill: i && j ? '#16223a' : '#2a3b5e', alpha: a, r: 6 }); H.text(ctx, c, 107 + j * 140, 96 + i * 58, { size: 19, align: 'center', alpha: a, bold: !i || !j, color: j === 2 && i ? C.acc2 : C.ink }); }));
+        if (t > 11) { const a = ease(prog(t, 11, 12)), heat = (Math.sin((t - 11) * .9 - 1.57) + 1) / 2, cx = 700, cy = 300;
+          ctx.globalAlpha = a; ctx.strokeStyle = C.wall; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(cx, cy, 150, 0, 7); ctx.stroke();
+          ctx.fillStyle = `rgb(${140 + 100 * heat},${160 - 40 * heat},${190 - 110 * heat})`; ctx.beginPath(); ctx.ellipse(cx, cy, 145 - 18 * (1 - heat), 145, 0, 0, 7); ctx.fill();
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(cx - 160, cy); ctx.lineTo(cx + 160, cy); ctx.stroke(); ctx.setLineDash([]);
+          H.text(ctx, '活塞銷方向（短徑）', cx, cy + 22, { size: 16, align: 'center' }); H.text(ctx, heat < .5 ? '冷車：只有長徑接觸' : '工作溫度：正圓、全面接觸', cx, 490, { size: 20, bold: true, align: 'center', color: heat < .5 ? C.acc2 : C.fire }); ctx.globalAlpha = 1; }
+      },
+      quiz: { q: '下列何者「不是」鋁合金活塞的優點？', opts: ['強度較大', '慣性損失較小', '重量較輕', '導熱較佳'], ans: 0, ex: '鋁合金活塞的缺點正是強度較小、較易磨損。' } },
+    { title: '壓縮環：守住壓縮壓力', dur: 15,
+      captions: [[0, '上方 2～3 道是<b>壓縮環</b>：保持<b>氣密</b>、協助活塞頭<b>散熱</b>。'], [5, '壓縮與動力行程時，氣體壓力把環壓向環槽下方並<b>抵緊汽缸壁</b>，氣體就漏不下去。'], [10, '第一道壓縮環最靠近燃燒室、條件最嚴苛，所以<b>鍍多孔性鉻</b>（顏色較亮）。']],
+      draw(ctx, t) {
+        const pTop = 170 - 60 * Math.sin(t * 1.4); pistonView(ctx, 340, 340, pTop, t, { gasCol: 'rgba(79,209,165,.5)', gasP: 40, hiRing: t > 10 ? 'c1' : (t > 5 ? 'c2' : null) });
+        H.box(ctx, 600, 90, 330, 190, { stroke: C.acc }); H.text(ctx, '壓縮環', 620, 125, { size: 24, bold: true, color: C.acc });
+        H.text(ctx, '● 保持氣密\n● 協助活塞頭散熱\n● 第一道：鍍鉻（耐磨）\n● 第二道：鍍氧化鐵（易磨合）', 620, 170, { size: 18 });
+      },
+      quiz: { q: '第一道壓縮環一般鍍何種金屬？', opts: ['氧化鐵', '鉛錫合金', '銅鉛合金', '鉻'], ans: 3 } },
+    { title: '油環：刮油回油底殼', dur: 15,
+      captions: [[0, '下方的<b>油環</b>彈性比壓縮環大，負責<b>刮油</b>。'], [5, '它控制汽缸壁上的<b>油膜厚度</b>：留下一層薄薄的油潤滑，多餘的機油刮下來，經排油孔流回<b>油底殼</b>。'], [10, '有些油環內裝<b>襯環</b>（擴張環），增加彈力。']],
+      draw(ctx, t) {
+        const pTop = 160 + 70 * Math.sin(t * 1.2), down = Math.cos(t * 1.2) > 0; const p = pistonView(ctx, 340, 340, pTop, t, { gasCol: 'rgba(0,0,0,0)', hiRing: 'oil' });
+        if (down) for (let i = 0; i < 5; i++) { const k = ((t * 1.5 + i / 5) % 1); ctx.fillStyle = C.oil; ctx.beginPath(); ctx.arc(p.x0 + 12, pTop + 96 + k * 70, 4, 0, 7); ctx.arc(p.x1 - 12, pTop + 96 + k * 70, 4, 0, 7); ctx.fill(); }
+        H.label(ctx, p.x1 - 1, pTop + 30, 640, 100, '上方：薄油膜（潤滑）', { color: C.oil }); H.label(ctx, p.x1 - 1, pTop + 200, 640, 380, '下方：較厚的機油', { color: C.oil });
+        H.text(ctx, down ? '活塞下行：刮油 ↓ 回油底殼' : '活塞上行', 780, 240, { size: 20, bold: true, align: 'center', color: down ? C.acc : C.mut });
+      },
+      quiz: { q: '油環的主要功用是？', opts: ['點火', '刮除汽缸壁上多餘的機油並控制油膜厚度', '增加壓縮比', '固定活塞銷'], ans: 1 } },
+    { title: '故障偵探：吃機油、冒藍煙', dur: 20,
+      captions: [[0, '左邊是正常的活塞環，右邊是<b>磨損</b>的活塞環（開口間隙變大）。'], [5, '磨損後，燃燒氣體從環縫<b>漏到曲軸箱</b>（漏氣）→ 壓縮壓力降低 → <b>引擎無力、耗油</b>。'], [10, '機油也從環縫往上竄進燃燒室一起燒掉 → <b>吃機油、排氣冒藍煙</b>，增加排放污染。'], [15, '定期保養、及早維修，就是在<b>節能減碳</b>。（能源教育）']],
+      draw(ctx, t) {
+        const pTop = 190 - 50 * Math.sin(t * 1.6);
+        pistonView(ctx, 240, 240, pTop, t, { gasCol: 'rgba(79,209,165,.45)', gasP: 24, bot: 470 }); const p = pistonView(ctx, 700, 240, pTop, t, { gasCol: 'rgba(79,209,165,.45)', gasP: 24, worn: true, bot: 470 });
+        H.text(ctx, '正常', 240, 22, { size: 22, bold: true, align: 'center', color: C.ok }); H.text(ctx, '磨損', 700, 22, { size: 22, bold: true, align: 'center', color: C.bad });
+        if (t > 5) for (let i = 0; i < 6; i++) { const k = ((t * .9 + i / 6) % 1); ctx.fillStyle = C.mix; ctx.beginPath(); ctx.arc(p.x0 + 4, pTop - 6 + k * 130, 4, 0, 7); ctx.fill(); }
+        if (t > 10) { for (let i = 0; i < 6; i++) { const k = ((t * .8 + i / 6) % 1); ctx.fillStyle = C.oil; ctx.beginPath(); ctx.arc(p.x1 - 4, pTop + 120 - k * 150, 4, 0, 7); ctx.fill(); }
+          for (let i = 0; i < 10; i++) { const k = ((t * .3 + i / 10) % 1); ctx.globalAlpha = (1 - k) * .7; ctx.fillStyle = '#9fb7e8'; ctx.beginPath(); ctx.arc(860 + k * 60, 90 - k * 40 + Math.sin(i) * 14, 8 + k * 16, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; H.text(ctx, '藍煙', 900, 130, { size: 18, color: '#9fb7e8', align: 'center' }); }
+        H.box(ctx, 340, 470, 280, 56, { stroke: C.bad, alpha: ease(prog(t, 5, 6)) }); H.text(ctx, t < 10 ? '漏氣 → 無力、耗油' : '吃機油 → 冒藍煙', 480, 498, { size: 20, bold: true, align: 'center', color: '#ffb3b3', alpha: ease(prog(t, 5, 6)) });
+      },
+      quiz: { q: '「吃機油、排氣冒藍煙」最可能是哪個機件磨損？', opts: ['汽缸床墊', '活塞環', '火星塞', '水箱'], ans: 1, ex: '對比 V7：床墊破損通常是「水減少、冒白煙」。' } },
+    { title: '活塞銷的三種固定方式', dur: 20,
+      captions: [[0, '活塞銷連接活塞與連桿小端，做成<b>空心</b>減輕重量，以鉻鉬鋼鍛製。必須定位，以免橫向移動刮傷汽缸壁。'], [6, '<b>固定式</b>：銷固定在活塞銷轂，連桿小端裝銅套轉動。<b>半浮式</b>：銷固定在連桿小端，活塞銷轂內裝銅套轉動。'], [13, '<b>全浮式</b>：兩邊都不固定，兩端用<b>扣環</b>定位，不易咬死，<b>大多數引擎採用</b>。（綠色＝可轉動、紅點＝固定）']],
+      draw(ctx, t) { pinDiagram(ctx, 25, '固定式', 0, t, ease(prog(t, 5.5, 6.5))); pinDiagram(ctx, 335, '半浮式', 1, t, ease(prog(t, 9, 10))); pinDiagram(ctx, 645, '全浮式', 2, t, ease(prog(t, 12.5, 13.5)));
+        if (t < 5.5) H.text(ctx, '活塞銷：空心、鉻鉬鋼鍛製\n須定位，防止刮傷汽缸壁', W / 2, 270, { size: 26, bold: true, align: 'center', color: C.acc }); },
+      quiz: { q: '目前汽油引擎的活塞銷大多採用何種方式？', opts: ['固定式', '半浮式', '3/4 浮式', '全浮式'], ans: 3 } },
+  ],
+};
+
+Player(V8);
+</script></body></html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第2節 內燃機的循環｜引擎原理上課簡報</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d;
+--自學:#38c6ff;--共學:#3ddc84;--互學:#ffd166;--導學:#ff8a3d;--評量:#c79bff;--準備:#9fb0cf}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#050a14;color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;overflow:hidden}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:var(--bg);border-radius:6px;overflow:hidden;padding:84px 64px 56px;display:none}
+.slide.on{display:flex;flex-direction:column;justify-content:center;animation:fin .35s ease}
+@keyframes fin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* 頁首 */
+.shead{position:absolute;left:64px;right:64px;top:22px;display:flex;align-items:center;gap:12px;font-size:17px;color:var(--mut)}
+.chip{font-weight:700;border-radius:20px;padding:4px 14px;font-size:17px;color:#0d1526}
+.tchip{border:1px solid var(--line);border-radius:20px;padding:3px 12px;font-size:16px;color:var(--mut)}
+.shead .lesson{margin-left:auto}
+.sfoot{position:absolute;left:64px;right:64px;bottom:16px;display:flex;align-items:center;gap:10px;font-size:14px;color:#5f7299}
+.sfoot .prog{flex:1;height:4px;background:var(--panel2);border-radius:2px;overflow:hidden}.sfoot .prog i{display:block;height:100%;background:var(--acc)}
+/* 文字 */
+h1{font-size:54px;margin:0 0 18px;line-height:1.25}
+h2{font-size:46px;margin:0 0 26px;line-height:1.3}
+h3{font-size:28px;margin:0 0 12px;color:var(--acc)}
+p,li{font-size:28px;line-height:1.6;margin:0 0 10px}
+.mut{color:var(--mut)}.acc{color:var(--acc)}.blue{color:var(--acc2)}.green{color:var(--ok)}.red{color:var(--bad)}
+.small{font-size:20px}
+ul.clean{list-style:none;padding:0;margin:0}ul.clean li{padding-left:34px;position:relative}ul.clean li:before{content:"▸";position:absolute;left:4px;color:var(--acc)}
+/* 版面元件 */
+.row{display:flex;gap:24px}.col{flex:1;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card.hl{border-color:var(--acc)}
+.card .em{font-size:56px;line-height:1;margin-bottom:10px}
+.card h4{margin:0 0 6px;font-size:28px}
+.card p{font-size:23px;margin:0}
+.box{background:var(--panel);border:2px solid var(--acc);border-radius:16px;padding:20px 26px}
+.prompt{background:#0a1120;border:1px dashed var(--acc2);border-radius:12px;padding:16px 20px 52px;font-size:24px;line-height:1.6;position:relative}
+.copy{position:absolute;right:12px;bottom:10px;font-size:16px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit}
+table.t{width:100%;border-collapse:separate;border-spacing:0 8px}
+table.t th{font-size:26px;background:#2a3b5e;padding:10px 14px;text-align:center}
+table.t td{font-size:26px;background:var(--panel);padding:13px 14px;text-align:center}
+table.t th:first-child,table.t td:first-child{border-radius:10px 0 0 10px}table.t th:last-child,table.t td:last-child{border-radius:0 10px 10px 0}
+table.t td:first-child{font-weight:700;background:#1f2e4d}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;padding-left:54px;position:relative;margin-bottom:16px;font-size:27px}
+.steps li:before{content:counter(s);position:absolute;left:0;top:2px;width:38px;height:38px;border-radius:50%;background:var(--acc);color:#1a1200;font-weight:700;display:grid;place-items:center;font-size:20px}
+.flow{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap}
+.flow .node{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 24px;font-size:28px;font-weight:700;text-align:center}
+.flow .arr{font-size:34px;color:var(--mut)}
+.tl{display:flex;gap:8px;margin-top:10px}.tl div{border-radius:10px;padding:10px 8px;text-align:center;font-size:18px;color:#0d1526;font-weight:700}
+.tl div small{display:block;font-weight:400;font-size:15px}
+/* 按鈕連結 */
+a.btn{display:inline-flex;align-items:center;gap:8px;background:var(--acc);color:#1a1200;font-weight:700;text-decoration:none;border-radius:12px;padding:12px 20px;font-size:22px;margin:6px 10px 6px 0}
+a.btn.sec{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+a.btn.off{background:#2a2f3a;color:#7c8598;border:1px dashed #4a5263;pointer-events:none}
+/* 嵌入動畫 */
+.embed{position:absolute;left:64px;right:64px;top:76px;bottom:44px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0a1120}
+.embed iframe{width:100%;height:100%;border:0}
+/* 逐步顯示 */
+.frag{transition:opacity .35s,transform .35s}
+.frag.hid{opacity:0;transform:translateY(6px)}
+.kw{color:var(--acc);font-weight:700;border-bottom:3px solid var(--acc);padding:0 6px;transition:color .3s}
+.kw.frag.hid{opacity:1;transform:none;color:transparent}
+/* 封面 */
+.cover{display:flex;flex-direction:column;justify-content:center;height:100%}
+.cover .tag{display:inline-block;background:var(--acc);color:#1a1200;font-weight:700;border-radius:8px;padding:6px 14px;font-size:22px;margin-bottom:18px;width:max-content}
+/* 計時器 */
+.timer{position:absolute;right:64px;top:10px;background:var(--panel);border:2px solid var(--acc2);border-radius:12px;padding:2px 14px;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer;z-index:5;user-select:none}
+.timer.run{border-color:var(--ok)}.timer.done{border-color:var(--bad);color:var(--bad);animation:blink 1s infinite}
+.timer small{display:block;font-size:12px;color:var(--mut);font-weight:400;text-align:center}
+@keyframes blink{50%{opacity:.4}}
+/* 控制列與覆蓋層（不在 stage 內，不會被縮放） */
+#ctrl{position:fixed;right:14px;bottom:12px;display:flex;gap:6px;opacity:.25;transition:opacity .3s;z-index:20}
+#ctrl:hover{opacity:1}
+#ctrl button,#ctrl a{background:#1d2c4a;color:#e8eef9;border:1px solid #2c3f63;border-radius:8px;padding:7px 11px;font-size:15px;cursor:pointer;text-decoration:none;font-family:inherit}
+#notes{position:fixed;left:12px;right:12px;bottom:58px;max-height:34vh;overflow:auto;background:rgba(10,17,32,.96);border:1px solid #ffb020;border-radius:12px;padding:12px 16px;font-size:17px;line-height:1.6;display:none;z-index:19}
+#notes.show{display:block}#notes b{color:#ffb020}
+#ov{position:fixed;inset:0;background:rgba(5,10,20,.95);display:none;z-index:30;overflow:auto;padding:30px}
+#ov.show{display:block}
+#ov .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+#ov .it{background:#16223a;border:1px solid #2c3f63;border-radius:10px;padding:12px;cursor:pointer;font-size:16px}
+#ov .it:hover,#ov .it.cur{border-color:#ffb020}
+#ov .it b{display:block;color:#9fb0cf;font-size:13px;margin-bottom:4px}
+#qr{display:grid;place-items:center;background:#fff;border-radius:12px;padding:12px;width:max-content}
+.hastimer .shead .lesson{margin-right:150px}
+.slide.embedslide{display:none}.slide.embedslide.on{display:block}
+.card > b{font-size:21px;display:block;margin-bottom:4px}
+</style></head><body>
+<div id="stage">
+<section class="slide nohead" data-title="封面">
+  <div class="cover">
+    <span class="tag">引擎原理｜第一章 熱機與內燃機之認識</span>
+    <h1 style="font-size:66px">第 2 節　內燃機的循環</h1>
+    <p class="mut" style="font-size:26px">本節目標：看懂 P-V 圖 ・ 分辨四種熱力循環 ・ 會算每秒動力次數</p>
+    <div class="tl" style="margin-top:30px">
+      <div style="flex:3;background:#9fb0cf">準備<small>3 分</small></div>
+      <div style="flex:5;background:#ff8a3d">導學<small>5 分 引起動機</small></div>
+      <div style="flex:10;background:#38c6ff">自學<small>10 分 V2 動畫</small></div>
+      <div style="flex:12;background:#ff8a3d">導學<small>12 分 重點講解</small></div>
+      <div style="flex:8;background:#3ddc84">共學<small>8 分 計算練習</small></div>
+      <div style="flex:7;background:#ffd166">互學<small>7 分 Wordwall</small></div>
+      <div style="flex:5;background:#c79bff">評量<small>5 分</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tag="準備" data-time="3" data-title="課前準備"
+  data-notes="各組平板開啟 V2 動畫與學習單第 2 節。提醒角色輪替：上一節的操作者這節換成說明者。">
+  <h2>課前準備：開啟 V2 動畫與學習單</h2>
+  <div class="row">
+    <div class="col">
+      <div class="grid3" style="margin-bottom:22px">
+        <div class="card"><div class="em">🖐️</div><h4>操作者</h4><p>上節的記錄者</p></div>
+        <div class="card"><div class="em">🗣️</div><h4>說明者</h4><p>上節的操作者</p></div>
+        <div class="card"><div class="em">✍️</div><h4>記錄者</h4><p>上節的說明者</p></div>
+      </div>
+      <p>角色<b class="acc">輪替一次</b>，換個工作試試看！</p>
+      <div><a class="btn" href="V2_P-V圖會說話.html" target="_blank">▶ 開啟 V2 動畫</a><a class="btn sec" data-link="剛好學">🔗 剛好學</a></div>
+    </div>
+    <div style="width:290px;text-align:center">
+      <div id="qr" style="margin:0 auto"></div>
+      <p class="small mut" style="margin-top:8px">掃描開啟本節簡報</p>
+      <p id="qrurl" class="mut" style="font-size:12px;word-break:break-all"></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tag="導學" data-time="5" data-title="引起動機：柴油引擎有火星塞嗎？"
+  data-notes="先快速回顧上節三個關鍵字。接著用剛好學投票：「柴油引擎有沒有火星塞？」揭曉答案後帶出：點燃方式不同 → 燃燒方式不同 → 熱力循環不同。">
+  <h2>上節回顧＋投票時間</h2>
+  <div class="grid3" style="margin-bottom:24px">
+    <div class="card"><h4>🔥 熱機</h4><p>化學能 → 熱能 → 機械能</p></div>
+    <div class="card"><h4>🏠 內燃機</h4><p>汽缸內燃燒</p></div>
+    <div class="card"><h4>🏭 外燃機</h4><p>外部燃燒</p></div>
+  </div>
+  <div class="box" style="text-align:center"><h3 style="font-size:36px;margin:0">🗳️ 柴油引擎有沒有「火星塞」？</h3></div>
+  <div><a class="btn" data-link="剛好學">✋ 用剛好學投票</a></div>
+  <div class="frag" style="margin-top:14px">
+    <p style="font-size:30px"><b class="red">沒有！</b>柴油引擎把空氣壓縮到很熱，噴入柴油後<b class="acc">自己著火</b>。</p>
+    <p class="blue" style="font-size:26px">點燃方式不同 → 燃燒方式不同 → 熱力循環也不同</p>
+  </div>
+</section>
+
+<section class="slide" data-tag="自學" data-time="10" data-timer="600" data-title="自學：V2 P-V 圖會說話"
+  data-notes="各組在平板開啟 V2 自學；教師端可在本頁播放示範。注意看每種循環「燃燒那一段」是垂直線還是水平線。看完接著做 Edcafe 測驗。">
+  <div class="embed"><iframe data-src="V2_P-V圖會說話.html?embed=1" title="V2 P-V 圖會說話"></iframe></div>
+</section>
+
+<section class="slide" data-tag="自學" data-title="自學：Edcafe 測驗＋學習單"
+  data-notes="看完動畫完成 Edcafe 測驗，同時填學習單「一、看懂 P-V 圖」。">
+  <h2>看完動畫，完成兩件事</h2>
+  <div class="grid2">
+    <div class="card hl"><div class="em">📝</div><h4>Edcafe 影片測驗</h4><p style="margin-bottom:14px">檢查自己看懂了沒有</p><a class="btn" data-link="edcafe2">開始測驗</a></div>
+    <div class="card"><div class="em">📄</div><h4>學習單「一、看懂 P-V 圖」</h4><p>橫軸、縱軸、水平線與垂直線的意義、壓縮比</p></div>
+  </div>
+  <p class="mut" style="margin-top:24px">還沒看完？<a class="btn sec" href="V2_P-V圖會說話.html" target="_blank">在新分頁開啟 V2</a></p>
+</section>
+
+<section class="slide" data-tag="導學" data-time="12" data-title="導學：看懂 P-V 圖"
+  data-notes="以奧圖循環為例，帶學生找出水平線（等壓）與垂直線（等容）。壓縮比＝汽缸總容積 V2 ÷ 燃燒室容積 V1。">
+  <h2>P-V 圖怎麼看？</h2>
+  <div class="row" style="align-items:center">
+    <svg viewBox="0 0 540 352" style="width:560px;flex:none">
+      <line x1="60" y1="300" x2="520" y2="300" stroke="#9fb0cf" stroke-width="2"/><line x1="60" y1="300" x2="60" y2="30" stroke="#9fb0cf" stroke-width="2"/>
+      <text x="535" y="348" fill="#9fb0cf" font-size="18" text-anchor="end">V 容積 →</text><text x="70" y="36" fill="#9fb0cf" font-size="18">P 壓力 ↑</text>
+      <line x1="112" y1="300" x2="112" y2="40" stroke="#33476b" stroke-dasharray="5 5"/><line x1="476" y1="300" x2="476" y2="40" stroke="#33476b" stroke-dasharray="5 5"/>
+      <text x="112" y="325" fill="#9fb0cf" font-size="16" text-anchor="middle">TDC（V1）</text><text x="476" y="325" fill="#9fb0cf" font-size="16" text-anchor="middle">BDC（V2）</text>
+      <line x1="112" y1="293.8" x2="476" y2="293.8" stroke="#3ddc84" stroke-width="5"/>
+      <polyline fill="none" stroke="#38c6ff" stroke-width="4" points="476.0,293.8 463.9,293.6 451.7,293.3 439.6,293.0 427.5,292.7 415.3,292.4 403.2,292.0 391.1,291.7 378.9,291.2 366.8,290.8 354.7,290.3 342.5,289.7 330.4,289.1 318.3,288.5 306.1,287.7 294.0,286.9 281.9,286.0 269.7,284.9 257.6,283.7 245.5,282.3 233.3,280.7 221.2,278.7 209.1,276.5 196.9,273.7 184.8,270.3 172.7,266.1 160.5,260.7 148.4,253.6 136.3,243.7 124.1,229.5 112.0,207.4"/>
+      <line x1="112" y1="207.4" x2="112" y2="52" stroke="#ff7a1a" stroke-width="7"/>
+      <polyline fill="none" stroke="#ff9a4a" stroke-width="4" points="112.0,52.0 124.1,111.2 136.3,149.3 148.4,175.6 160.5,194.7 172.7,209.2 184.8,220.5 196.9,229.6 209.1,236.9 221.2,243.0 233.3,248.2 245.5,252.5 257.6,256.3 269.7,259.5 281.9,262.4 294.0,264.9 306.1,267.1 318.3,269.1 330.4,270.9 342.5,272.5 354.7,274.0 366.8,275.3 378.9,276.5 391.1,277.6 403.2,278.7 415.3,279.6 427.5,280.5 439.6,281.3 451.7,282.0 463.9,282.7 476.0,283.4"/>
+      <line x1="476" y1="283.4" x2="476" y2="293.8" stroke="#8a8f99" stroke-width="5"/>
+      <g fill="#fff" font-size="20" font-weight="700"><text x="92" y="300">O</text><text x="486" y="300">A</text><text x="90" y="212">B</text><text x="90" y="58">C</text><text x="486" y="282">D</text></g>
+    </svg>
+    <div class="col">
+      <p>🟩 水平線：<span class="kw frag">壓力</span> 不變 ＝ <span class="kw frag">等壓</span></p>
+      <p>🟧 垂直線：<span class="kw frag">容積</span> 不變 ＝ <span class="kw frag">等容</span></p>
+      <div class="box frag" style="margin-top:16px"><p style="margin:0">壓縮比 ＝ <b class="acc">汽缸總容積 V2</b> ÷ <b class="acc">燃燒室容積 V1</b></p></div>
+      <p class="frag small mut" style="margin-top:12px">圖中 B→C 是垂直線：火星塞點火瞬間燃燒，容積不變 → <b class="acc">等容燃燒</b></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tag="導學" data-title="導學：四種熱力循環"
+  data-notes="重點放在「名稱—燃燒方式—引擎」對照，不要求推導公式。逐列顯示，可先讓學生猜。">
+  <h2>四種熱力循環，看「燃燒那一段」分辨</h2>
+  <table class="t">
+    <tr><th>循環</th><th>別名</th><th>燃燒方式</th><th>使用的引擎</th></tr>
+    <tr class="frag"><td>等容循環</td><td>奧圖循環</td><td class="acc">等容燃燒</td><td>四行程汽油引擎</td></tr>
+    <tr class="frag"><td>等壓循環</td><td>狄塞爾循環</td><td class="acc">等壓燃燒</td><td>低速柴油引擎</td></tr>
+    <tr class="frag"><td>等容等壓循環</td><td>混合／雙燃燒循環</td><td class="acc">先等容、再等壓</td><td>高速柴油引擎</td></tr>
+    <tr class="frag"><td>米勒循環</td><td>—</td><td class="acc">等容（進汽門晚關）</td><td>裝機械增壓器的奧圖引擎</td></tr>
+  </table>
+  <div class="box frag" style="margin-top:10px"><p style="margin:0">🎵 口訣：<b class="acc">汽油等容、低速柴油等壓、高速柴油兩段燒、米勒晚關要增壓</b></p></div>
+</section>
+
+<section class="slide" data-tag="導學" data-title="導學：米勒循環"
+  data-notes="米勒循環是常考點：進汽門在下死點後約 70～80° 才關閉（一般奧圖引擎約 30～40°），所以要裝機械增壓器。壓縮比例小 → 不易爆震；膨脹比例大 → 輸出動力較大。課本提到較常裝設於馬自達車型。">
+  <h2>米勒循環：進汽門「晚一點」才關</h2>
+  <div class="grid2">
+    <div class="card"><h3>一般奧圖引擎</h3><p style="font-size:26px">進汽門在下死點後約 <b class="acc">30～40°</b> 關閉</p></div>
+    <div class="card hl"><h3>米勒循環引擎</h3><p style="font-size:26px">進汽門在下死點後約 <b class="acc">70～80°</b> 才關閉</p></div>
+  </div>
+  <ul class="clean" style="margin-top:22px">
+    <li class="frag">部分混合氣被推回進氣歧管 → 須裝<b class="acc">機械增壓器</b>補足進氣</li>
+    <li class="frag">壓縮比例<b class="acc">較小</b> → 較不易爆震</li>
+    <li class="frag">膨脹比例<b class="acc">較大</b> → 引擎輸出動力較大</li>
+  </ul>
+</section>
+
+<section class="slide" data-tag="導學" data-title="導學：四行程與二行程"
+  data-notes="內燃機依工作循環分四行程與二行程。關鍵數字：四行程曲軸轉 2 轉（720°）一次動力；二行程轉 1 轉（360°）一次動力。為下一頁計算鋪路。">
+  <h2>依工作循環分：四行程 vs 二行程</h2>
+  <div class="grid2">
+    <div class="card" style="border-color:var(--acc2)"><div class="em">4️⃣</div><h3 style="color:var(--acc2)">四行程循環引擎</h3><p style="font-size:26px">活塞移動 <span class="kw frag">4</span> 個行程<br>曲軸轉 <span class="kw frag">2</span> 轉（<span class="kw frag">720°</span>）<br>產生 <b>1 次</b>動力</p></div>
+    <div class="card" style="border-color:var(--acc)"><div class="em">2️⃣</div><h3>二行程循環引擎</h3><p style="font-size:26px">活塞移動 <span class="kw frag">2</span> 個行程<br>曲軸轉 <span class="kw frag">1</span> 轉（<span class="kw frag">360°</span>）<br>產生 <b>1 次</b>動力</p></div>
+  </div>
+</section>
+
+<section class="slide" data-tag="導學" data-title="導學：每秒動力次數"
+  data-notes="逐步顯示例題計算過程，強調先把 rpm 換成每秒轉數，再看四行程要除以 2。">
+  <h2>數學應用：每秒產生幾次動力？</h2>
+  <div class="box" style="margin-bottom:22px"><p style="margin:0;font-size:30px">每秒動力次數 ＝（rpm ÷ 60）× 缸數 ÷ <b class="acc">N</b>　<span class="mut small">（四行程 N＝2；二行程 N＝1）</span></p></div>
+  <p style="font-size:28px">例：<b>四缸四行程</b>引擎，<b>1200 rpm</b></p>
+  <ol class="steps">
+    <li class="frag">每秒轉幾轉？ 1200 ÷ 60 ＝ <b class="acc">20 轉／秒</b></li>
+    <li class="frag">四行程每 2 轉，每缸做功 1 次 → 20 ÷ 2 ＝ <b class="acc">每缸 10 次／秒</b></li>
+    <li class="frag">4 個缸 → 10 × 4 ＝ <b class="acc">40 次／秒</b></li>
+  </ol>
+</section>
+
+<section class="slide" data-tag="共學" data-time="8" data-timer="480" data-title="共學：計算練習"
+  data-notes="組內完成學習單「五、動力次數計算」4 題，會的教不會的；說明者負責講解步驟。時間到逐題按下一步揭曉答案。">
+  <h2>小組計算練習（學習單第五大題）</h2>
+  <table class="t">
+    <tr><th style="width:62%">題目</th><th>答案</th></tr>
+    <tr><td style="text-align:left;font-weight:400">(1) 六缸四行程引擎 1200 rpm，每秒幾次動力？</td><td><span class="frag acc">20 × 6 ÷ 2 ＝ 60 次</span></td></tr>
+    <tr><td style="text-align:left;font-weight:400">(2) 二行程雙缸引擎 1500 rpm，每秒幾次動力？</td><td><span class="frag acc">25 × 2 ÷ 1 ＝ 50 次</span></td></tr>
+    <tr><td style="text-align:left;font-weight:400">(3) 四缸二行程引擎 1200 rpm，每秒幾次動力？</td><td><span class="frag acc">20 × 4 ÷ 1 ＝ 80 次</span></td></tr>
+    <tr><td style="text-align:left;font-weight:400">(4) 六缸四行程引擎，曲軸轉一轉產生幾次動力？</td><td><span class="frag acc">6 ÷ 2 ＝ 3 次</span></td></tr>
+  </table>
+  <p class="mut small">🤝 會的教不會的：說明者負責講解，記錄者寫下計算過程。</p>
+</section>
+
+<section class="slide" data-tag="互學" data-time="7" data-timer="420" data-title="互學：Wordwall 循環配對"
+  data-notes="Wordwall 組間競賽：循環名稱 ↔ 燃燒方式 ↔ 適用引擎。可用投影讓各組輪流上台，或各組平板同時作答比分數。">
+  <h2>Wordwall 組間競賽：循環配對</h2>
+  <div class="grid3" style="margin-bottom:24px">
+    <div class="card"><div class="em">🔤</div><h4>循環名稱</h4><p>奧圖、狄塞爾、混合、米勒</p></div>
+    <div class="card"><div class="em">🔥</div><h4>燃燒方式</h4><p>等容、等壓、先等容再等壓</p></div>
+    <div class="card"><div class="em">🚗</div><h4>適用引擎</h4><p>汽油、低速柴油、高速柴油</p></div>
+  </div>
+  <div><a class="btn" data-link="wordwall2">🎮 開始 Wordwall</a></div>
+  <p class="mut" style="margin-top:16px">比正確率與速度，最快全對的組別加分！</p>
+</section>
+
+<section class="slide" data-tag="評量" data-time="5" data-title="總結與評量"
+  data-notes="回顧三個重點，完成 Google 表單隨堂測驗（課本隨堂練習 1-2）。預告第 3 節：往復式活塞引擎的七種分類（拼圖法，各組會拿到任務卡）。">
+  <h2>今天學到什麼？</h2>
+  <div class="grid3" style="margin-bottom:26px">
+    <div class="card"><div class="em">📈</div><h4>P-V 圖</h4><p>水平線等壓、垂直線等容</p></div>
+    <div class="card"><div class="em">🔄</div><h4>四種熱力循環</h4><p>看燃燒那一段分辨</p></div>
+    <div class="card"><div class="em">🧮</div><h4>動力次數</h4><p>四行程 720°、二行程 360° 一次動力</p></div>
+  </div>
+  <div><a class="btn" data-link="form2">✅ Google 表單隨堂測驗</a><a class="btn sec" data-link="notebooklm">🎧 NotebookLM 語音複習</a><a class="btn sec" href="V2_P-V圖會說話.html" target="_blank">🔁 重看 V2</a></div>
+  <p class="mut" style="margin-top:20px">下一節預告：<b class="blue">往復式活塞引擎的七種分類</b>——拼圖法，各組當專家！</p>
+</section>
+</div>
+<script>window.LINKS={};window.LESSON='引擎原理｜第 2 節\u3000內燃機的循環';</script>
+<script src="links.js"></script>
+<script>/* 網頁式簡報框架（共用） */
+(function () {
+  const TAGC = { 自學: '#38c6ff', 共學: '#3ddc84', 互學: '#ffd166', 導學: '#ff8a3d', 評量: '#c79bff', 準備: '#9fb0cf', 議題: '#5ee0d0' };
+  const stage = document.getElementById('stage'), slides = [...stage.querySelectorAll('.slide')], L = window.LINKS || {}, LESSON = window.LESSON || '';
+  let cur = 0;
+  // 連結按鈕：data-link 對應 LINKS 設定；未設定則顯示「連結待設定」
+  document.querySelectorAll('a[data-link]').forEach(a => {
+    const u = L[a.dataset.link]; a.target = '_blank'; a.rel = 'noopener';
+    if (u) a.href = u; else { a.classList.add('off'); a.title = '請在檔案開頭 LINKS 設定網址'; a.innerHTML += '<small style="font-size:14px">（待設定）</small>'; }
+  });
+  // 嵌入動畫：延遲載入
+  slides.forEach((s, i) => {
+    const tag = s.dataset.tag, time = s.dataset.time;
+    const h = document.createElement('div'); h.className = 'shead';
+    h.innerHTML = (tag ? `<span class="chip" style="background:${TAGC[tag] || '#9fb0cf'}">${tag}</span>` : '') + (time ? `<span class="tchip">⏱ ${time} 分鐘</span>` : '') + `<span class="lesson">${LESSON}</span>`;
+    if (!s.classList.contains('nohead')) s.prepend(h);
+    const f = document.createElement('div'); f.className = 'sfoot'; f.innerHTML = `<span>${i + 1} / ${slides.length}</span><span class="prog"><i style="width:${(i + 1) / slides.length * 100}%"></i></span>`; s.append(f);
+    if (s.querySelector('.embed')) s.classList.add('embedslide');
+    if (s.dataset.timer) { s.classList.add('hastimer'); const tm = document.createElement('div'); tm.className = 'timer'; tm.dataset.sec = s.dataset.timer; s.append(tm); setupTimer(tm); }
+  });
+  function setupTimer(el) {
+    let left = +el.dataset.sec, run = false, iv = null;
+    const show = () => { const m = Math.floor(left / 60), s = left % 60; el.innerHTML = `${m}:${String(s).padStart(2, '0')}<small>${run ? '點一下暫停' : left === +el.dataset.sec ? '點一下開始計時' : '點一下繼續・雙擊重設'}</small>`; };
+    el.onclick = e => { e.stopPropagation(); run = !run; el.classList.toggle('run', run); if (run) iv = setInterval(() => { left--; if (left <= 0) { left = 0; clearInterval(iv); run = false; el.classList.remove('run'); el.classList.add('done'); beep(); } show(); }, 1000); else clearInterval(iv); show(); };
+    el.ondblclick = e => { e.stopPropagation(); clearInterval(iv); run = false; left = +el.dataset.sec; el.classList.remove('run', 'done'); show(); };
+    show();
+  }
+  function beep() { try { const a = new (window.AudioContext || window.webkitAudioContext)(); [0, .35, .7].forEach(t => { const o = a.createOscillator(), g = a.createGain(); o.frequency.value = 880; o.connect(g); g.connect(a.destination); g.gain.value = .15; o.start(a.currentTime + t); o.stop(a.currentTime + t + .2); }); } catch (e) { } }
+  // 縮放
+  function fit() { const k = Math.min(innerWidth / 1280, innerHeight / 720); stage.style.transform = `translate(-50%,-50%) scale(${k})`; }
+  addEventListener('resize', fit); fit();
+  // 逐步顯示
+  slides.forEach(s => s.querySelectorAll('.frag').forEach(f => f.classList.add('hid')));
+  function show(i, back) {
+    cur = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => s.classList.toggle('on', k === cur));
+    const s = slides[cur];
+    if (back) s.querySelectorAll('.frag').forEach(f => f.classList.remove('hid'));
+    s.querySelectorAll('iframe[data-src]').forEach(f => { if (!f.src) f.src = f.dataset.src; });
+    document.getElementById('notes').innerHTML = `<b>教師提示（第 ${cur + 1} 頁）</b><br>${s.dataset.notes || '—'}`;
+    history.replaceState(null, '', '#' + (cur + 1));
+    document.querySelectorAll('#ov .it').forEach((it, k) => it.classList.toggle('cur', k === cur));
+  }
+  function next() { const h = slides[cur].querySelector('.frag.hid'); if (h) { h.classList.remove('hid'); return; } if (cur < slides.length - 1) show(cur + 1); }
+  function prev() { const v = [...slides[cur].querySelectorAll('.frag:not(.hid)')]; if (v.length) { v[v.length - 1].classList.add('hid'); return; } if (cur > 0) show(cur - 1, true); }
+  // 控制列
+  const ctrl = document.createElement('div'); ctrl.id = 'ctrl';
+  ctrl.innerHTML = `<a href="index.html" title="回首頁">🏠 首頁</a><button id="bOv" title="全部頁面（O）">☰</button><button id="bN" title="教師提示（N）">📝</button><button id="bF" title="全螢幕（F）">⛶</button><button id="bP">◀</button><button id="bX">▶</button>`;
+  document.body.append(ctrl);
+  const notes = document.createElement('div'); notes.id = 'notes'; document.body.append(notes);
+  const ov = document.createElement('div'); ov.id = 'ov'; ov.innerHTML = `<h2 style="font-size:24px;margin:0 0 14px">${LESSON}｜全部頁面</h2><div class="g">${slides.map((s, i) => `<div class="it" data-i="${i}"><b>${i + 1}．${s.dataset.tag || ''}</b>${s.dataset.title || (s.querySelector('h1,h2') || {}).textContent || ''}</div>`).join('')}</div>`;
+  document.body.append(ov);
+  ov.onclick = e => { const it = e.target.closest('.it'); if (it) show(+it.dataset.i); ov.classList.remove('show'); };
+  const fs = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+  document.getElementById('bP').onclick = prev; document.getElementById('bX').onclick = next; document.getElementById('bF').onclick = fs;
+  document.getElementById('bN').onclick = () => notes.classList.toggle('show'); document.getElementById('bOv').onclick = () => ov.classList.toggle('show');
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === 'f' || e.key === 'F') fs(); else if (e.key === 'n' || e.key === 'N') notes.classList.toggle('show');
+    else if (e.key === 'o' || e.key === 'O' || e.key === 'Escape') ov.classList.toggle('show', e.key !== 'Escape' && !ov.classList.contains('show'));
+    else if (e.key === 'Home') show(0); else if (e.key === 'End') show(slides.length - 1);
+  });
+  // 點畫面右側 2/3 前進、左側 1/3 後退（按鈕、連結、輸入框除外）
+  stage.addEventListener('click', e => { if (e.target.closest('a,button,iframe,.timer,.copy,input,select')) return; (e.clientX < innerWidth / 3 ? prev : next)(); });
+  let tx = null; addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
+  addEventListener('touchend', e => { if (tx == null) return; const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 60) (d < 0 ? next : prev)(); tx = null; });
+  // 複製提示詞
+  document.querySelectorAll('.copy').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.parentElement.querySelector('.ptxt').innerText; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => b.textContent = '✔ 已複製').catch(() => b.textContent = '請手動選取複製'); });
+  // 學生連結 QR（需網路；無網路時只顯示網址）
+  const qr = document.getElementById('qr');
+  if (qr) { const url = location.href.split('#')[0]; const u = document.getElementById('qrurl'); if (u) u.textContent = url;
+    const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    sc.onload = () => { try { new QRCode(qr, { text: url, width: 220, height: 220 }); } catch (e) { } }; sc.onerror = () => qr.style.display = 'none'; document.head.append(sc); }
+  addEventListener('hashchange', () => { const n = parseInt(location.hash.slice(1)); if (n && n - 1 !== cur) show(n - 1); });
+  show(Math.max(0, (parseInt(location.hash.slice(1)) || 1) - 1));
+})();
+</script></body></html>

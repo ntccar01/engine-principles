@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>教師大螢幕｜互學挑戰排行榜</title>
+<style>
+:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:14px 16px 40px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:24px;margin:0}.tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px}
+.who{margin-left:auto;color:var(--mut);font-size:14px}
+button,select,input{font-family:inherit;font-size:16px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:8px 12px}
+button{cursor:pointer}button.pri{background:var(--acc);color:#1a1200;border:none;font-weight:700}
+button.go{background:var(--ok);color:#002010;border:none;font-weight:700}button.stop{background:var(--bad);color:#fff;border:none}
+a.home{color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;text-decoration:none;font-weight:700}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:12px 0}
+.bar label{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:6px}
+.live{display:flex;gap:8px;align-items:center;margin-left:auto}.lstate{font-weight:700;padding:6px 10px;border-radius:8px;background:#0a1120}
+.stat{display:flex;gap:12px;margin:6px 0 12px;flex-wrap:wrap}.stat div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:16px;color:var(--mut)}.stat b{font-size:28px;color:var(--acc);margin-left:6px}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+th{color:var(--mut);font-weight:400;font-size:16px;text-align:left;padding:0 14px}
+td{background:var(--panel);padding:14px;font-size:26px}td:first-child{border-radius:12px 0 0 12px;width:90px;text-align:center;font-weight:700}td:last-child{border-radius:0 12px 12px 0}
+tr.r1 td{background:#3a2f10}tr.r2 td{background:#26324a}tr.r3 td{background:#33261a}
+tr.new td{animation:flash 2s}@keyframes flash{0%{background:#1f6b45}100%{}}
+.pct{display:inline-block;height:12px;background:var(--acc2);border-radius:6px;vertical-align:middle;margin-left:10px}
+.msg{color:var(--mut);text-align:center;padding:40px;font-size:20px}
+.err{color:var(--bad)}
+.big td{font-size:30px}
+</style></head><body><div class="wrap">
+<header><a class="home" href="index.html">🏠 首頁</a><span class="tag">教師大螢幕</span><h1>互學挑戰排行榜</h1><span class="who" id="who"></span><span id="lgbox"><input id="em" type="email" placeholder="教師 Email" value="lin1102@gm.ntc.edu.tw" style="width:230px"> <input id="pw" type="password" placeholder="密碼" style="width:130px"> <button id="login" class="pri">登入</button> <button id="forgot" title="寄送重設密碼信">忘記密碼</button></span><button id="logout" style="display:none">登出</button></header>
+<div class="bar">
+  <label>節次 <select id="lesson"></select></label>
+  <label>班級 <input id="cls" placeholder="全部" style="width:110px"></label>
+  <label>日期 <select id="day"><option value="today">今天</option><option value="all">全部</option></select></label>
+  <label>排名依據 <select id="mode"><option value="first">首次挑戰</option><option value="best">最佳成績</option></select></label>
+  <button id="csv">⬇ 匯出 CSV</button>
+  <div class="live"><span class="lstate" id="lstate">全班挑戰：—</span><button id="bReady">① 準備</button><button class="go" id="bGo">② 開始！</button><button class="stop" id="bOff">結束</button></div>
+</div>
+<div class="stat"><div>完成組數<b id="nGrp">0</b></div><div>平均正確率<b id="avg">—</b></div><div>上傳筆數<b id="nRec">0</b></div></div>
+<div id="board"><p class="msg">請先用教師帳號登入。</p></div>
+</div>
+<script src="firebase-config.js"></script>
+<script type="module">
+const B = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const [A, U, F] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-firestore.js')]);
+const LESSONS = [["Ch3-V1", "第1節｜汽油從哪裡來？石油與汽油的身世"]];
+const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+const app = A.initializeApp(window.FIREBASE_CONFIG), auth = U.getAuth(app), db = F.getFirestore(app);
+const qs = new URLSearchParams(location.search);
+$('#lesson').innerHTML = LESSONS.map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join('');
+if (qs.get('lesson')) $('#lesson').value = qs.get('lesson');
+try { $('#cls').value = qs.get('cls') || localStorage.getItem('t_cls') || ''; } catch (e) { }
+let rows = [], unsub = null, unLive = null, seen = new Set(), firstLoad = true;
+$('#login').onclick = () => U.signInWithEmailAndPassword(auth, $('#em').value.trim(), $('#pw').value).catch(e => alert('登入失敗：' + (e.code || e.message)));
+$('#pw').onkeydown = e => { if (e.key === 'Enter') $('#login').click(); };
+$('#forgot').onclick = () => U.sendPasswordResetEmail(auth, $('#em').value.trim()).then(() => alert('已寄出重設密碼信，請到信箱收信。')).catch(e => alert('寄送失敗：' + (e.code || e.message)));
+$('#logout').onclick = () => U.signOut(auth);
+U.onAuthStateChanged(auth, u => {
+  const ok = u && !u.isAnonymous;
+  $('#who').textContent = ok ? u.email : ''; $('#lgbox').style.display = ok ? 'none' : ''; $('#logout').style.display = ok ? '' : 'none';
+  if (ok) listen(); else { if (unsub) unsub(); if (unLive) unLive(); $('#board').innerHTML = '<p class="msg">請先用教師帳號登入。</p>'; }
+});
+function listen() {
+  if (unsub) unsub(); if (unLive) unLive(); seen = new Set(); firstLoad = true;
+  const L = $('#lesson').value;
+  unsub = F.onSnapshot(F.query(F.collection(db, 'engine_scores'), F.where('lesson', '==', L)), s => {
+    rows = s.docs.map(d => Object.assign({ id: d.id }, d.data(), { t: d.data().ts ? d.data().ts.toMillis() : Date.now() })); draw();
+  }, e => $('#board').innerHTML = `<p class="msg err">無法讀取成績（${esc(e.code || e.message)}）。請確認登入的是 lin1102@gm.ntc.edu.tw。</p>`);
+  unLive = F.onSnapshot(F.doc(db, 'engine_live', L), s => { const d = s.exists() ? s.data() : null;
+    $('#lstate').textContent = '全班挑戰：' + (!d ? '未啟用' : { ready: '🔔 準備中（學生等待）', go: '🚀 進行中', off: '已結束' }[d.state] || d.state) + (d && d.cls ? `（${d.cls}）` : ''); }, () => { });
+}
+['#lesson'].forEach(k => $(k).onchange = () => auth.currentUser && !auth.currentUser.isAnonymous && listen());
+['#cls', '#day', '#mode'].forEach(k => $(k).oninput = $(k).onchange = () => { try { localStorage.setItem('t_cls', $('#cls').value.trim()); } catch (e) { } draw(); });
+function filtered() {
+  const c = $('#cls').value.trim(), today = new Date(); today.setHours(0, 0, 0, 0);
+  return rows.filter(r => (!c || r.cls === c) && ($('#day').value === 'all' || r.t >= today.getTime())).sort((a, b) => a.t - b.t);
+}
+function draw() {
+  const list = filtered(), by = {};
+  list.forEach(r => { const k = r.cls + '｜' + r.grp; (by[k] = by[k] || []).push(r); });
+  const best = $('#mode').value === 'best';
+  const rank = Object.entries(by).map(([k, a]) => { const pick = best ? a.slice().sort((x, y) => y.score - x.score || x.sec - y.sec)[0] : a[0]; return Object.assign({ n: a.length }, pick); })
+    .sort((x, y) => y.pct - x.pct || x.sec - y.sec);
+  $('#nGrp').textContent = rank.length; $('#nRec').textContent = list.length;
+  $('#avg').textContent = rank.length ? Math.round(rank.reduce((s, r) => s + r.pct, 0) / rank.length) + '%' : '—';
+  if (!rank.length) { $('#board').innerHTML = '<p class="msg">還沒有組別完成挑戰…</p>'; firstLoad = false; return; }
+  const medal = i => ['🥇', '🥈', '🥉'][i] || (i + 1);
+  $('#board').innerHTML = `<table class="${rank.length <= 6 ? 'big' : ''}"><tr><th>名次</th><th>組別</th><th>得分</th><th>正確率</th><th>用時</th><th>挑戰次數</th></tr>${rank.map((r, i) =>
+    `<tr class="r${i + 1} ${!firstLoad && !seen.has(r.id) ? 'new' : ''}"><td>${medal(i)}</td><td>${esc(r.cls)} 第 <b>${r.grp}</b> 組</td><td><b>${r.score}</b> / ${r.total}</td><td>${r.pct}%<span class="pct" style="width:${r.pct * 1.2}px"></span></td><td>${fmt(r.sec)}</td><td>${r.n}</td></tr>`).join('')}</table>`;
+  rank.forEach(r => seen.add(r.id)); firstLoad = false;
+}
+async function setLive(state) {
+  if (!auth.currentUser || auth.currentUser.isAnonymous) return alert('請先登入教師帳號');
+  const L = $('#lesson').value;
+  await F.setDoc(F.doc(db, 'engine_live', L), { state, cls: $('#cls').value.trim(), goAt: state === 'go' ? Date.now() : 0, at: F.serverTimestamp() }).catch(e => alert('設定失敗：' + (e.code || e.message)));
+}
+$('#bReady').onclick = () => setLive('ready'); $('#bGo').onclick = () => setLive('go'); $('#bOff').onclick = () => setLive('off');
+$('#csv').onclick = () => {
+  const list = filtered(), head = ['時間', '節次', '班級', '組別', '得分', '滿分', '正確率', '用時(秒)', '各關明細'];
+  const lines = [head].concat(list.map(r => [new Date(r.t).toLocaleString('zh-TW'), r.lesson, r.cls, r.grp, r.score, r.total, r.pct, r.sec, (r.detail || []).map(d => `${d.round}:${d.got}/${d.of}`).join('；')]));
+  const csv = '﻿' + lines.map(l => l.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `互學挑戰_${$('#lesson').value}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+};
+</script></body></html>
