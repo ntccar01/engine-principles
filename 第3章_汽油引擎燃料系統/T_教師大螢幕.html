@@ -50,7 +50,7 @@ td.op{width:60px;text-align:center}td.op button{padding:4px 8px;font-size:15px;b
 <script type="module">
 const B = 'https://www.gstatic.com/firebasejs/10.12.2/';
 const [A, U, F] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-firestore.js')]);
-const LESSONS = [["Ch3-V1", "第1節｜汽油從哪裡來？石油與汽油的身世"], ["Ch3-V2", "第2節｜92、95、98 差在哪？辛烷值與油品性質"], ["Ch3-V3", "第3節｜混合比與燃燒：冷車為什麼要比較「濃」？"], ["Ch3-V4", "第4節｜化油器：沒有電腦的年代，怎麼自動調混合比？"]];
+const LESSONS = [["Ch3-V1", "第1節｜汽油從哪裡來？石油與汽油的身世"], ["Ch3-V2", "第2節｜92、95、98 差在哪？辛烷值與油品性質"], ["Ch3-V3", "第3節｜混合比與燃燒：冷車為什麼要比較「濃」？"], ["Ch3-V4", "第4節｜化油器：沒有電腦的年代，怎麼自動調混合比？"], ["Ch3-V5", "第5節｜汽油噴射系統（一）：電腦接手，噴油嘴放哪裡？"]];
 const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 const app = A.initializeApp(window.FIREBASE_CONFIG), auth = U.getAuth(app), db = F.getFirestore(app);
