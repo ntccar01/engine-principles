@@ -9,3 +9,7 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: "864195851107",
   appId: "1:864195851107:web:de3fd1a48896528b145956"
 };
+
+/* ===== 班級選項（學生端下拉選單、教師大螢幕共用）=====
+   可自行增減；學生也可選「✏️ 手動輸入班級」。 */
+window.CLASS_LIST = ['汽車一甲', '汽車一乙'];

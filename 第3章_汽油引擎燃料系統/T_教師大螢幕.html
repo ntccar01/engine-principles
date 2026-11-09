@@ -25,29 +25,37 @@ tr.new td{animation:flash 2s}@keyframes flash{0%{background:#1f6b45}100%{}}
 .msg{color:var(--mut);text-align:center;padding:40px;font-size:20px}
 .err{color:var(--bad)}
 .big td{font-size:30px}
-@media(max-width:760px){td,.big td{font-size:17px;padding:10px 8px}td:first-child{width:44px}th{font-size:13px;padding:0 8px}th:nth-child(6),td:nth-child(6){display:none}.pct{display:none}.live{margin-left:0}.stat b{font-size:22px}}
+td.op{width:60px;text-align:center}td.op button{padding:4px 8px;font-size:15px;background:transparent;border:1px solid #4a2a2a;color:#ff9a9a}
+#ana{margin-top:18px}#ana h3{font-size:18px;color:var(--mut);margin:0 0 8px}.arow{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:16px}.arow span:first-child{width:260px}.abar{height:14px;border-radius:7px;background:var(--acc2)}.arow.low .abar{background:var(--bad)}
+.stat input{font-size:16px}
+@media(max-width:760px){td,.big td{font-size:17px;padding:10px 8px}td:first-child{width:44px}th{font-size:13px;padding:0 8px}th:nth-child(6),td:nth-child(6){display:none}#ana .arow span:first-child{width:150px}.pct{display:none}.live{margin-left:0}.stat b{font-size:22px}}
 </style></head><body><div class="wrap">
 <header><a class="home" href="index.html">🏠 首頁</a><span class="tag">教師大螢幕</span><h1>互學挑戰排行榜</h1><span class="who" id="who"></span><span id="lgbox"><input id="em" type="email" placeholder="教師 Email" value="lin1102@gm.ntc.edu.tw" style="width:230px"> <input id="pw" type="password" placeholder="密碼" style="width:130px"> <button id="login" class="pri">登入</button> <button id="forgot" title="寄送重設密碼信">忘記密碼</button></span><button id="logout" style="display:none">登出</button></header>
 <div class="bar">
   <label>節次 <select id="lesson"></select></label>
-  <label>班級 <input id="cls" placeholder="全部" style="width:110px"></label>
-  <label>日期 <select id="day"><option value="today">今天</option><option value="all">全部</option></select></label>
+  <label>班級 <input id="cls" list="clsList" placeholder="全部" style="width:130px"><datalist id="clsList"></datalist></label>
+  <label>範圍 <select id="day"><option value="today">今天</option><option value="round">本輪</option><option value="all">全部</option></select></label>
   <label>排名依據 <select id="mode"><option value="first">首次挑戰</option><option value="best">最佳成績</option></select></label>
-  <button id="csv">⬇ 匯出 CSV</button>
+  <button id="round" title="從現在開始重新計分，舊成績保留但不顯示">🔄 新一輪</button>
+  <button id="csv" title="下載目前畫面範圍的成績">⬇ 匯出 CSV</button>
+  <button id="csvAll" title="下載所有節次、所有班級的成績">⬇ 全部節次</button>
+  <button id="clear" class="stop" title="先下載備份，再刪除目前範圍的成績">🗑 下載並清空</button>
   <div class="live"><span class="lstate" id="lstate">全班挑戰：—</span><button id="bReady">① 準備</button><button class="go" id="bGo">② 開始！</button><button class="stop" id="bOff">結束</button></div>
 </div>
-<div class="stat"><div>完成組數<b id="nGrp">0</b></div><div>平均正確率<b id="avg">—</b></div><div>上傳筆數<b id="nRec">0</b></div></div>
+<div class="stat"><div>完成組數<b id="nGrp">0</b> / <input id="ng" type="number" min="1" max="12" value="11" style="width:56px;padding:2px 6px" title="班級組數"></div><div>尚未完成<b id="miss" style="font-size:20px">—</b></div><div>平均正確率<b id="avg">—</b></div><div>上傳筆數<b id="nRec">0</b></div></div>
 <div id="board"><p class="msg">請先用教師帳號登入。</p></div>
+<div id="ana"></div>
 </div>
 <script src="firebase-config.js"></script>
 <script type="module">
 const B = 'https://www.gstatic.com/firebasejs/10.12.2/';
 const [A, U, F] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-firestore.js')]);
-const LESSONS = [["Ch3-V1", "第1節｜汽油從哪裡來？石油與汽油的身世"], ["Ch3-V2", "第2節｜92、95、98 差在哪？辛烷值與油品性質"], ["Ch3-V3", "第3節｜混合比與燃燒：冷車為什麼要比較「濃」？"]];
+const LESSONS = [["Ch3-V1", "第1節｜汽油從哪裡來？石油與汽油的身世"], ["Ch3-V2", "第2節｜92、95、98 差在哪？辛烷值與油品性質"], ["Ch3-V3", "第3節｜混合比與燃燒：冷車為什麼要比較「濃」？"], ["Ch3-V4", "第4節｜化油器：沒有電腦的年代，怎麼自動調混合比？"]];
 const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 const app = A.initializeApp(window.FIREBASE_CONFIG), auth = U.getAuth(app), db = F.getFirestore(app);
 const qs = new URLSearchParams(location.search);
+$('#clsList').innerHTML = (window.CLASS_LIST || []).map(c => `<option value="${esc(c)}">`).join('');
 $('#lesson').innerHTML = LESSONS.map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join('');
 if (qs.get('lesson')) $('#lesson').value = qs.get('lesson');
 try { $('#cls').value = qs.get('cls') || localStorage.getItem('t_cls') || ''; } catch (e) { }
@@ -59,23 +67,28 @@ $('#logout').onclick = () => U.signOut(auth);
 U.onAuthStateChanged(auth, u => {
   const ok = u && !u.isAnonymous;
   $('#who').textContent = ok ? u.email : ''; $('#lgbox').style.display = ok ? 'none' : ''; $('#logout').style.display = ok ? '' : 'none';
-  if (ok) listen(); else { if (unsub) unsub(); if (unLive) unLive(); $('#board').innerHTML = '<p class="msg">請先用教師帳號登入。</p>'; }
+  if (ok) listen(); else { if (unsub) unsub(); if (unLive) unLive(); setBoard('<p class="msg">請先用教師帳號登入。</p>'); }
 });
 function listen() {
   if (unsub) unsub(); if (unLive) unLive(); seen = new Set(); firstLoad = true;
   const L = $('#lesson').value;
   unsub = F.onSnapshot(F.query(F.collection(db, 'engine_scores'), F.where('lesson', '==', L)), s => {
     rows = s.docs.map(d => Object.assign({ id: d.id }, d.data(), { t: d.data().ts ? d.data().ts.toMillis() : Date.now() })); draw();
-  }, e => $('#board').innerHTML = `<p class="msg err">無法讀取成績（${esc(e.code || e.message)}）。請確認登入的是 lin1102@gm.ntc.edu.tw。</p>`);
+  }, e => setBoard(`<p class="msg err">無法讀取成績（${esc(e.code || e.message)}）。請確認登入的是 lin1102@gm.ntc.edu.tw。</p>`));
   unLive = F.onSnapshot(F.doc(db, 'engine_live', L), s => { const d = s.exists() ? s.data() : null;
     $('#lstate').textContent = '全班挑戰：' + (!d ? '未啟用' : { ready: '🔔 準備中（學生等待）', go: '🚀 進行中', off: '已結束' }[d.state] || d.state) + (d && d.cls ? `（${d.cls}）` : ''); }, () => { });
 }
 ['#lesson'].forEach(k => $(k).onchange = () => auth.currentUser && !auth.currentUser.isAnonymous && listen());
 ['#cls', '#day', '#mode'].forEach(k => $(k).oninput = $(k).onchange = () => { try { localStorage.setItem('t_cls', $('#cls').value.trim()); } catch (e) { } draw(); });
+const rkey = () => 'round_' + $('#lesson').value;
+const roundStart = () => { try { return +localStorage.getItem(rkey()) || 0; } catch (e) { return 0; } };
 function filtered() {
   const c = $('#cls').value.trim(), today = new Date(); today.setHours(0, 0, 0, 0);
-  return rows.filter(r => (!c || r.cls === c) && ($('#day').value === 'all' || r.t >= today.getTime())).sort((a, b) => a.t - b.t);
+  const d = $('#day').value, from = d === 'all' ? 0 : d === 'round' ? roundStart() : today.getTime();
+  return rows.filter(r => (!c || r.cls === c) && r.t >= from).sort((a, b) => a.t - b.t);
 }
+let lastHtml = '';
+const setBoard = h => { if (h !== lastHtml) { $('#board').innerHTML = h; lastHtml = h; } };
 function draw() {
   const list = filtered(), by = {};
   list.forEach(r => { const k = r.cls + '｜' + r.grp; (by[k] = by[k] || []).push(r); });
@@ -83,23 +96,62 @@ function draw() {
   const rank = Object.entries(by).map(([k, a]) => { const pick = best ? a.slice().sort((x, y) => y.score - x.score || x.sec - y.sec)[0] : a[0]; return Object.assign({ n: a.length }, pick); })
     .sort((x, y) => y.pct - x.pct || x.sec - y.sec);
   $('#nGrp').textContent = rank.length; $('#nRec').textContent = list.length;
+  const c = $('#cls').value.trim(), done = new Set(rank.filter(r => !c || r.cls === c).map(r => r.grp)), ng = +$('#ng').value || 11;
+  const miss = Array.from({ length: ng }, (_, i) => i + 1).filter(g => !done.has(g));
+  $('#miss').textContent = c || new Set(rank.map(r => r.cls)).size <= 1 ? (miss.length ? miss.join('、') + ' 組' : '全部完成 🎉') : '（請先填班級）';
   $('#avg').textContent = rank.length ? Math.round(rank.reduce((s, r) => s + r.pct, 0) / rank.length) + '%' : '—';
-  if (!rank.length) { $('#board').innerHTML = '<p class="msg">還沒有組別完成挑戰…</p>'; firstLoad = false; return; }
+  if (!rank.length) { setBoard('<p class="msg">還沒有組別完成挑戰…</p>'); $('#ana').innerHTML = ''; firstLoad = false; return; }
   const medal = i => ['🥇', '🥈', '🥉'][i] || (i + 1);
-  $('#board').innerHTML = `<table class="${rank.length <= 6 ? 'big' : ''}"><tr><th>名次</th><th>組別</th><th>得分</th><th>正確率</th><th>用時</th><th>挑戰次數</th></tr>${rank.map((r, i) =>
-    `<tr class="r${i + 1} ${!firstLoad && !seen.has(r.id) ? 'new' : ''}"><td>${medal(i)}</td><td>${esc(r.cls)} 第 <b>${r.grp}</b> 組</td><td><b>${r.score}</b> / ${r.total}</td><td>${r.pct}%<span class="pct" style="width:${r.pct * 1.2}px"></span></td><td>${fmt(r.sec)}</td><td>${r.n}</td></tr>`).join('')}</table>`;
+  setBoard(`<table class="${rank.length <= 6 ? 'big' : ''}"><tr><th>名次</th><th>組別</th><th>得分</th><th>正確率</th><th>用時</th><th>挑戰次數</th><th></th></tr>${rank.map((r, i) =>
+    `<tr class="r${i + 1} ${!firstLoad && !seen.has(r.id) ? 'new' : ''}"><td>${medal(i)}</td><td>${esc(r.cls)} 第 <b>${r.grp}</b> 組</td><td><b>${r.score}</b> / ${r.total}</td><td>${r.pct}%<span class="pct" style="width:${r.pct * 1.2}px"></span></td><td>${fmt(r.sec)}</td><td>${r.n}</td><td class="op"><button data-del="${esc(r.cls + '｜' + r.grp)}" title="刪除這一組的成績">🗑</button></td></tr>`).join('')}</table>`);
+  drawAna(rank);
   rank.forEach(r => seen.add(r.id)); firstLoad = false;
 }
+function drawAna(rank) {
+  const agg = {}; rank.forEach(r => (r.detail || []).forEach(d => { const a = agg[d.round] = agg[d.round] || { got: 0, of: 0 }; a.got += d.got; a.of += d.of; }));
+  const items = Object.entries(agg).map(([k, a]) => [k, Math.round(a.got / a.of * 100)]).sort((x, y) => x[1] - y[1]);
+  $('#ana').innerHTML = items.length ? `<h3>📊 各關答對率（${$('#mode').value === 'best' ? '最佳' : '首次'}成績；紅色＝全班較弱，建議回頭講解）</h3>` + items.map(([k, p]) =>
+    `<div class="arow ${p < 70 ? 'low' : ''}"><span>${esc(k)}</span><span class="abar" style="width:${p * 4}px"></span><b>${p}%</b></div>`).join('') : '';
+}
+function exportCSV(list, tag) {
+  const head = ['時間', '節次', '班級', '組別', '得分', '滿分', '正確率', '用時(秒)', '各關明細'];
+  const lines = [head].concat(list.map(r => [new Date(r.t).toLocaleString('zh-TW'), r.lesson, r.cls, r.grp, r.score, r.total, r.pct, r.sec, (r.detail || []).map(d => `${d.round}:${d.got}/${d.of}`).join('；')]));
+  const csv = '\ufeff' + lines.map(l => l.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `互學挑戰_${tag}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+}
+async function delRecords(list) {
+  for (let i = 0; i < list.length; i += 400) { const b = F.writeBatch(db); list.slice(i, i + 400).forEach(r => b.delete(F.doc(db, 'engine_scores', r.id))); await b.commit(); }
+}
+const scope = () => `節次「${$('#lesson').selectedOptions[0].text}」、班級「${$('#cls').value.trim() || '全部'}」、範圍「${$('#day').selectedOptions[0].text}」`;
+$('#board').onclick = async e => {
+  const b = e.target.closest('[data-del]'); if (!b) return; const key = b.dataset.del, [cls, g] = key.split('｜');
+  const list = filtered().filter(r => r.cls + '｜' + r.grp === key);
+  if (!confirm(`刪除「${cls} 第 ${g} 組」在目前範圍內的 ${list.length} 筆成績？\n刪除後無法復原。`)) return;
+  try { await delRecords(list); } catch (err) { alert('刪除失敗：' + (err.code || err.message)); }
+};
+$('#round').onclick = () => { if (!confirm('開始新一輪計分？\n排行榜會從現在起重新計算，舊成績仍保留在資料庫（範圍選「全部」可看到）。')) return;
+  try { localStorage.setItem(rkey(), Date.now()); } catch (e) { } $('#day').value = 'round'; seen = new Set(); firstLoad = true; draw(); };
+$('#clear').onclick = async () => {
+  const list = filtered(); if (!list.length) return alert('目前範圍沒有成績可以清空。');
+  exportCSV(list, $('#lesson').value + '_清空前備份');
+  setTimeout(async () => {
+    const ans = prompt(`已下載備份 CSV（${list.length} 筆）。\n\n即將永久刪除：${scope()}\n\n確定要清空，請輸入「清空」兩個字：`);
+    if (ans !== '清空') return alert('已取消，資料未刪除。');
+    try { await delRecords(list); alert(`已刪除 ${list.length} 筆成績。`); } catch (err) { alert('刪除失敗：' + (err.code || err.message)); }
+  }, 600);
+};
+$('#csvAll').onclick = async () => {
+  try { const s = await F.getDocs(F.collection(db, 'engine_scores'));
+    const all = s.docs.map(d => Object.assign({ id: d.id }, d.data(), { t: d.data().ts ? d.data().ts.toMillis() : 0 })).sort((a, b) => (a.lesson > b.lesson) - (a.lesson < b.lesson) || a.t - b.t);
+    if (!all.length) return alert('目前沒有任何成績。'); exportCSV(all, '全部節次');
+  } catch (err) { alert('下載失敗：' + (err.code || err.message)); }
+};
+$('#ng').oninput = () => draw();
 async function setLive(state) {
   if (!auth.currentUser || auth.currentUser.isAnonymous) return alert('請先登入教師帳號');
   const L = $('#lesson').value;
   await F.setDoc(F.doc(db, 'engine_live', L), { state, cls: $('#cls').value.trim(), goAt: state === 'go' ? Date.now() : 0, at: F.serverTimestamp() }).catch(e => alert('設定失敗：' + (e.code || e.message)));
 }
 $('#bReady').onclick = () => setLive('ready'); $('#bGo').onclick = () => setLive('go'); $('#bOff').onclick = () => setLive('off');
-$('#csv').onclick = () => {
-  const list = filtered(), head = ['時間', '節次', '班級', '組別', '得分', '滿分', '正確率', '用時(秒)', '各關明細'];
-  const lines = [head].concat(list.map(r => [new Date(r.t).toLocaleString('zh-TW'), r.lesson, r.cls, r.grp, r.score, r.total, r.pct, r.sec, (r.detail || []).map(d => `${d.round}:${d.got}/${d.of}`).join('；')]));
-  const csv = '﻿' + lines.map(l => l.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `互學挑戰_${$('#lesson').value}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
-};
+$('#csv').onclick = () => exportCSV(filtered(), $('#lesson').value);
 </script></body></html>

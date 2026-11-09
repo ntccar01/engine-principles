@@ -429,6 +429,8 @@ function Activity(root, cfg) {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
+  const CLS = (window.CLASS_LIST && window.CLASS_LIST.length) ? window.CLASS_LIST : ['汽車一甲', '汽車一乙'];
+  const curCls = () => { const sel = body.querySelector('#aclsSel'); if (!sel) return ''; return sel.value === '__manual' ? body.querySelector('#acls').value.trim() : sel.value; };
   const COLORS = ['#38c6ff', '#ffd166', '#3ddc84', '#ff8a3d', '#c79bff', '#5ee0d0', '#ff6b9a', '#a3e635'];
   const R = cfg.rounds, total = R.reduce((a, r) => a + (r.type === 'choice' ? r.qs.length : r.type === 'match' ? r.pairs.length : r.items.length), 0);
   let who = { cls: store.get('act_cls'), grp: store.get('act_grp') }, ri = 0, got = 0, t0 = 0, tick = null, detail = [];
@@ -441,12 +443,16 @@ function Activity(root, cfg) {
   /* ---- 開始畫面 ---- */
   function start() {
     body.innerHTML = `<div class="astart"><p>共 <b>${R.length}</b> 關、<b>${total}</b> 分。<br>每關「第一次檢查」就答對才得分；答錯的要改對才能過關。<br>小組 3 人輪流操作平板，答案要<b>先討論、取得共識</b>再按！</p>
-      <div class="arow"><label>班級 <input id="acls" maxlength="20" placeholder="例：汽一甲" value="${esc(who.cls)}"></label>
+      <div class="arow"><label>班級 <select id="aclsSel">${CLS.map(c => `<option ${c === who.cls ? 'selected' : ''}>${esc(c)}</option>`).join('')}<option value="__manual" ${who.cls && !CLS.includes(who.cls) ? 'selected' : ''}>✏️ 手動輸入班級</option></select>
+        <input id="acls" maxlength="20" placeholder="輸入班級名稱" value="${CLS.includes(who.cls) ? '' : esc(who.cls)}" style="display:none"></label>
       <label>組別 <select id="agrp">${Array.from({ length: 12 }, (_, i) => `<option ${String(i + 1) === who.grp ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label></div>
       <ol class="alist">${R.map(r => `<li>${esc(r.title)} <small>${{ classify: '分類', match: '配對', order: '排序', choice: '情境判斷' }[r.type]}</small></li>`).join('')}</ol>
       <p class="alive" id="alive"></p><button class="apri" id="ago">開始挑戰 ▶</button></div>`;
+    const sel = body.querySelector('#aclsSel'), man = body.querySelector('#acls');
+    const tog = () => { man.style.display = sel.value === '__manual' ? '' : 'none'; if (sel.value === '__manual') man.focus(); if (live) onLive(live); };
+    sel.onchange = tog; man.oninput = () => { if (live) onLive(live); }; man.style.display = sel.value === '__manual' ? '' : 'none';
     body.querySelector('#ago').onclick = () => {
-      who.cls = body.querySelector('#acls').value.trim() || '未填班級'; who.grp = body.querySelector('#agrp').value;
+      who.cls = curCls() || '未填班級'; who.grp = body.querySelector('#agrp').value;
       store.set('act_cls', who.cls); store.set('act_grp', who.grp);
       ri = 0; got = 0; detail = []; t0 = Date.now(); clearInterval(tick); tick = setInterval(setInfo, 1000); round();
     };
@@ -591,7 +597,7 @@ function Activity(root, cfg) {
   let live = null;
   function onLive(d) {
     live = d; const el = body.querySelector('#alive'); if (!el) return;
-    const mine = d && (!d.cls || d.cls === (body.querySelector('#acls').value.trim() || who.cls));
+    const mine = d && (!d.cls || d.cls === (curCls() || who.cls));
     if (mine && d.state === 'ready') { el.className = 'alive on'; el.textContent = '🔔 老師準備開始全班挑戰！填好班級、組別後等待，老師按開始會自動進入。'; }
     else if (mine && d.state === 'go' && Date.now() - (d.goAt || 0) < 600000) { el.className = 'alive go'; el.textContent = '🚀 全班挑戰開始！'; body.querySelector('#ago').click(); }
     else { el.className = 'alive'; el.textContent = ''; }
