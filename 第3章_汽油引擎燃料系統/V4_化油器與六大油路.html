@@ -675,10 +675,69 @@ function gauge(ctx, x, y, v, label) {
   const a = Math.PI + clamp(v, 0, 1) * Math.PI; ctx.strokeStyle = C.bad; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y + 10); ctx.lineTo(x + 44 * Math.cos(a), y + 10 + 44 * Math.sin(a)); ctx.stroke();
   H.text(ctx, label, x, y + 36, { size: 14, align: 'center', color: C.mut }); ctx.restore();
 }
+function along(pts, k) {
+  const seg = []; let tot = 0; for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); seg.push(d); tot += d; }
+  let s = k * tot; for (let i = 0; i < seg.length; i++) { if (s <= seg[i]) { const r = s / seg[i]; return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * r, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * r]; } s -= seg[i]; }
+  return pts[pts.length - 1];
+}
+/* 膜片式（機械式）汽油泵：凸輪 → 搖臂 → 拉桿 → 膜片；th＝凸輪角度（弧度），full＝浮筒室已滿 */
+function fuelPump(ctx, th, full, t) {
+  const cx = 230, e = 26, R = 45, Px = cx + 110, Py = 350, Cx = cx + 220, Cy = Py + R;
+  const innerY = Py + e * Math.cos(th), sinPhi = e * Math.cos(th) / 110;             /* 凸輪頂起外端 → 內端下壓（拉膜片） */
+  const vel = -Math.sin(th);                                                          /* >0：內端往下（膜片下拉） */
+  const rodBot = full ? Py + e : innerY, yc = rodBot - 130;      /* 調節時期：膜片停在下方 */
+  const ph = full ? 2 : vel > 0 ? 0 : 1;
+  /* 進、出油管 */
+  ctx.fillStyle = '#2b3850'; ctx.fillRect(40, 44, 130, 22); ctx.fillRect(130, 44, 40, 50); ctx.fillRect(290, 44, 40, 50); ctx.fillRect(290, 44, 140, 22);
+  H.text(ctx, '← 來自油箱', 40, 84, { size: 14, color: C.mut }); H.text(ctx, '往化油器 →', 430, 84, { size: 14, align: 'right', color: C.mut });
+  /* 泵室 */
+  H.box(ctx, cx - 150, 90, 300, 112, { fill: '#1d2c4a', stroke: '#5c6f8a', r: 6 });
+  ctx.fillStyle = 'rgba(255,209,102,.38)'; ctx.beginPath(); ctx.moveTo(cx - 148, 92); ctx.lineTo(cx + 148, 92); ctx.lineTo(cx + 148, 200); ctx.quadraticCurveTo(cx, yc + (yc - 200) * .6, cx - 148, 200); ctx.closePath(); ctx.fill();
+  H.text(ctx, '泵室（汽油）', cx, 150, { size: 15, align: 'center', color: '#ffe3a3' });
+  /* 單向閥：進油閥往泵室內開、出油閥往外開 */
+  const inOpen = ph === 0 ? Math.min(1, Math.abs(vel) * 2) : 0, outOpen = ph === 1 ? Math.min(1, Math.abs(vel) * 2) : 0;
+  const flap = (hx, ang, col) => { ctx.save(); ctx.translate(hx, 92); ctx.rotate(ang); ctx.fillStyle = col; ctx.fillRect(0, -3, 40, 6); ctx.restore(); ctx.fillStyle = '#c3d1e4'; ctx.beginPath(); ctx.arc(hx, 92, 4, 0, 7); ctx.fill(); };
+  flap(130, inOpen * .75, inOpen ? C.ok : '#8ea3bf'); flap(290, -outOpen * .75, outOpen ? C.ok : '#8ea3bf');
+  H.text(ctx, '進油閥', 176, 106, { size: 13, bold: true, color: inOpen ? C.ok : C.mut }); H.text(ctx, '出油閥', 284, 106, { size: 13, bold: true, align: 'right', color: outOpen ? C.ok : C.mut });
+  H.text(ctx, '進油閥', 730, 285, { size: 18, bold: true, align: 'right', color: C.mut }); H.text(ctx, inOpen ? '開' : '關', 742, 285, { size: 18, bold: true, color: inOpen ? C.ok : C.bad });
+  H.text(ctx, '出油閥', 830, 285, { size: 18, bold: true, align: 'right', color: C.mut }); H.text(ctx, outOpen ? '開' : '關', 842, 285, { size: 18, bold: true, color: outOpen ? C.ok : C.bad });
+  /* 汽油流動 */
+  const fdot = (x, y) => { ctx.fillStyle = FU; ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); };
+  if (inOpen) for (let i = 0; i < 6; i++) { const k = (t * 1.2 + i / 6) % 1, P = along([[40, 55], [150, 55], [150, 115]], k); fdot(P[0], P[1]); }
+  if (outOpen) for (let i = 0; i < 6; i++) { const k = (t * 1.2 + i / 6) % 1, P = along([[310, 110], [310, 55], [430, 55]], k); fdot(P[0], P[1]); }
+  /* 膜片 */
+  ctx.strokeStyle = C.acc; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(cx - 150, 200); ctx.quadraticCurveTo(cx, yc + (yc - 200) * .6, cx + 150, 200); ctx.stroke();
+  H.label(ctx, cx + 120, 202, cx + 185, 182, '膜片');
+  /* 下殼＋膜片彈簧（把膜片往上推） */
+  ctx.strokeStyle = '#5c6f8a'; ctx.lineWidth = 3; ctx.strokeRect(cx - 90, 205, 180, 100);
+  ctx.strokeStyle = '#7fd1ae'; ctx.lineWidth = 3; ctx.beginPath(); const sTop = yc + 6, sBot = 302, nC = 7; for (let i = 0; i <= nC * 2; i++) { const y = sTop + (sBot - sTop) * i / (nC * 2), x = cx + (i % 2 ? 26 : -26); i ? ctx.lineTo(x, y) : ctx.moveTo(cx, y); } ctx.stroke();
+  H.label(ctx, cx - 26, 260, cx - 175, 250, '膜片彈簧', { color: '#7fd1ae' });
+  /* 拉桿 */
+  ctx.fillStyle = '#c3d1e4'; ctx.fillRect(cx - 5, yc, 10, 130); ctx.fillRect(cx - 14, rodBot - 6, 28, 8);
+  H.label(ctx, cx + 5, yc + 110, cx - 175, 330, '拉桿', { color: '#c3d1e4' });
+  /* 搖臂 */
+  const ix = Px - 110, ox = Px + 110, oy = Py - 110 * sinPhi;
+  ctx.strokeStyle = '#8ea3bf'; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(ix, innerY); ctx.lineTo(ox, oy); ctx.stroke(); ctx.lineCap = 'butt';
+  ctx.fillStyle = '#5c6f8a'; ctx.beginPath(); ctx.arc(Px, Py, 9, 0, 7); ctx.fill(); H.text(ctx, '支點', Px, Py + 26, { size: 13, align: 'center', color: C.mut });
+  H.label(ctx, (ix + Px) / 2, (innerY + Py) / 2, cx - 175, 400, '搖臂', { color: '#8ea3bf' });
+  if (full && innerY < rodBot - 4) { ctx.strokeStyle = C.bad; ctx.setLineDash([4, 4]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ix - 18, innerY); ctx.lineTo(ix - 18, rodBot); ctx.stroke(); ctx.setLineDash([]); H.text(ctx, '空動', ix - 24, (innerY + rodBot) / 2, { size: 13, bold: true, align: 'right', color: C.bad }); }
+  /* 凸輪（偏心） */
+  ctx.fillStyle = '#5c6f8a'; ctx.beginPath(); ctx.arc(Cx + e * Math.sin(th), Cy - e * Math.cos(th), R, 0, 7); ctx.fill();
+  ctx.fillStyle = '#c3d1e4'; ctx.beginPath(); ctx.arc(Cx, Cy, 6, 0, 7); ctx.fill(); H.text(ctx, '凸輪（凸輪軸）', Cx, Cy + R + 34, { size: 14, align: 'center', color: C.mut });
+  ctx.strokeStyle = C.mut; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(Cx, Cy, R + 18, -2.4, -1.2); ctx.stroke(); H.arrow(ctx, Cx + (R + 18) * Math.cos(-1.25), Cy + (R + 18) * Math.sin(-1.25), Cx + (R + 18) * Math.cos(-1.1), Cy + (R + 18) * Math.sin(-1.1), { color: C.mut, lw: 2, head: 8 });
+  return ph;
+}
+const PHT = [['吸油時期', '凸輪頂起搖臂外端\n→ 搖臂內端往下拉拉桿\n→ 膜片下移、壓縮彈簧\n→ 泵室變大產生真空\n→ 進油閥開，汽油吸入'], ['送油時期', '凸輪轉離，搖臂放開\n→ 膜片彈簧把膜片往上推\n→ 泵室變小、汽油被擠壓\n→ 出油閥開，送往化油器'], ['調節時期', '浮筒室已滿、汽油送不出去\n→ 膜片被壓在下方不動\n→ 搖臂照轉但碰不到拉桿\n→ 搖臂「空動」，不再送油']];
+function pumpText(ctx, ph) {
+  H.text(ctx, PHT[ph][0], 730, 80, { size: 32, bold: true, align: 'center', color: [C.acc2, C.ok, C.bad][ph] });
+  H.text(ctx, PHT[ph][1], 730, 130, { size: 19, align: 'center' });
+  H.text(ctx, '送油壓力來自「膜片彈簧」\n不是凸輪直接推出去的！', 730, 340, { size: 17, bold: true, align: 'center', color: '#ffd166' });
+  H.text(ctx, '真空端 150～300 mmHg ｜ 壓力端 0.2～0.4 bar', 730, 420, { size: 15, align: 'center', color: C.mut });
+}
 const SCEN = [['冷車早上發動', 'choke', .1, 1], ['停紅燈怠速', 'idle', 0, 0], ['平路巡航（中高速）', 'high', .5, 0], ['猛踩油門超車的瞬間', 'accel', .8, 0], ['滿載爬陡坡（全負荷）', 'power', .9, 0]];
 const V4 = {
   code: 'Ch3-V4', title: '化油器：沒有電腦的年代，怎麼自動調混合比？', sub: '第3章 汽油引擎燃料系統｜第 4 節',
-  state: { thr: .3, sc: null, n: 0, pick: null },
+  state: { thr: .3, sc: null, n: 0, pick: null, cam: 0, auto: true, full: false, pseen: [] },
   chapters: [
     { title: '化油器式燃料系統', dur: 24,
       captions: [[0, '燃料系統的任務：依引擎狀況，提供<b>適當比例的混合氣</b>，讓引擎穩定、有力又省油。'], [6, '化油器式燃料系統的流程：<b>油箱 → 汽油濾清器 → 汽油泵 → 化油器 → 引擎</b>。'],
@@ -700,24 +759,13 @@ const V4 = {
       quiz: { q: '化油器式燃料系統的流程，何者正確？', opts: ['油箱 → 汽油濾清器 → 汽油泵 → 化油器', '油箱 → 化油器 → 汽油泵 → 濾清器', '油箱 → 汽油泵 → 引擎 → 化油器', '化油器 → 油箱 → 汽油泵'], ans: 0, ex: '化油器式的濾清器大多裝在油箱與汽油泵之間。' } },
 
     { title: '汽油泵與濾清器', dur: 30,
-      captions: [[0, '<b>機械式汽油泵</b>（膜片式）由<b>凸輪軸</b>帶動：凸輪推動搖臂，把膜片往下拉，泵室產生真空，汽油被<b>吸入</b>。', '機械式汽油泵，又叫膜片式，由凸輪軸帶動：凸輪推動搖臂，把膜片往下拉，泵室產生真空，汽油被吸入。'],
-        [8, '凸輪轉過最高點後，<b>膜片彈簧</b>把膜片往上推，汽油從出油閥<b>送</b>到化油器。浮筒室滿了送不出去時，搖臂就空轉，這叫<b>調節時期</b>。'],
-        [17, '<b>電動式汽油泵</b>由馬達帶動：可裝在溫度低的地方減少氣阻、一打開點火開關就能供油、供油穩定，多用在<b>汽油噴射系統</b>。'],
+      captions: [[0, '<b>機械式汽油泵</b>（膜片式）由<b>凸輪軸</b>帶動：凸輪推動搖臂，把膜片往下拉，泵室產生真空，汽油被<b>吸入</b>。 <a href="https://www.youtube.com/watch?v=ZjZtvH9pAzs" target="_blank" rel="noopener" style="color:#38c6ff;white-space:nowrap">▶ 看真實影片</a>', '機械式汽油泵，又叫膜片式，由凸輪軸帶動：凸輪推動搖臂，把膜片往下拉，泵室產生真空，汽油被吸入。'],
+        [6, '凸輪轉過最高點後，<b>膜片彈簧</b>把膜片往上推，汽油從出油閥<b>送</b>到化油器。送油的力量來自<b>膜片彈簧</b>。', '凸輪轉過最高點後，膜片彈簧把膜片往上推，汽油從出油閥送到化油器。送油的力量來自膜片彈簧。'],
+        [13, '浮筒室滿了、汽油送不出去：膜片停在下方，搖臂照轉卻碰不到拉桿，這叫<b>調節時期</b>（搖臂空動）。', '浮筒室滿了、汽油送不出去：膜片停在下方，搖臂照轉卻碰不到拉桿，這叫調節時期，搖臂空動。'],
+        [17, '<b>電動式汽油泵</b>由馬達帶動：可裝在溫度低的地方減少氣阻、一打開點火開關就能供油、供油穩定，多用在<b>汽油噴射系統</b>。 <a href="https://www.youtube.com/watch?v=l-2XY81tJE0" target="_blank" rel="noopener" style="color:#38c6ff;white-space:nowrap">▶ 看真實影片</a>', '<b>電動式汽油泵</b>由馬達帶動：可裝在溫度低的地方減少氣阻、一打開點火開關就能供油、供油穩定，多用在<b>汽油噴射系統</b>。'],
         [24, '<b>汽油濾清器</b>過濾雜質和水分，要定期更換，而且<b>有方向性</b>，裝反就濾不掉水分。']],
       draw(ctx, t) {
-        const ph = t < 8 ? (t % 2 < 1 ? 0 : 1) : t < 17 ? (t < 14 ? ((t * .5) % 1 < .5 ? 0 : 1) : 2) : -1;
-        if (ph >= 0) {
-          const d = ph === 0 ? 1 : ph === 1 ? 0 : 1, x = 260, y = 240;
-          H.box(ctx, x - 130, y - 140, 260, 90, { fill: '#1d2c4a', stroke: '#5c6f8a' }); H.text(ctx, '泵室', x, y - 120, { size: 15, align: 'center', color: C.mut });
-          ctx.fillStyle = 'rgba(255,209,102,.5)'; ctx.fillRect(x - 126, y - 100 + (1 - d) * 30, 252, 46 - (1 - d) * 30 + 4);
-          ctx.strokeStyle = C.acc; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x - 128, y - 50); ctx.quadraticCurveTo(x, y - 50 + d * 40 - 20, x + 128, y - 50); ctx.stroke(); H.text(ctx, '膜片', x + 150, y - 50, { size: 15, color: C.acc });
-          ctx.fillStyle = '#c3d1e4'; ctx.fillRect(x - 5, y - 40 + d * 20, 10, 100);
-          ctx.fillStyle = '#8ea3bf'; ctx.beginPath(); ctx.arc(x + 90, y + 120, 34, 0, 7); ctx.fill(); ctx.fillStyle = '#5c6f8a'; ctx.beginPath(); ctx.ellipse(x + 90, y + 120 - (d ? 0 : 0), 34, 44, t * 3, 0, 7); ctx.fill(); H.text(ctx, '凸輪', x + 90, y + 180, { size: 15, align: 'center', color: C.mut });
-          const vIn = ph === 0, vOut = ph === 1;
-          H.text(ctx, `進油閥 ${vIn ? '開' : '關'}`, x - 120, y - 160, { size: 17, bold: true, color: vIn ? C.ok : C.mut }); H.text(ctx, `出油閥 ${vOut ? '開' : '關'}`, x + 20, y - 160, { size: 17, bold: true, color: vOut ? C.ok : C.mut });
-          const lab = ['吸油時期', '送油時期', '調節時期'][ph]; H.text(ctx, lab, 640, 120, { size: 34, bold: true, align: 'center', color: C.acc });
-          H.text(ctx, ['凸輪推搖臂 → 膜片下拉\n泵室真空 → 汽油吸入', '膜片彈簧上推膜片\n→ 汽油送往化油器', '浮筒室已滿、送不出去\n→ 膜片停在下方、搖臂空動'][ph], 640, 200, { size: 22, align: 'center' });
-          H.text(ctx, '真空端 150～300 mmHg ｜ 壓力端 0.2～0.4 bar', 640, 330, { size: 17, align: 'center', color: C.mut });
+        if (t < 17) { pumpText(ctx, fuelPump(ctx, t * Math.PI / 2.5, t >= 13, t));
         } else if (t < 24) {
           H.box(ctx, 120, 90, 720, 300, { stroke: C.acc2 }); H.text(ctx, '電動式汽油泵（馬達＋滾子泵）', 480, 130, { size: 26, bold: true, align: 'center', color: C.acc2 });
           ['① 可裝在溫度較低處 → 減少氣阻', '② 點火開關 ON 就供油 → 好發動', '③ 積極式供油 → 供油穩定', '→ 多用於汽油噴射系統'].forEach((s, i) => H.text(ctx, s, 180, 190 + i * 48, { size: 22, alpha: ease(prog(t, 17.5 + i * .8, 18.5 + i * .8)), color: i === 3 ? C.acc : C.ink }));
@@ -728,6 +776,23 @@ const V4 = {
         }
       },
       quiz: { q: '下列何者「不是」電動式汽油泵的優點？', opts: ['由凸輪軸直接帶動', '可裝在溫度較低處減少氣阻', '引擎未起動前即可供油', '供油較穩定'], ans: 0, ex: '凸輪軸帶動的是機械式（膜片式）汽油泵。' } },
+
+    { title: '膜片式汽油泵（互動）', loop: true, nominal: 24,
+      captions: [[0, '拉動滑桿慢慢轉凸輪，或按「自動轉」。看搖臂、拉桿、膜片怎麼連動，進油閥、出油閥什麼時候開。再按「浮筒室已滿」看調節時期。三個時期都看到後按「完成本段」。', '拉動滑桿慢慢轉凸輪，或按自動轉。看搖臂、拉桿、膜片怎麼連動，進油閥、出油閥什麼時候開。再按浮筒室已滿，看調節時期。三個時期都看到後，按完成本段。']],
+      panel(el, S) {
+        el.innerHTML = `<div class="box"><div class="row">凸輪角度 <input type="range" id="r" min="0" max="360" value="${S.cam}"> <b id="rv"></b>　<button id="au">▶ 自動轉</button><button id="fl">浮筒室：未滿</button></div>
+        <div class="row"><span style="color:#9fb0cf">已看到：<b id="seen">0</b> / 3（吸油・送油・調節）</span><button onclick="finishLoop()">完成本段 ✔</button></div></div>`;
+        const g = id => el.querySelector('#' + id), upd = () => { g('rv').textContent = Math.round(S.cam) + '°'; g('au').textContent = S.auto ? '⏸ 停止' : '▶ 自動轉'; g('au').className = S.auto ? 'pri' : ''; g('fl').textContent = S.full ? '浮筒室：已滿' : '浮筒室：未滿'; g('fl').className = S.full ? 'pri' : ''; };
+        g('r').oninput = () => { S.cam = +g('r').value; S.auto = false; upd(); }; g('au').onclick = () => { S.auto = !S.auto; upd(); }; g('fl').onclick = () => { S.full = !S.full; upd(); };
+        S.tick = () => { g('seen').textContent = S.pseen.length; if (S.auto) { g('r').value = S.cam; g('rv').textContent = Math.round(S.cam) + '°'; } }; upd();
+      },
+      draw(ctx, t, S) {
+        const now = performance.now() / 1000, dt = clamp(now - (S.lt || now), 0, .1); S.lt = now; if (S.auto) S.cam = (S.cam + dt * 72) % 360;
+        const th = S.cam * Math.PI / 180, ph = fuelPump(ctx, th, S.full, now);
+        /* 手動轉時：用凸輪下一刻的方向判斷吸油／送油 */
+        const shown = S.full ? 2 : (Math.sin(th) < 0 ? 0 : 1); if (!S.pseen.includes(shown)) S.pseen.push(shown); pumpText(ctx, shown); if (S.tick) S.tick();
+      },
+      quiz: { q: '浮筒室已滿時，膜片式汽油泵的狀態是？', opts: ['膜片停在下方，搖臂空動（調節時期）', '膜片持續上下運動，壓力越來越高', '進油閥、出油閥同時打開', '凸輪停止轉動'], ans: 0, ex: '汽油送不出去，膜片被壓在下方，搖臂碰不到拉桿，不再送油。' } },
 
     { title: '文氏管原理（互動實驗）', loop: true, nominal: 20,
       captions: [[0, '拉動「節氣門開度」：空氣流過文氏管<b>最窄處</b>時速度最快、<b>真空最大</b>，就把浮筒室的汽油吸出來。開越大，空氣越多、吸出的汽油也越多！做完觀察按「完成本段」。', '拉動節氣門開度：空氣流過文氏管最窄處時速度最快、真空最大，就把浮筒室的汽油吸出來。開越大，空氣越多、吸出的汽油也越多！做完觀察，按完成本段。']],
