@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>沒有引擎的引擎課｜AI 協作開發分享</title>
+<meta name="description" content="國立臺東專科學校附設高職部汽車科 林慶泓老師：以 AI 協作自製「引擎原理」網頁式動畫、互學挑戰、簡報、學習單與教案的開發歷程分享">
+<style>
+:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d;--vio:#c79bff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;line-height:1.75;font-size:17px}
+a{color:var(--acc2)}
+img{max-width:100%;display:block}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+nav.top{position:sticky;top:0;z-index:10;background:rgba(13,21,38,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav.top .wrap{display:flex;gap:4px;align-items:center;overflow-x:auto;white-space:nowrap;padding-top:8px;padding-bottom:8px;scrollbar-width:none}
+nav.top a{color:var(--mut);text-decoration:none;font-size:14px;padding:4px 10px;border-radius:6px}
+nav.top a:hover,nav.top a.on{color:var(--ink);background:var(--panel2)}
+nav.top .home{color:var(--acc);font-weight:700}
+header.hero{padding:56px 0 36px;border-bottom:1px solid var(--line);background:radial-gradient(ellipse at 80% 0%,rgba(255,176,32,.12),transparent 60%)}
+.kicker{display:inline-block;background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:3px 10px;font-size:14px}
+h1{font-size:clamp(30px,5vw,48px);line-height:1.25;margin:16px 0 12px}
+.lead{font-size:clamp(17px,2.2vw,20px);color:var(--mut);max-width:760px;margin:0}
+.author{margin-top:22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.author .av{width:48px;height:48px;border-radius:50%;background:var(--panel2);border:2px solid var(--acc);display:grid;place-items:center;font-weight:700;color:var(--acc);font-size:20px}
+.author b{display:block}
+.author span{color:var(--mut);font-size:15px}
+.hero-img{margin-top:30px;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+section{padding:56px 0;border-bottom:1px solid var(--line)}
+.num{color:var(--acc);font-weight:700;font-size:15px;letter-spacing:1px}
+h2{font-size:clamp(24px,3.4vw,32px);margin:4px 0 14px;line-height:1.35}
+h3{font-size:20px;margin:0 0 6px}
+p{margin:0 0 14px}
+.mut{color:var(--mut)}
+.acc{color:var(--acc)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:820px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card p{margin:0;color:var(--mut);font-size:15.5px}
+.stat{text-align:center;padding:18px 10px}
+.stat .n{font-size:clamp(32px,5vw,44px);font-weight:800;color:var(--acc);line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .l{color:var(--ink);font-size:15px;margin-top:6px}
+.stat .s{color:var(--mut);font-size:13px}
+.quote{border-left:4px solid var(--acc);background:var(--panel);padding:14px 18px;border-radius:0 10px 10px 0;margin:18px 0;font-size:16.5px}
+.quote small{display:block;color:var(--mut);margin-top:6px;font-size:14px}
+.pill{display:inline-block;font-size:13px;border-radius:999px;padding:1px 10px;margin-right:4px;font-weight:700}
+.p-dao{background:#ff8a3d;color:#1a0d00}.p-zi{background:#38c6ff;color:#001a26}.p-gong{background:#3ddc84;color:#00210f}.p-hu{background:#ffd166;color:#221800}.p-ping{background:#c79bff;color:#1a0b2a}.p-zhun{background:#9fb0cf;color:#0d1526}
+/* 50 分鐘時間軸 */
+.tl{display:flex;height:58px;border-radius:10px;overflow:hidden;margin:18px 0 8px;cursor:pointer}
+.tl button{border:0;font:inherit;font-weight:700;color:#14110a;font-size:14px;line-height:1.15;padding:0 2px;cursor:pointer;filter:saturate(.55);transition:filter .2s,box-shadow .2s}
+.tl button small{display:block;font-weight:400;font-size:12px}
+.tl button.on,.tl button:hover{filter:none}.tl button.on{box-shadow:inset 0 -6px 0 rgba(255,255,255,.85)}
+.tlinfo{display:grid;grid-template-columns:1fr 1.1fr;gap:18px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;min-height:250px}
+@media(max-width:760px){.tlinfo{grid-template-columns:1fr}}
+.tlinfo img{border-radius:8px;border:1px solid var(--line)}
+/* 流程 */
+.steps{counter-reset:s;display:grid;gap:12px}
+.step{display:grid;grid-template-columns:56px 1fr 1fr;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.step .k{width:44px;height:44px;border-radius:10px;background:var(--panel2);color:var(--acc);font-weight:800;font-size:20px;display:grid;place-items:center}
+.step h3{grid-column:2/4;margin-bottom:0}
+.step .who{font-size:15px;color:var(--mut)}
+.step .who b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+.step .who b.ai{color:var(--acc2)}
+.step .who b.me{color:var(--acc)}
+@media(max-width:700px){.step{grid-template-columns:44px 1fr}.step h3,.step .who{grid-column:2}}
+/* 前後對照 */
+.ba-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 12px}
+.ba-tabs button{background:var(--panel2);border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:7px 14px;font:inherit;font-size:15px;cursor:pointer}
+.ba-tabs button.on{border-color:var(--acc);color:var(--ink)}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.ba{grid-template-columns:1fr}}
+.ba figure{margin:0;background:#0a1120;border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative}
+.ba figure img{width:100%;aspect-ratio:16/9;object-fit:contain;background:#0a1120}
+.ba figure.b{border-color:rgba(255,93,93,.55)}.ba figure.a{border-color:rgba(61,220,132,.55)}
+.ba .lab{position:absolute;top:8px;left:8px;font-size:13px;font-weight:700;padding:2px 10px;border-radius:6px}
+.ba .lb{background:var(--bad);color:#fff}.ba .la{background:var(--ok);color:#00210f}
+.ba-text{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:600px){.ba-text{grid-template-columns:1fr}}
+.ba-text .card h3{font-size:16px}
+/* 嵌入 */
+.embed{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0a1120;aspect-ratio:16/10}
+.embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.embed .ph{position:absolute;inset:0;display:grid;place-items:center;text-align:center;cursor:pointer;background:center/cover no-repeat}
+.embed .ph span{background:var(--acc);color:#1a1200;font-weight:700;border-radius:10px;padding:12px 22px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.btn{display:inline-block;background:var(--acc);color:#1a1200;font-weight:700;text-decoration:none;border-radius:8px;padding:9px 16px;margin:4px 6px 4px 0;font-size:15px}
+.btn.sec{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:15.5px}
+th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:700;font-size:14px}
+.tw{overflow-x:auto}
+.log{position:relative;padding-left:22px;border-left:2px solid var(--line)}
+.log div{margin-bottom:16px;position:relative}
+.log div::before{content:"";position:absolute;left:-29px;top:8px;width:12px;height:12px;border-radius:50%;background:var(--acc)}
+.log b{color:var(--acc)}
+.warn{background:rgba(255,93,93,.08);border-color:rgba(255,93,93,.4)}
+footer{padding:36px 0 60px;color:var(--mut);font-size:14px}
+</style>
+</head>
+<body>
+
+<nav class="top"><div class="wrap">
+  <a class="home" href="../index.html">← 課程首頁</a>
+  <a href="#why">起點</a><a href="#made">成果</a><a href="#lesson">一節課</a><a href="#flow">開發流程</a><a href="#check">老師把關</a><a href="#tools">工具</a><a href="#pit">踩坑</a><a href="#start">開始試試</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="kicker">2026 高優計畫｜引擎原理 開發歷程分享</span>
+  <h1>沒有一顆引擎的引擎課，<br>怎麼讓學生看懂引擎？</h1>
+  <p class="lead">我和 AI 一起，把課本做成 19 節課的網頁式動畫、互學挑戰、上課簡報、學習單與教案。這一頁記錄整個過程：怎麼分工、怎麼把關、踩過哪些坑，以及您可以怎麼開始。</p>
+  <div class="author"><div class="av">林</div><div><b>林慶泓 老師</b><span>國立臺東專科學校附設高職部　汽車科</span></div></div>
+  <div class="hero-img"><img src="img/home.jpg" alt="引擎原理數位學習網首頁：三章課程卡片與上課簡報" loading="eager"></div>
+  <p class="mut" style="margin-top:12px;font-size:15px">👉 課程網站：<a href="../index.html">ntccar01.github.io/engine-principles</a>（所有成品都可以直接點開試用）</p>
+</div></header>
+
+<section id="why"><div class="wrap">
+  <div class="num">01｜起點</div>
+  <h2>為什麼要自己做？</h2>
+  <div class="grid g3">
+    <div class="card"><h3>🧑‍🎓 學生</h3><p>一年級 32 人，學習成就與動機偏低。課本文字多、圖是靜態的，看不出「動起來」的樣子。</p></div>
+    <div class="card"><h3>🏫 教室</h3><p>沒有引擎實物、沒有剖面教具。只有平板：3 人一台，分成 11 組。</p></div>
+    <div class="card"><h3>📋 計畫要求</h3><p>高優計畫要求「科技應用＋四學」（自學、共學、互學、導學），而且要寫成完整教案。</p></div>
+  </div>
+  <div class="quote">既然沒有引擎可以拆，那就把引擎「畫」出來，讓它在平板上動，讓學生可以自己暫停、慢放、拖拉操作。<small>— 這是整個專案的出發點</small></div>
+</div></section>
+
+<section id="made"><div class="wrap">
+  <div class="num">02｜成果總覽</div>
+  <h2>三章、19 節課，全部上線</h2>
+  <p class="mut">第 1 章 熱機與內燃機（6 節）、第 2 章 引擎本體（3 節）、第 3 章 汽油引擎燃料系統（10 節）。</p>
+  <div class="grid g4" style="margin-top:18px">
+    <div class="card stat"><div class="n">19</div><div class="l">支網頁式動畫</div><div class="s">共 123 段，每段有小問題</div></div>
+    <div class="card stat"><div class="n">19</div><div class="l">組 🎮 互學挑戰</div><div class="s">每組 4 關，全班即時排名</div></div>
+    <div class="card stat"><div class="n">19</div><div class="l">份網頁簡報</div><div class="s">四學時間軸、內嵌動畫</div></div>
+    <div class="card stat"><div class="n">402</div><div class="l">句預錄語音旁白</div><div class="s">免費語音合成</div></div>
+    <div class="card stat"><div class="n">4</div><div class="l">份高優教案</div><div class="s">Word，依學校格式</div></div>
+    <div class="card stat"><div class="n">8</div><div class="l">份學習單</div><div class="s">學生版＋教師解答版</div></div>
+    <div class="card stat"><div class="n">9</div><div class="l">節補課包</div><div class="s">NotebookLM 影片＋測驗</div></div>
+    <div class="card stat"><div class="n">11</div><div class="l">份 Google 表單測驗</div><div class="s">Apps Script 一鍵建立</div></div>
+  </div>
+  <p class="mut" style="margin-top:16px;font-size:15px">成本：網站放 GitHub Pages、成績放 Firebase 免費方案、語音用免費合成，除了 AI 訂閱外幾乎零成本。</p>
+</div></section>
+
+<section id="lesson"><div class="wrap">
+  <div class="num">03｜一節課怎麼上</div>
+  <h2>50 分鐘，四學怎麼排？</h2>
+  <p class="mut">以第 1 章第 4 節「四行程引擎工作原理」為例。點時間軸上的色塊看每一段在做什麼。</p>
+  <div class="tl" id="tl">
+    <button style="flex:3;background:#9fb0cf" data-i="0">準備<small>3</small></button>
+    <button style="flex:5;background:#ff8a3d" data-i="1">導學<small>5</small></button>
+    <button style="flex:10;background:#38c6ff" data-i="2">自學<small>10</small></button>
+    <button style="flex:12;background:#ff8a3d" data-i="3">導學<small>12</small></button>
+    <button style="flex:8;background:#3ddc84" data-i="4">共學<small>8</small></button>
+    <button style="flex:7;background:#ffd166" data-i="5">互學<small>7</small></button>
+    <button style="flex:5;background:#c79bff" data-i="6">評量<small>5</small></button>
+  </div>
+  <div class="tlinfo" id="tlinfo"><div id="tltext"></div><img id="tlimg" alt=""></div>
+  <p class="mut" style="font-size:14px;margin-top:8px">＊各節時間依內容調整，每節都是 50 分鐘。</p>
+
+  <h3 style="margin-top:34px">直接試玩一支動畫</h3>
+  <p class="mut">這就是學生在平板上看到的畫面：可以播放、暫停、逐格、調速度、開關語音，每段結束有小問題，答對才會繼續。</p>
+  <div class="embed" id="emb"><div class="ph" style="background-image:linear-gradient(rgba(13,21,38,.35),rgba(13,21,38,.35)),url(img/demo_v3.jpg)"><span>▶ 載入「四行程引擎透視動畫」</span></div></div>
+  <p style="margin-top:12px"><a class="btn sec" href="../V3_四行程引擎透視動畫.html" target="_blank">在新分頁開啟</a><a class="btn sec" href="../S4_第4節_四行程引擎工作原理.html" target="_blank">看這節的上課簡報</a><a class="btn sec" href="../V3_四行程引擎透視動畫.html?act=1" target="_blank">🎮 試玩互學挑戰</a></p>
+</div></section>
+
+<section id="flow"><div class="wrap">
+  <div class="num">04｜開發流程</div>
+  <h2>我和 AI 怎麼分工？</h2>
+  <p class="mut">每一節都照同一套流程做。<b class="acc">橘色是老師的工作</b>，<b style="color:var(--acc2)">藍色是 AI 的工作</b>。</p>
+  <div class="steps" style="margin-top:18px">
+    <div class="step"><div class="k">1</div><h3>讀課本、拆節</h3>
+      <div class="who"><b class="me">老師</b>提供課本與課程手冊，決定每章幾節、教學順序。</div>
+      <div class="who"><b class="ai">AI</b>讀完整章，提出每節的內容範圍、頁碼、動畫主題，讓老師確認。</div></div>
+    <div class="step"><div class="k">2</div><h3>網頁式動畫（V）</h3>
+      <div class="who"><b class="me">老師</b>逐段看、找錯，用自己的話描述哪裡不合理。</div>
+      <div class="who"><b class="ai">AI</b>寫成分段動畫：字幕、語音、互動模擬、每段小問題；照老師的回饋修正。</div></div>
+    <div class="step"><div class="k">3</div><h3>🎮 互學挑戰</h3>
+      <div class="who"><b class="me">老師</b>確認題目難度與用語是否適合學生。</div>
+      <div class="who"><b class="ai">AI</b>出 4 關（分類、配對、排序、情境題），接上教師大螢幕即時排名。</div></div>
+    <div class="step"><div class="k">4</div><h3>網頁簡報（S）</h3>
+      <div class="who"><b class="me">老師</b>決定開場方式、時間分配、要用哪些平台。</div>
+      <div class="who"><b class="ai">AI</b>做出四學時間軸、內嵌動畫、計時器、講者備註、QR Code。</div></div>
+    <div class="step"><div class="k">5</div><h3>學習單</h3>
+      <div class="who"><b class="me">老師</b>確認版面能印、能寫。</div>
+      <div class="who"><b class="ai">AI</b>產生 Word 學生版與教師解答版，題目對應動畫與挑戰。</div></div>
+    <div class="step"><div class="k">6</div><h3>教案</h3>
+      <div class="who"><b class="me">老師</b>提供學校教案範例格式、課綱與議題。</div>
+      <div class="who"><b class="ai">AI</b>依格式寫出逐節活動、時間、評量、數位工具，並和簡報時間核對。</div></div>
+    <div class="step"><div class="k">7</div><h3>補課包與測驗</h3>
+      <div class="who"><b class="me">老師</b>用 NotebookLM 產生影片、執行 Apps Script 建表單。</div>
+      <div class="who"><b class="ai">AI</b>寫講義、影片指示、測驗題庫與 Apps Script 程式。</div></div>
+    <div class="step"><div class="k">8</div><h3>上線</h3>
+      <div class="who"><b class="me">老師</b>雙擊「更新網站.bat」。</div>
+      <div class="who"><b class="ai">AI</b>把檔案寫進老師的雲端硬碟，再讀回比對確認沒寫壞。</div></div>
+  </div>
+
+  <h3 style="margin-top:34px">開發歷程</h3>
+  <div class="log" style="margin-top:12px">
+    <div><b>第 1、2 章</b>　拆 9 節 → 動畫 V1～V9、簡報、學習單、補課包、兩份教案</div>
+    <div><b>上線</b>　GitHub Pages 架站、Firebase 接上成績與教師大螢幕、一鍵更新工具</div>
+    <div><b>語音</b>　改用預錄語音，旁白念完動畫才往下走</div>
+    <div><b>第 3 章</b>　10 節，動畫裡直接內建互學挑戰；第 8 節用拼圖法做專家頁</div>
+    <div><b>回頭整合</b>　把第 3 章的互學挑戰補回第 1、2 章，教案、簡報、學習單一起改</div>
+  </div>
+</div></section>
+
+<section id="check"><div class="wrap">
+  <div class="num">05｜老師的專業不可少</div>
+  <h2>AI 做得很快，但「對不對」要老師看</h2>
+  <p>動畫第一版常常「看起來很專業」，卻有物理上不合理的地方。學生會照著畫面記，畫錯就是教錯。下面是我抓出來的幾個例子，點上方按鈕切換。</p>
+  <div class="ba-tabs" id="batabs"></div>
+  <div class="ba" id="ba"><figure class="b"><img class="before" alt="修正前"><span class="lab lb">修正前</span></figure><figure class="a"><img class="after" alt="修正後"><span class="lab la">修正後</span></figure></div>
+  <div class="ba-text"><div class="card"><h3 style="color:var(--bad)">我看到的問題</h3><p id="bap"></p></div><div class="card"><h3 style="color:var(--ok)">怎麼修</h3><p id="baf"></p></div></div>
+  <div class="quote" id="baq"></div>
+  <div class="grid g3" style="margin-top:22px">
+    <div class="card"><h3>✔ 我的檢查清單</h3><p>流動的東西不能穿過實體；轉動方向要合理；比例要和字幕的數字對得上；學生最容易誤解的地方要特別看。</p></div>
+    <div class="card"><h3>✔ 描述問題的方法</h3><p>截圖＋指出位置＋說明應該怎樣，再問一句「你理解我的意思嗎？」，AI 會先複述確認再改。</p></div>
+    <div class="card"><h3>✔ 教學決策是老師的</h3><p>用哪些平台、刪掉什麼（例如後來改用動畫內建挑戰取代 Wordwall）、時間怎麼分，都是老師決定。</p></div>
+  </div>
+</div></section>
+
+<section id="tools"><div class="wrap">
+  <div class="num">06｜用到的工具</div>
+  <h2>工具與分工</h2>
+  <div class="tw"><table>
+    <tr><th>工具</th><th>做什麼</th><th>費用</th></tr>
+    <tr><td>Claude（Cowork）</td><td>讀課本、寫動畫與簡報程式、學習單與教案；連結我的電腦，直接把成品寫進雲端硬碟</td><td>訂閱</td></tr>
+    <tr><td>HTML 網頁</td><td>所有動畫、挑戰、簡報都是單一網頁檔，平板瀏覽器就能開，不用安裝 App</td><td>免費</td></tr>
+    <tr><td>GitHub Pages</td><td>放網站，學生掃 QR Code 進入</td><td>免費</td></tr>
+    <tr><td>Firebase</td><td>學生匿名送出挑戰成績（只記班級、組別），教師大螢幕即時排名、全班同步開始</td><td>免費方案</td></tr>
+    <tr><td>語音合成（edge-tts）</td><td>預錄旁白 MP3；沒有音檔時自動改用瀏覽器語音</td><td>免費</td></tr>
+    <tr><td>NotebookLM</td><td>補課影片、語音摘要</td><td>免費</td></tr>
+    <tr><td>Google 表單＋Apps Script</td><td>隨堂測驗與單元測驗，用程式一次建好 11 份</td><td>免費</td></tr>
+    <tr><td>Padlet、Edcafe、ChatEverywhere、Canva</td><td>拼圖法畫廊、發表牆、補課測驗、查資料、資訊卡</td><td>依平台</td></tr>
+    <tr><td>Google 雲端硬碟＋Obsidian</td><td>工作資料夾與開發筆記（每次做完記錄進度與踩坑）</td><td>免費</td></tr>
+  </table></div>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card"><img src="img/act_c3.jpg" alt="互學挑戰畫面：選班級組別後開始" style="border-radius:8px;margin-bottom:10px"><h3>🎮 互學挑戰</h3><p>3 人取得共識才按，每關換操作者；答錯要改正才能下一關，只計首次答對。</p></div>
+    <div class="card"><img src="img/teacher.jpg" alt="教師大螢幕：選節次、準備、開始、即時排名" style="border-radius:8px;margin-bottom:10px"><h3>🏆 教師大螢幕</h3><p>老師按「準備 → 開始」全班同步；即時排名、各關答對率、匯出 CSV。</p></div>
+  </div>
+</div></section>
+
+<section id="pit"><div class="wrap">
+  <div class="num">07｜踩過的坑</div>
+  <h2>這些地方要注意</h2>
+  <div class="grid g2">
+    <div class="card warn"><h3>📕 課本版權</h3><p>課本 PDF 只給 AI 讀，不放上網站；網頁上所有圖都是重新自繪。</p></div>
+    <div class="card warn"><h3>🔒 學生個資</h3><p>成績只記班級＋組別，不記姓名；學生端匿名登入、只能新增不能讀。</p></div>
+    <div class="card"><h3>🗣️ 語音被截斷</h3><p>瀏覽器朗讀長句會斷掉 → 切成短句，並讓動畫等旁白念完再往下。</p></div>
+    <div class="card"><h3>🔄 改了卻沒變</h3><p>瀏覽器快取舊檔 → 簡報連結加版本參數；看網站時按 Ctrl＋F5。</p></div>
+    <div class="card"><h3>📁 檔案寫回確認</h3><p>曾發生寫入雲端硬碟沒更新 → 每次寫完讀回比對。</p></div>
+    <div class="card"><h3>🔥 Firebase 共用專案</h3><p>和其他系統共用時，規則要整段加在後面，不能插進別人的區塊；不要另開 Google 登入。</p></div>
+    <div class="card"><h3>📱 簡報裡的動畫被擠掉</h3><p>嵌入簡報時互動按鈕跑出畫面 → 動畫自動縮放，跳出小問題時暫時收起面板。</p></div>
+    <div class="card"><h3>⏱️ 時間要對得上</h3><p>改了簡報就要同步改教案與學習單，每節都核對加總是 50 分鐘。</p></div>
+  </div>
+</div></section>
+
+<section id="start"><div class="wrap">
+  <div class="num">08｜開始試試</div>
+  <h2>想用在自己的課？</h2>
+  <div class="grid g3">
+    <div class="card"><h3>① 先挑一節</h3><p>選學生最難想像的一個單元（會動、看不到內部的），先做一支動畫試上看看。</p></div>
+    <div class="card"><h3>② 把關比做快重要</h3><p>每一段都自己看過、截圖回饋。您的專業是品質的保證。</p></div>
+    <div class="card"><h3>③ 把流程留下來</h3><p>做完一節就把決策與踩坑寫成筆記，下一節就會更快。</p></div>
+  </div>
+  <div class="card" style="margin-top:18px;border-color:var(--acc)">
+    <h3>🧰 技能規畫包（整理中）</h3>
+    <p>我正在把這套流程整理成可以帶走的「技能包」：工作流程說明、動畫播放器、互學挑戰、教師大螢幕、網頁簡報、學習單產生器等模板，以及 GitHub Pages 與 Firebase 的設定步驟。完成並用其他科目試做驗證後，會放在這裡提供下載。</p>
+  </div>
+  <p style="margin-top:20px"><a class="btn" href="../index.html">進入課程網站</a><a class="btn sec" href="../ch1.html">第 1 章</a><a class="btn sec" href="../ch2.html">第 2 章</a><a class="btn sec" href="../第3章_汽油引擎燃料系統/index.html">第 3 章</a></p>
+</div></section>
+
+<footer><div class="wrap">
+  林慶泓｜國立臺東專科學校附設高職部 汽車科｜115 學年度 高職優質化計畫「引擎原理」<br>
+  動畫與教材為課堂教學自製，圖片皆為自繪；歡迎教師參考使用，引用請註明出處。
+</div></footer>
+
+<script>
+/* 時間軸 */
+const TL=[
+ ['準備','p-zhun','3 分','各組平板開啟本節動畫與簡報 QR Code；確認操作者（每節輪替）、說明者、記錄者。','img/slide_s4.jpg','網頁簡報封面與四學時間軸'],
+ ['導學','p-dao','5 分','情境題「車子發不動，可能是什麼原因？」各組用剛好學投票，再揭曉：這四個原因正好就是引擎的工作四要素。','img/slide_s4.jpg','網頁簡報'],
+ ['自學','p-zi','10 分','各組看 V3 動畫：可暫停、逐格、慢放；每段結束有小問題，答對才繼續。老師巡視指定的關鍵段落。','img/demo_v3.jpg','四行程引擎透視動畫'],
+ ['導學','p-dao','12 分','老師用簡報整理重點：工作四要素、汽缸各部位名稱、上死點與下死點、四行程工作程序（只有動力行程產生動力）。','img/slide_s4.jpg','網頁簡報'],
+ ['共學','p-gong','8 分','角色輪替操作 V3：一人操作、一人說明、一人記錄，每個行程換人，完成學習單「四行程動作對照表」。','img/remedial.jpg','學習與補課頁面'],
+ ['互學','p-hu','7 分','🎮 互學挑戰：老師在大螢幕按「開始」，全班同時挑戰 4 關，即時排名；結束後挑出答對率最低的一關請高分組說明。','img/act_entry.jpg','互學挑戰入口：選班級與組別'],
+ ['評量','p-ping','5 分','簡報隨堂題或 Google 表單；並預告下一節。沒來上課或想複習的同學，課後用補課包（影片＋測驗＋動畫）自學。','img/remedial.jpg','補課包頁面']];
+const tlb=[...document.querySelectorAll('#tl button')];
+function showTL(i){tlb.forEach((b,j)=>b.classList.toggle('on',i===j));const [n,c,t,d,img,alt]=TL[i];
+ document.getElementById('tltext').innerHTML=`<span class="pill ${c}">${n}</span><span class="mut">${t}</span><p style="margin-top:10px">${d}</p>`;
+ const im=document.getElementById('tlimg');im.src=img;im.alt=alt;}
+tlb.forEach((b,i)=>b.onclick=()=>showTL(i));showTL(2);
+/* 嵌入動畫：點擊才載入 */
+document.querySelector('#emb .ph').onclick=function(){this.outerHTML='<iframe src="../'+encodeURIComponent('V3_四行程引擎透視動畫.html')+'?embed=1" title="四行程引擎透視動畫" allow="autoplay"></iframe>';};
+/* 前後對照 */
+const BA=[
+ ['火焰傳播比例','before_flame','after_flame','字幕說「火焰核時期只走 10%」，畫面上的火焰卻已經佔了將近 2/3；下一個「孵化時期」幾乎全滿。學生會記錯比例。','改用「火星塞到對面汽缸壁」當 100%，三個時期依 0→10%→90%→100% 成長，並在燃燒室下方加上刻度尺與「火焰行距 %」。','火焰核時期，應該是 0~10% 的範圍，但圖中好像已經將近 2/3 了，學生會理解錯誤。'],
+ ['旁通道空氣','before_bypass','after_bypass','空氣粒子從上方流過，還「穿透」怠速調整螺絲。真實的空氣應該從螺絲下方的縫隙流過。','空氣從節氣門前的入口進入旁通道，經過螺絲下方的縫隙，再從節氣門後流出；螺絲鎖入時縫隙變小、粒子變少。','空氣流動還是在上方，且穿透怠速調整螺絲……空氣應該是從下方流過才對，你理解我的意思嗎？'],
+ ['翼板方向','before_vane','after_vane','空氣由左向右流，翼板卻往反方向擺動；CO 調整螺絲的旁通道也看不出作用。','翼板轉軸在上、被氣流推向下游；CO 螺絲旁通道重新設計，放鬆／鎖入可以對照。','空氣流動方向是由左向右流動，但翼板移動的方向卻是相反，請照邏輯修正。'],
+ ['膜片式汽油泵','before_pump','after_pump','只畫了膜片和凸輪，看不出凸輪怎麼帶動膜片，學生還是不容易理解。','重畫完整機構：凸輪→搖臂→拉桿→膜片＋彈簧、進出油閥與汽油流動，加上「調節時期」空動；新增可以自己轉凸輪的互動段，並連結真實影片。','這個圖示，它的作用方式，學生還是不容易理解，有更好的方式修正嗎？如果有困難也要告訴我。']];
+const ba=document.getElementById('ba'),tabs=document.getElementById('batabs');
+function showBA(i){[...tabs.children].forEach((b,j)=>b.classList.toggle('on',i===j));const [n,b4,af,p,f,q]=BA[i];
+ ba.querySelector('.before').src='img/'+b4+'.jpg';ba.querySelector('.after').src='img/'+af+'.jpg';
+ ba.querySelector('.before').alt=n+'（修正前）';ba.querySelector('.after').alt=n+'（修正後）';
+ document.getElementById('bap').textContent=p;document.getElementById('baf').textContent=f;
+ document.getElementById('baq').innerHTML='「'+q+'」<small>— 我當時給 AI 的回饋原文</small>';}
+BA.forEach((x,i)=>{const b=document.createElement('button');b.textContent=x[0];b.onclick=()=>showBA(i);tabs.appendChild(b);});showBA(0);
+/* 導覽高亮 */
+const links=[...document.querySelectorAll('nav.top a[href^="#"]')];
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id));}),{rootMargin:'-45% 0px -50% 0px'});
+document.querySelectorAll('section[id]').forEach(s=>io.observe(s));
+</script>
+</body>
+</html>
