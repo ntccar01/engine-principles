@@ -731,15 +731,29 @@ const V3 = {
         [22, '③ <b>繁殖時期</b>：剩下 40% 混合氣迅速燒完（90%～100%），汽缸內達到<b>最高壓力與溫度</b>，把活塞推下去。']],
       draw(ctx, t) {
         const ph = t < 8 ? 0 : t < 15 ? 1 : t < 22 ? 2 : 3;
-        const frac = [.05 + .05 * ((t * 2) % 1), lerp(.1, .55, prog(t, 9, 14)), lerp(.55, .9, prog(t, 16, 21)), lerp(.9, 1.1, prog(t, 23, 26))][ph];
-        chamber(ctx, 80, 70, 380, 200, frac);
-        H.text(ctx, '火星塞', 70, 300, { size: 15, color: C.mut });
+        /* 火焰行距：火星塞到對面壁＝100%（ph1 火焰核 0→10%，ph2 孵化 10→90%，ph3 繁殖 90→100%） */
+        const frac = [0, lerp(0, .1, prog(t, 8.5, 14)), lerp(.1, .9, prog(t, 15.5, 21)), lerp(.9, 1, prog(t, 22.5, 26))][ph];
+        const X = 80, Y = 70, W = 380, Hh = 200, D = W - 20;
+        ctx.save(); H.rr(ctx, X, Y, W, Hh, 16); ctx.fillStyle = 'rgba(79,209,165,.35)'; ctx.fill(); ctx.strokeStyle = '#8ea3bf'; ctx.lineWidth = 3; ctx.stroke(); ctx.clip();
+        const r = frac >= 1 ? D * 1.1 : D * frac;
+        if (r > 0) { ctx.fillStyle = 'rgba(255,122,26,.85)'; ctx.beginPath(); ctx.arc(X + 20, Y + Hh / 2, r, 0, 7); ctx.fill(); }
+        if (ph === 0 && t > 6) { ctx.fillStyle = `rgba(255,240,150,${.5 + .5 * Math.sin(t * 20)})`; ctx.beginPath(); ctx.arc(X + 20, Y + Hh / 2, 6, 0, 7); ctx.fill(); }
+        ctx.restore(); ctx.fillStyle = '#d9dee8'; ctx.fillRect(X - 16, Y + Hh / 2 - 5, 18, 10);
+        H.text(ctx, '火星塞', X - 20, Y - 12, { size: 15, color: C.mut });
+        /* 行距尺 */
+        const ry = Y + Hh + 22, x0 = X + 20, x1 = X + W;
+        ctx.strokeStyle = '#5a6f92'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0, ry); ctx.lineTo(x1, ry); ctx.stroke();
+        [[0, '0'], [.1, '10%'], [.9, '90%'], [1, '100%']].forEach(([f, l]) => { const px = x0 + D * f; ctx.beginPath(); ctx.moveTo(px, ry - 6); ctx.lineTo(px, ry + 6); ctx.stroke();
+          H.text(ctx, l, px, ry + 22, { size: 14, align: 'center', color: C.mut }); });
+        if (frac > 0) { ctx.strokeStyle = C.fire; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x0, ry); ctx.lineTo(x0 + D * frac, ry); ctx.stroke(); }
+        H.text(ctx, `火焰行距 ${Math.round(frac * 100)}%`, x1, Y - 12, { size: 16, bold: true, align: 'right', color: C.fire });
         const names = [['火焰核時期', '0～10%'], ['孵化時期', '10～90%'], ['繁殖時期', '90～100%']];
-        names.forEach(([n, d], i) => { const on = ph >= i + 1 || (ph === 0 && i === 0 && t > 8); H.box(ctx, 80 + i * 130, 330, 120, 80, { stroke: on ? C.acc : '#22324f', fill: on ? '#2a3b5e' : '#121c30' });
-          H.text(ctx, n, 140 + i * 130, 358, { size: 17, bold: true, align: 'center', color: on ? C.acc : '#3a4a66' }); H.text(ctx, d, 140 + i * 130, 388, { size: 15, align: 'center', color: on ? C.ink : '#3a4a66' }); });
-        pCurve(ctx, 540, 100, 360, 280, ph === 0 ? .3 : ph === 1 ? .45 : ph === 2 ? .5 : 1, 'normal');
+        names.forEach(([n, d], i) => { const on = ph >= i + 1; const cur = ph === i + 1; H.box(ctx, 80 + i * 130, 345, 120, 80, { stroke: cur ? C.acc : on ? '#6b7fa3' : '#22324f', fill: on ? '#2a3b5e' : '#121c30' });
+          H.text(ctx, n, 140 + i * 130, 373, { size: 17, bold: true, align: 'center', color: on ? C.acc : '#3a4a66' }); H.text(ctx, d, 140 + i * 130, 403, { size: 15, align: 'center', color: on ? C.ink : '#3a4a66' }); });
+        const up = [.2, lerp(.2, .27, prog(t, 8.5, 14)), lerp(.27, .45, prog(t, 15.5, 21)), lerp(.45, 1, prog(t, 22.5, 27))][ph];
+        pCurve(ctx, 540, 100, 360, 280, up, 'normal');
         H.text(ctx, '汽缸壓力', 720, 80, { size: 18, bold: true, align: 'center', color: C.acc });
-        if (ph >= 3) H.text(ctx, '最高壓力 → 推動活塞', 720, 440, { size: 20, bold: true, align: 'center', color: C.ok });
+        if (t > 26) H.text(ctx, '最高壓力 → 推動活塞', 720, 440, { size: 20, bold: true, align: 'center', color: C.ok });
       },
       quiz: { q: '燃燒過程中，汽缸產生最高壓力與溫度的是哪個時期？', opts: ['繁殖時期', '火焰核時期', '孵化時期', '點火之前'], ans: 0, ex: '繁殖時期剩餘混合氣迅速燃燒，產生最高壓力與溫度。' } },
 
