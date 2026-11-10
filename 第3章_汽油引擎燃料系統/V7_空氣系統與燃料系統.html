@@ -689,18 +689,40 @@ const V7 = {
       draw(ctx, t) {
         const m = t < 12 ? 0 : t < 24 ? 1 : 2, names = ['翼板式', '熱線式', '卡門渦流式'];
         names.forEach((s, i) => { H.box(ctx, 80 + i * 280, 48, 250, 46, { stroke: i === m ? C.acc : '#2c3f63', fill: i === m ? '#2a3b5e' : '#16223a' }); H.text(ctx, s, 205 + i * 280, 71, { size: 20, bold: true, align: 'center', color: i === m ? C.acc : '#5c6f8a' }); });
-        ctx.fillStyle = '#3a4a66'; ctx.fillRect(120, 120, 560, 10); ctx.fillRect(120, 330, 560, 10);
-        for (let i = 0; i < 22; i++) { const k = (t * .3 + i / 22) % 1; ctx.fillStyle = '#7cc7ff'; ctx.globalAlpha = .55; ctx.beginPath(); ctx.arc(130 + k * 540, 145 + (i * 37) % 175, 3, 0, 7); ctx.fill(); } ctx.globalAlpha = 1;
-        const flow = .5 + .5 * Math.sin(t * .8);
-        if (m === 0) { const a = .15 + flow * 1.1; ctx.save(); ctx.translate(400, 135); ctx.rotate(a); ctx.fillStyle = '#c3d1e4'; ctx.fillRect(-5, 0, 10, 160); ctx.restore(); H.label(ctx, 400, 135, 460, 95, '翼板（帶動電壓計）');
-          ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.strokeRect(160, 300, 180, 26); H.text(ctx, 'CO 調整螺絲（旁通道）', 250, 380, { size: 15, align: 'center', color: '#ffd166' });
-          H.box(ctx, 720, 140, 210, 190, {}); H.text(ctx, '鎖入螺絲\n→ 旁通空氣少\n→ 翼板動更多\n→ 噴油多、變濃\n→ CO 升高', 735, 165, { size: 17 }); }
+        const dot = (x, y, al = .8) => { ctx.fillStyle = '#7cc7ff'; ctx.globalAlpha = al; ctx.beginPath(); ctx.arc(x, y, 3.2, 0, 7); ctx.fill(); ctx.globalAlpha = 1; };
+        /* 空氣流量隨時間變化；粒子位置用流量的積分 → 流量大時粒子跑得快 */
+        const flow = .15 + .85 * (.5 + .5 * Math.sin(t * .8)), travel = .575 * t - .531 * Math.cos(t * .8);
+        if (m === 0) {
+          /* 翼板式：上方主通道（翼板）＋下方旁通道（CO 調整螺絲） */
+          const tight = t >= 5.5, ins = tight ? 34 : 10, gap = 46 - ins, byShare = .1 + .35 * gap / 46, aVane = .25 + (1 - byShare) * .95;
+          ctx.fillStyle = '#3a4a66'; ctx.fillRect(120, 115, 560, 10); ctx.fillRect(120, 340, 560, 10); ctx.fillRect(250, 284, 320, 10);
+          H.text(ctx, '主通道', 140, 140, { size: 14, color: C.mut }); H.text(ctx, '旁通道', 140, 318, { size: 14, color: '#ffd166' });
+          const tipX = 400 + 150 * Math.sin(aVane), tipY = 125 + 150 * Math.cos(aVane);
+          const nM = 18, nB = Math.round(2 + 13 * gap / 46);
+          for (let i = 0; i < nM; i++) { const fr = ((i * 7) % nM) / nM, y0 = 140 + fr * 135, ym = tipY + 8 + (276 - tipY - 8) * fr;
+            const P = along([[120, y0], [tipX - 40, ym], [tipX + 40, ym], [680, y0]], (travel * .35 + i / nM) % 1); dot(P[0], P[1]); }
+          for (let i = 0; i < nB; i++) { const fr = ((i * 5) % 7) / 7, yb = 340 - gap + 4 + fr * (gap - 8), yl = 300 + fr * 34;
+            const P = along([[120, 310 + fr * 25], [220, yl], [380, yb], [420, yb], [600, yl], [680, 310 + fr * 25]], (travel * .35 + i / Math.max(nB, 1)) % 1); dot(P[0], P[1]); }
+          ctx.save(); ctx.translate(400, 125); ctx.rotate(-aVane); ctx.fillStyle = '#c3d1e4'; ctx.fillRect(-5, 0, 10, 150); ctx.restore();
+          ctx.fillStyle = C.acc; ctx.beginPath(); ctx.arc(400, 125, 6, 0, 7); ctx.fill(); H.label(ctx, 400, 125, 470, 95, '翼板（轉軸帶動電壓計）');
+          /* CO 調整螺絲：從下方鎖入旁通道 */
+          ctx.fillStyle = '#ffd166'; ctx.fillRect(388, 340 - ins, 24, ins); for (let k = 0; k < ins; k += 6) { ctx.fillStyle = '#b8902a'; ctx.fillRect(388, 340 - ins + k, 24, 2); }
+          ctx.fillStyle = '#ffd166'; ctx.fillRect(380, 350, 40, 12); H.text(ctx, tight ? 'CO 調整螺絲：鎖入 ↑' : 'CO 調整螺絲：放鬆 ↓', 400, 384, { size: 16, bold: true, align: 'center', color: '#ffd166' });
+          H.box(ctx, 720, 120, 210, 230, { stroke: tight ? C.fire : C.ok, lw: 3 });
+          H.text(ctx, tight ? '鎖入螺絲' : '放鬆螺絲', 825, 145, { size: 20, bold: true, align: 'center', color: tight ? C.fire : C.ok });
+          H.text(ctx, tight ? '旁通空氣少\n↓\n主通道空氣多\n↓\n翼板推得更開\n↓\n噴油多、變濃\nCO 升高' : '旁通空氣多\n↓\n主通道空氣少\n↓\n翼板開得較小\n↓\n噴油少、變稀\nCO 降低', 825, 172, { size: 15, align: 'center' });
+          H.text(ctx, `翼板開度 ${Math.round(aVane / 1.2 * 100)}%`, 560, 140, { size: 16, bold: true, color: C.acc }); }
+        else {
+          ctx.fillStyle = '#3a4a66'; ctx.fillRect(120, 120, 560, 10); ctx.fillRect(120, 330, 560, 10);
+          const n = 24; for (let i = 0; i < n; i++) dot(130 + ((travel * .45 + i / n) % 1) * 540, 145 + (i * 37) % 175, .6); }
         if (m === 1) { const hot = 1 - flow * .6; ctx.strokeStyle = `rgb(255,${Math.round(120 + 100 * hot)},60)`; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(400, 150); ctx.lineTo(400, 310); ctx.stroke(); H.label(ctx, 400, 200, 460, 170, '熱線（白金）');
           ctx.strokeStyle = '#7cc7ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(330, 180); ctx.lineTo(330, 290); ctx.stroke(); H.label(ctx, 330, 260, 200, 300, '冷線（測溫）', { color: '#7cc7ff' });
-          H.box(ctx, 720, 140, 210, 190, {}); H.text(ctx, `空氣流量 ${Math.round(20 + flow * 80)}%`, 825, 170, { size: 18, bold: true, align: 'center', color: '#7cc7ff' });
-          ctx.fillStyle = C.acc; ctx.fillRect(740, 210, 170 * (.2 + flow * .8), 24); H.text(ctx, '熱線電流', 825, 255, { size: 16, align: 'center' }); H.text(ctx, '流量↑ → 電流↑\n量「質量」最準', 825, 292, { size: 16, align: 'center', color: C.ok }); }
+          H.box(ctx, 720, 140, 210, 190, {}); H.text(ctx, `空氣流量 ${Math.round(flow * 100)}%`, 825, 170, { size: 18, bold: true, align: 'center', color: '#7cc7ff' });
+          ctx.fillStyle = '#22324f'; ctx.fillRect(740, 210, 170, 24); ctx.fillStyle = C.acc; ctx.fillRect(740, 210, 170 * (.15 + flow * .85), 24); H.text(ctx, `熱線電流 ${(.3 + flow * .9).toFixed(2)} A`, 825, 255, { size: 16, align: 'center' });
+          H.text(ctx, '風越快 → 帶走熱越多\n→ 電流越大', 825, 292, { size: 15, align: 'center', color: C.ok });
+          H.text(ctx, flow > .66 ? '💨 風速快' : flow < .33 ? '🍃 風速慢' : '🌬️ 風速中', 400, 360, { size: 18, bold: true, align: 'center', color: '#7cc7ff' }); }
         if (m === 2) { ctx.fillStyle = '#c3d1e4'; ctx.beginPath(); ctx.moveTo(240, 200); ctx.lineTo(270, 230); ctx.lineTo(240, 260); ctx.closePath(); ctx.fill(); H.label(ctx, 250, 230, 160, 390, '渦流產生器');
-          for (let i = 0; i < 6; i++) { const x = 300 + ((t * 70 + i * 60) % 360), yy = 230 + (i % 2 ? -22 : 22); ctx.strokeStyle = '#7cc7ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, yy, 14, 0, 5.5); ctx.stroke(); }
+          for (let i = 0; i < 6; i++) { const x = 300 + ((travel * 90 + i * 60) % 360), yy = 230 + (i % 2 ? -22 : 22); ctx.strokeStyle = '#7cc7ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, yy, 14, 0, 5.5); ctx.stroke(); }
           ctx.fillStyle = C.acc; ctx.fillRect(470, 126, 30, 18); ctx.fillRect(470, 316, 30, 18); H.text(ctx, '超音波', 485, 104, { size: 14, align: 'center', color: C.acc });
           H.box(ctx, 720, 140, 210, 190, {}); H.text(ctx, '渦卷數 ∝ 空氣流量\n數位信號\n\n三菱：超音波式\n豐田：光學式', 735, 165, { size: 17 }); }
         H.box(ctx, 120, 420, 720, 80, { stroke: C.acc }); H.text(ctx, ['類比信號・量體積（需大氣壓力、進氣溫度修正）・已淘汰', '類比信號・量質量・反應快、阻力小、精確・L 型最多', '數位信號・量體積（需大氣壓力、進氣溫度修正）'][m], 480, 460, { size: 19, bold: true, align: 'center', color: C.acc });
