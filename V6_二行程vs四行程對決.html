@@ -71,6 +71,8 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 .embed header,.embed .side,.embed .tips{display:none}
 .embed .main{grid-template-columns:1fr}
 .embed .wrap{max-width:calc((100vh - 150px) * 16 / 9);padding:4px 8px 8px}
+/* 互動段（有操作面板）：畫面再縮小，讓滑桿與「完成本段」按鈕不用捲動就看得到 */
+.embed.haspanel .caption{font-size:15px;min-height:0}
 .embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
 .embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
 </style></head><body>
@@ -288,7 +290,7 @@ function Player(cfg) {
   function go(i, keepPlay) {
     ci = i; t = 0; lastCap = ''; ended = false; $('#end').classList.remove('show'); $('#quiz').classList.remove('show');
     stopTTS();
-    const p = $('#panel'); p.innerHTML = ''; if (chs[i].panel) chs[i].panel(p, S);
+    const p = $('#panel'); p.innerHTML = ''; p.style.display = ''; if (chs[i].panel) chs[i].panel(p, S); document.body.classList.toggle('haspanel', !!chs[i].panel);
     if (chs[i].enter) chs[i].enter(S);
     [...$('#list').children].forEach((li, k) => { li.classList.toggle('on', k === i); li.classList.toggle('ok', passed[k]); });
     $('#cht').textContent = `第 ${i + 1} 段｜${chs[i].title}`; $('#cht').classList.remove('hide'); clearTimeout(window.__ht); window.__ht = setTimeout(() => $('#cht').classList.add('hide'), 2500);
@@ -296,6 +298,7 @@ function Player(cfg) {
   }
   function score() { const n = firstOk.filter(x => x === true).length, q = chs.filter(c => c.quiz).length; $('#score').textContent = `首次答對 ${n} / ${q}`; return n; }
   function showQuiz() {
+    if (document.body.classList.contains('embed')) $('#panel').style.display = 'none';  /* 嵌入時讓出空間給小問題 */
     const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
     $('#qq').textContent = q.q; $('#qe').textContent = ''; $('#qgo').style.display = 'none';
     $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
@@ -360,6 +363,16 @@ function Player(cfg) {
   go(0, false); score(); requestAnimationFrame(frame);
   if (window.speechSynthesis) speechSynthesis.getVoices();
   if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('embed');
+  /* 嵌入簡報時：自動縮放畫面，讓說明、操作面板與「完成本段」按鈕都不必捲動就看得到 */
+  if (document.body.classList.contains('embed')) {
+    const wrapEl = document.querySelector('.wrap'); let busy = false;
+    const fitEmbed = () => { if (busy) return; busy = true; requestAnimationFrame(() => { busy = false;
+      const over = wrapEl.getBoundingClientRect().bottom - innerHeight, ch = cv.getBoundingClientRect().height, full = cv.parentElement.clientWidth * HGT / W;
+      if (!ch || (over <= 2 && (over > -14 || !cv.style.height))) return;
+      const nh = Math.max(100, ch - over - 4);
+      if (nh >= full - 1) { cv.style.height = ''; cv.style.width = ''; } else { cv.style.height = nh + 'px'; cv.style.width = 'auto'; cv.style.display = 'block'; cv.style.margin = '0 auto'; } }); };
+    new ResizeObserver(fitEmbed).observe(wrapEl); addEventListener('resize', fitEmbed); fitEmbed();
+  }
   return { S, go };
 }
 

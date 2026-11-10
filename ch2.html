@@ -69,6 +69,8 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 .embed header,.embed .side,.embed .tips{display:none}
 .embed .main{grid-template-columns:1fr}
 .embed .wrap{max-width:calc((100vh - 150px) * 16 / 9);padding:4px 8px 8px}
+/* 互動段（有操作面板）：畫面再縮小，讓滑桿與「完成本段」按鈕不用捲動就看得到 */
+.embed.haspanel .caption{font-size:15px;min-height:0}
 .embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
 .embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
 
