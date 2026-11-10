@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第1章 熱機與內燃機之認識｜引擎原理</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:12px 16px 32px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:15px}
+header h1{font-size:22px;margin:0}
+header .sub{color:var(--mut);font-size:14px}
+header .score{margin-left:auto;color:var(--mut);font-size:14px}
+.main{display:grid;grid-template-columns:1fr 260px;gap:14px}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+.stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:default}
+.chtitle{position:absolute;left:12px;top:10px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--acc)}
+.caption{min-height:62px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:10px;padding:12px 16px;font-size:19px;line-height:1.55}
+.caption b{color:var(--acc)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.controls button:hover{border-color:var(--acc2)}
+.controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:88px}
+.controls .time{color:var(--mut);font-size:14px;margin-left:auto;font-variant-numeric:tabular-nums}
+.controls label{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:4px;cursor:pointer}
+.bar{display:flex;gap:3px;margin-top:10px;height:12px;cursor:pointer}
+.bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
+.bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
+.bar div.done i{background:var(--ok)}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
+.side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
+.side ol{list-style:none;margin:0;padding:0}
+.side li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;gap:8px;align-items:center}
+.side li:hover{background:var(--panel2)}
+.side li.on{background:var(--panel2);outline:1px solid var(--acc)}
+.side li .n{width:22px;height:22px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:12px;flex:none}
+.side li.ok .n{background:var(--ok);color:#002010}
+.side .tips{color:var(--mut);font-size:13px;line-height:1.6;margin:10px 6px 2px;border-top:1px solid var(--line);padding-top:8px}
+.panel{margin-top:10px}
+.panel:empty{display:none}
+.panel .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.panel .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0}
+.panel input[type=number]{width:72px;font-size:17px;padding:6px;border-radius:6px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit}
+.panel input[type=range]{width:200px}
+.panel button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px;cursor:pointer;font-family:inherit}
+.panel button.pri{background:var(--acc);color:#1a1200;font-weight:700;border:none}
+.panel .res{font-size:17px;line-height:1.8}
+.panel .res b{color:var(--acc)}
+.panel .fb{font-weight:700}
+.panel .fb.ok{color:var(--ok)}.panel .fb.bad{color:var(--bad)}
+.quiz{position:absolute;inset:0;background:rgba(5,10,20,.82);display:none;align-items:center;justify-content:center;padding:16px}
+.quiz.show{display:flex}
+.quiz .card{background:var(--panel);border:2px solid var(--acc);border-radius:14px;max-width:640px;width:100%;padding:18px 20px}
+.quiz .card h4{margin:0 0 4px;color:var(--acc);font-size:15px}
+.quiz .card p{font-size:20px;margin:6px 0 12px;line-height:1.5}
+.quiz .opt{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;font-size:17px;cursor:pointer;font-family:inherit}
+.quiz .opt:hover{border-color:var(--acc2)}
+.quiz .opt.right{background:#16452d;border-color:var(--ok)}
+.quiz .opt.wrong{background:#4a1d1d;border-color:var(--bad)}
+.quiz .ex{font-size:15px;color:var(--mut);margin-top:8px;min-height:20px;line-height:1.5}
+.quiz .go{margin-top:10px;background:var(--ok);color:#002010;border:none;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;cursor:pointer;display:none;font-family:inherit}
+.endcard{position:absolute;inset:0;background:rgba(5,10,20,.85);display:none;align-items:center;justify-content:center;text-align:center}
+.endcard.show{display:flex}
+.endcard div{font-size:22px;line-height:1.8}
+.endcard b{color:var(--acc);font-size:30px}
+@media(max-width:600px){.caption{font-size:16px}header h1{font-size:18px}.quiz .card p{font-size:17px}.quiz .opt{font-size:15px;padding:8px}}
+.chtitle.hide{opacity:0}
+.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:15px;text-decoration:none;font-weight:700}
+.home:hover{border-color:var(--acc);color:var(--acc)}
+.home.big{margin-top:14px;font-size:18px;padding:10px 18px;background:var(--acc);color:#1a1200;border:none}
+/* 嵌入簡報模式（?embed=1）：隱藏標題列與章節欄，讓畫面完整放進投影片 */
+.embed header,.embed .side,.embed .tips{display:none}
+.embed .main{grid-template-columns:1fr}
+.embed .wrap{max-width:calc((100vh - 150px) * 16 / 9);padding:4px 8px 8px}
+.embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
+.embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-top:14px}
+.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;color:var(--ink);text-decoration:none}
+a.card:hover{border-color:var(--acc)}.card .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:2px 8px}
+.card .p{color:var(--mut);margin-left:8px;font-size:14px}.card h2{font-size:20px;margin:10px 0 6px}.card p{color:var(--mut);margin:0;font-size:15px;line-height:1.5}
+.intro{color:var(--mut);line-height:1.7}.sec{margin-top:30px;font-size:22px;display:flex;align-items:center;gap:10px}
+.chgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;margin-top:16px}
+.ch{position:relative;display:flex;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;color:var(--ink);text-decoration:none;min-height:150px}
+a.ch:hover{border-color:var(--acc);transform:translateY(-2px)}.ch{transition:.15s}
+.ch .no{flex:none;width:70px;height:70px;border-radius:14px;background:var(--acc);color:#1a1200;display:grid;place-items:center;font-weight:800;font-size:30px}
+.ch .no small{display:block;font-size:12px;font-weight:700;margin-top:-6px}
+.ch h2{font-size:21px;margin:2px 0 6px}.ch p{color:var(--mut);font-size:14px;line-height:1.55;margin:0 0 10px}
+.ch .st{font-size:13px;font-weight:700;border-radius:20px;padding:2px 10px;display:inline-block}
+.st.ok{background:#143a27;color:var(--ok)}.st.wip{background:#3a2f10;color:var(--acc)}.st.soon{background:#1d2c4a;color:var(--mut)}
+.ch .bar{height:6px;background:var(--panel2);border-radius:3px;margin-top:10px;overflow:hidden}.ch .bar i{display:block;height:100%;background:var(--ok)}
+.ch.soon{opacity:.45;cursor:default}.ch.soon .no{background:#2c3f63;color:var(--mut)}
+.crumb{color:var(--mut);font-size:14px;margin:4px 0 0}.crumb a{color:var(--acc2)}
+.how{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}.how div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--mut);font-size:15px;line-height:1.6}.how b{color:var(--ink)}
+</style></head><body><div class="wrap"><header><a class="home" href="index.html">🏠 課程首頁</a><span class="tag">第1章</span><h1>熱機與內燃機之認識</h1></header>
+<p class="crumb">其他章節：<a href="ch2.html">第2章</a> ・ <a href="第3章_汽油引擎燃料系統/index.html">第3章</a></p>
+<h2 class="sec">🎞️ 上課簡報</h2><div class="grid"><a class="card" href="S1_第1節_熱機的定義與分類.html"><span class="tag">簡報</span><span class="p">第1節</span><h2>熱機的定義與分類</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S2_第2節_內燃機的循環.html"><span class="tag">簡報</span><span class="p">第2節</span><h2>內燃機的循環</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S3_第3節_往復式活塞引擎之分類.html"><span class="tag">簡報</span><span class="p">第3節</span><h2>往復式活塞引擎之分類</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S4_第4節_四行程引擎工作原理.html"><span class="tag">簡報</span><span class="p">第4節</span><h2>四行程引擎工作原理</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S5_第5節_汽門正時.html"><span class="tag">簡報</span><span class="p">第5節</span><h2>汽門正時</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S6_第6節_二行程引擎與第一單元總複習.html"><span class="tag">簡報</span><span class="p">第6節</span><h2>二行程引擎與第一單元總複習</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a></div>
+<h2 class="sec">🎬 網頁式動畫影片</h2><div class="grid"><a class="card" href="V1_熱機能量轉換之旅.html"><span class="tag">V1</span><span class="p">第1節</span><h2>熱機能量轉換之旅</h2><p>化學能→熱能→機械能；內燃機與外燃機</p></a><a class="card" href="V2_P-V圖會說話.html"><span class="tag">V2</span><span class="p">第2節</span><h2>P-V 圖會說話</h2><p>等容、等壓、混合、米勒四種循環</p></a><a class="card" href="V3_四行程引擎透視動畫.html"><span class="tag">V3</span><span class="p">第4節</span><h2>四行程引擎透視動畫</h2><p>TDC/BDC、行程、四行程、活塞速度</p></a><a class="card" href="V4_汽門正時圓盤計算器.html"><span class="tag">V4</span><span class="p">第5節</span><h2>汽門正時圓盤計算器</h2><p>行程度數、汽門重疊＋隨機練習</p></a><a class="card" href="V5_多缸動力重疊時間軸.html"><span class="tag">V5</span><span class="p">第5節</span><h2>多缸動力重疊時間軸</h2><p>動力間隔、動力重疊＋互動調整</p></a><a class="card" href="V6_二行程vs四行程對決.html"><span class="tag">V6</span><span class="p">第6節</span><h2>二行程 vs 四行程對決</h2><p>掃氣、工作原理、環境代價</p></a></div>
+<h2 class="sec">📖 補課區（缺課同學看這裡）</h2><div class="grid"><a class="card" href="R1_第1節補課包.html"><span class="tag">補課</span><span class="p">第1節</span><h2>熱機的定義與分類</h2><p>影片＋影片測驗＋動畫＋課後測驗</p></a><a class="card" href="R2_第2節補課包.html"><span class="tag">補課</span><span class="p">第2節</span><h2>內燃機的循環</h2><p>影片＋影片測驗＋動畫＋課後測驗</p></a><a class="card" href="R3_第3節補課包.html"><span class="tag">補課</span><span class="p">第3節</span><h2>往復式活塞引擎之分類</h2><p>影片＋影片測驗＋動畫＋課後測驗</p></a><a class="card" href="R4_第4節補課包.html"><span class="tag">補課</span><span class="p">第4節</span><h2>四行程引擎工作原理</h2><p>影片＋影片測驗＋動畫＋課後測驗</p></a><a class="card" href="R5_第5節補課包.html"><span class="tag">補課</span><span class="p">第5節</span><h2>汽門正時</h2><p>影片＋影片測驗＋動畫＋課後測驗</p></a><a class="card" href="R6_第6節補課包.html"><span class="tag">補課</span><span class="p">第6節</span><h2>二行程引擎與第一單元總複習</h2><p>影片＋影片測驗＋動畫＋課後測驗</p></a></div></div></body></html>
