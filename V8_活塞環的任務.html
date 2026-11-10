@@ -75,7 +75,55 @@ header .score{margin-left:auto;color:var(--mut);font-size:14px}
 .embed.haspanel .caption{font-size:15px;min-height:0}
 .embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
 .embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
+
+.actbtn{background:var(--ok);color:#002010;border:none;border-radius:8px;padding:7px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+#actwrap{display:none}
+.act{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px 20px;min-height:70vh}
+.acthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
+.acthead h2{font-size:21px;margin:0}.acthead .tag{background:var(--ok);color:#002010;font-weight:700;border-radius:6px;padding:3px 10px;font-size:14px}
+.ainfo{margin-left:auto;color:var(--mut);font-size:15px;font-variant-numeric:tabular-nums}.ainfo b{color:var(--acc)}
+.act button{font-family:inherit;cursor:pointer}
+.aback,.asec{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px}
+.apri{background:var(--acc);color:#1a1200;border:none;border-radius:10px;padding:10px 20px;font-size:18px;font-weight:700}
+.apri:disabled{opacity:.35;cursor:default}
+.astart{max-width:720px;margin:10px auto;font-size:18px;line-height:1.7}.astart b{color:var(--acc)}
+.arow{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0}
+.arow input,.arow select{font-size:18px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit;margin-left:6px}
+.arow input{width:150px}
+.alist{color:var(--mut);margin:6px 0 18px}.alist small{background:var(--panel2);border-radius:6px;padding:1px 8px;margin-left:6px;font-size:13px}
+.around h3{margin:2px 0 4px;font-size:21px;color:var(--acc)}.ahint{color:var(--mut);font-size:15px;margin:0 0 12px}
+.apool{display:flex;flex-wrap:wrap;gap:8px;min-height:56px;background:#0a1120;border:1px dashed var(--line);border-radius:10px;padding:10px;margin-bottom:12px}
+.achip{background:var(--panel2);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:9px 13px;font-size:17px;line-height:1.35;text-align:left}
+.achip.sel{border-color:var(--acc);background:#3a2f10;transform:translateY(-2px);box-shadow:0 4px 0 rgba(255,176,32,.35)}
+.achip.bad{border-color:var(--bad)}.achip.ok{border-color:var(--ok);background:#143a27;cursor:default}
+.abins{display:grid;gap:10px}
+.abin{background:#0f1a2e;border:2px solid var(--line);border-radius:12px;padding:8px;min-height:150px;cursor:pointer}
+.abin:hover{border-color:var(--acc2)}.abin h4{margin:2px 4px 8px;font-size:18px;color:var(--acc2);text-align:center}
+.adrop{display:flex;flex-direction:column;gap:6px}
+.amatch{display:grid;grid-template-columns:1fr 1.5fr;gap:14px}
+.acolL,.acolR{display:flex;flex-direction:column;gap:8px}
+.aitem{background:var(--panel2);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:11px 12px;font-size:17px;text-align:left;display:flex;align-items:center;gap:8px;line-height:1.4}
+.aitem.L{font-weight:700}.aitem.sel{border-color:var(--acc);background:#3a2f10}.aitem.ok{background:#143a27}
+.aitem i{font-style:normal;color:#0d1526;font-weight:700;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;flex:none;font-size:14px}
+.aseq{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:12px}
+.aslot{min-width:120px;min-height:58px;border:2px dashed var(--line);border-radius:10px;padding:6px;display:flex;align-items:center;gap:6px;background:#0f1a2e}
+.aslot>i{font-style:normal;color:var(--mut);font-weight:700}.aslot.ok{border:2px solid var(--ok)}.aslot.bad{border:2px solid var(--bad)}
+.aslot .achip{padding:6px 10px;font-size:16px}.aarr{color:var(--mut);font-size:22px}
+.aqq{font-size:20px;line-height:1.55;margin:4px 0 12px}.aqq span{background:var(--panel2);border-radius:6px;padding:1px 8px;font-size:14px;color:var(--mut);margin-right:8px}
+.aopt{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:11px 13px;margin:7px 0;font-size:18px}
+.aopt.ok{border-color:var(--ok);background:#143a27}.aopt.bad{border-color:var(--bad);background:#4a1d1d}.aopt:disabled{cursor:default}
+.aex{color:var(--mut);font-size:16px;min-height:22px;line-height:1.5}
+.afoot{display:flex;align-items:center;gap:12px;margin-top:14px;justify-content:flex-end}
+.amsg{margin-right:auto;font-size:17px;font-weight:700}.amsg.ok{color:var(--ok)}.amsg.bad{color:var(--bad)}
+.amut{color:var(--mut);font-size:15px}
+.aend{text-align:center;max-width:640px;margin:10px auto;font-size:18px}.astar{font-size:56px}
+.aend h3{font-size:26px;margin:6px 0}.abig b{color:var(--acc);font-size:28px}
+.atab{margin:10px auto;border-collapse:collapse;min-width:320px}.atab td{border-bottom:1px solid var(--line);padding:6px 14px;text-align:left}
+.asend{color:var(--mut)}.asend.ok{color:var(--ok)}
+@media(max-width:700px){.amatch{grid-template-columns:1fr}.abins{grid-template-columns:1fr!important}.abin{min-height:80px}}
+.alive{min-height:0;margin:0 0 12px;font-weight:700;border-radius:10px}.alive.on{background:#3a2f10;border:2px solid var(--acc);padding:10px 14px;color:var(--acc)}.alive.go{background:#143a27;border:2px solid var(--ok);padding:10px 14px;color:var(--ok)}
 </style></head><body>
+<script src="firebase-config.js"></script><script src="score.js"></script>
 <script>
 /* 網頁式動畫影片播放框架（共用） */
 const W = 960, HGT = 540;
@@ -240,11 +288,11 @@ function Player(cfg) {
   const $ = s => document.querySelector(s);
   document.title = cfg.code + ' ' + cfg.title;
   document.body.innerHTML = `<div class="wrap">
-  <header><a class="home" href="ch2.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span></header>
+  <header><a class="home" href="ch2.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
   <div class="main"><div>
     <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
       <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
-      <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br><a class="home big" href="ch2.html">🏠 回首頁選下一支動畫</a></div></div>
+      <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="ch2.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
     <div class="controls">
@@ -360,6 +408,13 @@ function Player(cfg) {
   // 互動章節：「完成本段」按鈕
   window.finishLoop = () => { if (chs[ci].quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } };
   window.__seek = (i, tt) => { go(i, false); t = tt; };
+  if (cfg.activity) {
+    const wrap = document.createElement('section'); wrap.id = 'actwrap'; document.querySelector('.wrap').append(wrap);
+    let act = null; const open = () => { setPlay(false); document.querySelector('.main').style.display = 'none'; wrap.style.display = 'block'; if (!act) act = Activity(wrap, Object.assign({ code: cfg.code, back: close }, cfg.activity)); window.scrollTo(0, 0); };
+    const close = () => { wrap.style.display = 'none'; document.querySelector('.main').style.display = ''; };
+    $('#actbtn').onclick = () => wrap.style.display === 'block' ? close() : open(); const ae = $('#actend'); if (ae) ae.onclick = open;
+    if (new URLSearchParams(location.search).has('act')) setTimeout(open, 0);
+  }
   go(0, false); score(); requestAnimationFrame(frame);
   if (window.speechSynthesis) speechSynthesis.getVoices();
   if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('embed');
@@ -374,6 +429,196 @@ function Player(cfg) {
     new ResizeObserver(fitEmbed).observe(wrapEl); addEventListener('resize', fitEmbed); fitEmbed();
   }
   return { S, go };
+}
+
+/* 互學挑戰模組（共用）：classify 分類、match 配對、order 排序、choice 情境選擇
+   cfg = { code, title, rounds:[...], back() }
+   classify: {type:'classify', title, bins:[...], items:[[文字, 正確籃號], ...]}
+   match:    {type:'match', title, pairs:[[左, 右], ...]}
+   order:    {type:'order', title, items:[依正確順序...]}
+   choice:   {type:'choice', title, qs:[[題目, [正確, 錯1, 錯2...], 解析], ...]}
+   計分：每個項目「第一次檢查」就對才得分；答錯的要改到對才能過關（學習用）。 */
+function Activity(root, cfg) {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
+  const CLS = (window.CLASS_LIST && window.CLASS_LIST.length) ? window.CLASS_LIST : ['汽車一甲', '汽車一乙'];
+  const curCls = () => { const sel = body.querySelector('#aclsSel'); if (!sel) return ''; return sel.value === '__manual' ? body.querySelector('#acls').value.trim() : sel.value; };
+  const COLORS = ['#38c6ff', '#ffd166', '#3ddc84', '#ff8a3d', '#c79bff', '#5ee0d0', '#ff6b9a', '#a3e635'];
+  const R = cfg.rounds, total = R.reduce((a, r) => a + (r.type === 'choice' ? r.qs.length : r.type === 'match' ? r.pairs.length : r.items.length), 0);
+  let who = { cls: store.get('act_cls'), grp: store.get('act_grp') }, ri = 0, got = 0, t0 = 0, tick = null, detail = [];
+  root.innerHTML = `<div class="act"><div class="acthead"><button class="aback">${esc(cfg.backText || '◀ 回動畫')}</button><span class="tag">互學挑戰</span><h2>${esc(cfg.title)}</h2><span class="ainfo"></span></div><div class="abody"></div></div>`;
+  const body = root.querySelector('.abody'), info = root.querySelector('.ainfo');
+  root.querySelector('.aback').onclick = () => { cfg.back && cfg.back(); };
+  const setInfo = () => { info.innerHTML = t0 ? `${esc(who.cls)} 第 ${esc(who.grp)} 組｜第 ${Math.min(ri + 1, R.length)} / ${R.length} 關｜得分 <b>${got}</b> / ${total}｜⏱ <b>${fmt((Date.now() - t0) / 1000)}</b>` : ''; };
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+  /* ---- 開始畫面 ---- */
+  function start() {
+    body.innerHTML = `<div class="astart"><p>共 <b>${R.length}</b> 關、<b>${total}</b> 分。<br>每關「第一次檢查」就答對才得分；答錯的要改對才能過關。<br>小組 3 人輪流操作平板，答案要<b>先討論、取得共識</b>再按！</p>
+      <div class="arow"><label>班級 <select id="aclsSel">${CLS.map(c => `<option ${c === who.cls ? 'selected' : ''}>${esc(c)}</option>`).join('')}<option value="__manual" ${who.cls && !CLS.includes(who.cls) ? 'selected' : ''}>✏️ 手動輸入班級</option></select>
+        <input id="acls" maxlength="20" placeholder="輸入班級名稱" value="${CLS.includes(who.cls) ? '' : esc(who.cls)}" style="display:none"></label>
+      <label>組別 <select id="agrp">${Array.from({ length: 12 }, (_, i) => `<option ${String(i + 1) === who.grp ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label></div>
+      <ol class="alist">${R.map(r => `<li>${esc(r.title)} <small>${{ classify: '分類', match: '配對', order: '排序', choice: '情境判斷' }[r.type]}</small></li>`).join('')}</ol>
+      <p class="alive" id="alive"></p><button class="apri" id="ago">開始挑戰 ▶</button></div>`;
+    const sel = body.querySelector('#aclsSel'), man = body.querySelector('#acls');
+    const tog = () => { man.style.display = sel.value === '__manual' ? '' : 'none'; if (sel.value === '__manual') man.focus(); if (live) onLive(live); };
+    sel.onchange = tog; man.oninput = () => { if (live) onLive(live); }; man.style.display = sel.value === '__manual' ? '' : 'none';
+    body.querySelector('#ago').onclick = () => {
+      who.cls = curCls() || '未填班級'; who.grp = body.querySelector('#agrp').value;
+      store.set('act_cls', who.cls); store.set('act_grp', who.grp);
+      ri = 0; got = 0; detail = []; t0 = Date.now(); clearInterval(tick); tick = setInterval(setInfo, 1000); round();
+    };
+    setInfo();
+  }
+
+  /* ---- 關卡外框 ---- */
+  function frame(r, html) {
+    body.innerHTML = `<div class="around"><h3>第 ${ri + 1} 關｜${esc(r.title)}</h3><p class="ahint">${esc(r.hint || { classify: '先點一張卡片，再點它要放的類別；點類別裡的卡片可以拿回來。', match: '先點左邊一項，再點右邊對應的說明；點已配好的可以取消。', order: '依正確順序依序點選卡片；點上方已排好的可以取消。', choice: '小組討論後再作答，第一次就答對才得分。' }[r.type])}</p>${html}
+      <div class="afoot"><span class="amsg"></span><button class="apri" id="achk" disabled>檢查答案</button></div></div>`;
+    setInfo();
+  }
+  const msg = (s, ok) => { const m = body.querySelector('.amsg'); m.innerHTML = s; m.className = 'amsg ' + (ok === true ? 'ok' : ok === false ? 'bad' : ''); };
+  function pass(pts, n) {
+    got += pts; detail.push({ round: R[ri].title, got: pts, of: n }); setInfo();
+    const b = body.querySelector('#achk'); b.disabled = false; b.textContent = ri < R.length - 1 ? '下一關 ▶' : '看結果 ▶';
+    b.onclick = () => { ri++; ri < R.length ? round() : finish(); };
+  }
+  function round() { const r = R[ri]; ({ classify, match, order, choice })[r.type](r); }
+
+  /* ---- 分類 ---- */
+  function classify(r) {
+    const items = shuf(r.items.map((it, i) => ({ i, t: it[0], ans: it[1], at: -1, bad: false })));
+    let sel = null, first = true, firstOk = 0;
+    frame(r, `<div class="apool"></div><div class="abins" style="grid-template-columns:repeat(${r.bins.length},1fr)">${r.bins.map((b, k) => `<div class="abin" data-k="${k}"><h4>${esc(b)}</h4><div class="adrop"></div></div>`).join('')}</div>`);
+    const pool = body.querySelector('.apool'), chk = body.querySelector('#achk');
+    const chip = it => `<button class="achip ${sel === it ? 'sel' : ''} ${it.bad ? 'bad' : ''} ${it.ok ? 'ok' : ''}" data-i="${it.i}">${esc(it.t)}</button>`;
+    function draw() {
+      pool.innerHTML = items.filter(x => x.at < 0).map(chip).join('') || '<span class="amut">全部放好了，按「檢查答案」</span>';
+      body.querySelectorAll('.abin').forEach(b => b.querySelector('.adrop').innerHTML = items.filter(x => x.at === +b.dataset.k).map(chip).join(''));
+      chk.disabled = items.some(x => x.at < 0) || items.every(x => x.ok);
+    }
+    body.querySelector('.around').onclick = e => {
+      const c = e.target.closest('.achip'), b = e.target.closest('.abin');
+      if (c) { const it = items[items.findIndex(x => x.i === +c.dataset.i)]; if (it.ok) return; if (it.at >= 0 && !sel) { it.at = -1; it.bad = false; } else sel = sel === it ? null : it; draw(); return; }
+      if (b && sel) { sel.at = +b.dataset.k; sel.bad = false; sel = null; draw(); }
+    };
+    chk.onclick = () => {
+      let bad = 0; items.forEach(x => { if (x.at === x.ans) x.ok = true; else { x.bad = true; x.at = -1; bad++; } });
+      if (first) { firstOk = items.filter(x => x.ok).length; first = false; }
+      draw();
+      if (bad) msg(`✘ 有 ${bad} 張放錯了（已退回上方，紅框），小組再討論一次！`, false);
+      else { msg(`✔ 全部正確！本關得分 ${firstOk} / ${items.length}`, true); pass(firstOk, items.length); }
+    };
+    draw();
+  }
+
+  /* ---- 配對 ---- */
+  function match(r) {
+    const L = r.pairs.map((p, i) => ({ i, t: p[0] })), Rr = shuf(r.pairs.map((p, i) => ({ i, t: p[1] })));
+    const link = {}; let sel = null, first = true, firstOk = 0, locked = {};
+    frame(r, `<div class="amatch"><div class="acolL"></div><div class="acolR"></div></div>`);
+    const chk = body.querySelector('#achk');
+    function draw() {
+      const used = Object.values(link);
+      body.querySelector('.acolL').innerHTML = L.map(x => { const k = link[x.i]; const n = k != null ? Object.keys(link).indexOf(String(x.i)) : -1;
+        return `<button class="aitem L ${sel === x.i ? 'sel' : ''} ${locked[x.i] ? 'ok' : ''}" data-i="${x.i}" ${k != null ? `style="border-color:${COLORS[n % 8]}"` : ''}>${k != null ? `<i style="background:${COLORS[n % 8]}">${n + 1}</i>` : ''}${esc(x.t)}</button>`; }).join('');
+      body.querySelector('.acolR').innerHTML = Rr.map(y => { const li = Object.keys(link).find(k => link[k] === y.i); const n = li != null ? Object.keys(link).indexOf(li) : -1;
+        return `<button class="aitem R ${li != null && locked[li] ? 'ok' : ''}" data-r="${y.i}" ${n >= 0 ? `style="border-color:${COLORS[n % 8]}"` : ''}>${n >= 0 ? `<i style="background:${COLORS[n % 8]}">${n + 1}</i>` : ''}${esc(y.t)}</button>`; }).join('');
+      chk.disabled = Object.keys(link).length < L.length || Object.keys(locked).length === L.length;
+    }
+    body.querySelector('.amatch').onclick = e => {
+      const l = e.target.closest('.L'), rr = e.target.closest('.R');
+      if (l) { const i = +l.dataset.i; if (locked[i]) return; if (link[i] != null) { delete link[i]; sel = null; } else sel = sel === i ? null : i; draw(); return; }
+      if (rr) { const j = +rr.dataset.r; const owner = Object.keys(link).find(k => link[k] === j);
+        if (owner != null) { if (locked[owner]) return; delete link[owner]; draw(); return; }
+        if (sel != null) { link[sel] = j; sel = null; draw(); } }
+    };
+    chk.onclick = () => {
+      let bad = 0; Object.keys(link).forEach(k => { if (+k === link[k]) locked[k] = true; else { delete link[k]; bad++; } });
+      if (first) { firstOk = Object.keys(locked).length; first = false; }
+      draw();
+      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(`✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}`, true); pass(firstOk, L.length); }
+    };
+    draw();
+  }
+
+  /* ---- 排序 ---- */
+  function order(r) {
+    const items = shuf(r.items.map((t, i) => ({ i, t }))); let seq = [], first = true, firstOk = 0, done = false;
+    frame(r, `<div class="aseq"></div><div class="apool"></div>`);
+    const chk = body.querySelector('#achk');
+    function draw() {
+      body.querySelector('.aseq').innerHTML = r.items.map((_, k) => { const it = seq[k]; return `<div class="aslot ${it && it.ok ? 'ok' : ''} ${it && it.bad ? 'bad' : ''}"><i>${k + 1}</i>${it ? `<button class="achip" data-s="${k}">${esc(it.t)}</button>` : ''}</div>`; }).join('<span class="aarr">→</span>');
+      body.querySelector('.apool').innerHTML = items.filter(x => !seq.includes(x)).map(x => `<button class="achip" data-i="${x.i}">${esc(x.t)}</button>`).join('') || '<span class="amut">排好了，按「檢查答案」</span>';
+      chk.disabled = done || seq.length < r.items.length;
+    }
+    body.querySelector('.around').onclick = e => {
+      const c = e.target.closest('.achip'); if (!c || done) return;
+      if (c.dataset.s != null) { const k = +c.dataset.s; if (seq[k].ok) return; seq = seq.slice(0, k).concat(seq.slice(k + 1)); seq.forEach(x => x.bad = false); }
+      else seq.push(items.find(x => x.i === +c.dataset.i));
+      draw();
+    };
+    chk.onclick = () => {
+      let bad = 0; seq.forEach((x, k) => { if (x.i === k) { x.ok = true; x.bad = false; } else { x.bad = true; bad++; } });
+      if (first) { firstOk = r.items.length - bad; first = false; }
+      if (bad) { const keep = []; for (const x of seq) { if (x.ok && keep.length === x.i) keep.push(x); else break; } seq.forEach(x => { if (!keep.includes(x)) { x.ok = false; } }); draw(); seq = keep; setTimeout(() => { items.forEach(x => x.bad = false); draw(); }, 900); msg(`✘ 有 ${bad} 個位置不對，正確的前段已保留，繼續排！`, false); }
+      else { done = true; draw(); msg(`✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}`, true); pass(firstOk, r.items.length); }
+    };
+    draw();
+  }
+
+  /* ---- 情境選擇 ---- */
+  function choice(r) {
+    let qi = 0, pts = 0;
+    frame(r, `<div class="aq"></div>`);
+    const chk = body.querySelector('#achk'); chk.style.display = 'none';
+    function q() {
+      const [qq, opts, ex] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
+      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}<p class="aex"></p>`;
+      body.querySelector('.aq').onclick = e => {
+        const b = e.target.closest('.aopt'); if (!b || b.disabled) return; const x = o[+b.dataset.k];
+        if (x.ok) { if (!tried) pts++; body.querySelectorAll('.aopt').forEach(z => z.disabled = true); b.classList.add('ok');
+          body.querySelector('.aex').innerHTML = `${tried ? '✔ 改對了（不計分）' : '✔ 答對了！'}${ex ? '　' + esc(ex) : ''}`; setInfo();
+          if (qi < r.qs.length - 1) { chk.style.display = ''; chk.disabled = false; chk.textContent = '下一題 ▶'; chk.onclick = () => { qi++; chk.style.display = 'none'; q(); }; }
+          else { chk.style.display = ''; msg(`本關得分 ${pts} / ${r.qs.length}`, true); pass(pts, r.qs.length); } }
+        else { tried = true; b.classList.add('bad'); b.disabled = true; body.querySelector('.aex').textContent = '✘ 不對喔，小組再討論看看。'; }
+      };
+    }
+    q();
+  }
+
+  /* ---- 結果 ---- */
+  function finish() {
+    clearInterval(tick); const sec = Math.round((Date.now() - t0) / 1000), pct = Math.round(got / total * 100);
+    const star = pct >= 90 ? '⭐⭐⭐' : pct >= 70 ? '⭐⭐' : pct >= 50 ? '⭐' : '💪';
+    const rec = { lesson: cfg.code, title: cfg.title, cls: who.cls, grp: +who.grp, score: got, total, pct, sec, detail, at: new Date().toISOString() };
+    body.innerHTML = `<div class="aend"><div class="astar">${star}</div><h3>${esc(who.cls)} 第 ${esc(who.grp)} 組　挑戰完成！</h3>
+      <p class="abig">得分 <b>${got}</b> / ${total}（${pct}%）　用時 <b>${fmt(sec)}</b></p>
+      <table class="atab">${detail.map(d => `<tr><td>${esc(d.round)}</td><td>${d.got} / ${d.of}</td></tr>`).join('')}</table>
+      <p class="asend">成績上傳中…</p>
+      <p class="amut">請舉手讓老師確認此畫面。${pct < 70 ? '建議回動畫重看答錯的段落，再挑戰一次！' : ''}</p>
+      <button class="apri" id="aagain">再挑戰一次</button> <button class="asec" id="aback2">${esc(cfg.backText || '◀ 回動畫')}</button></div>`;
+    info.innerHTML = '';
+    body.querySelector('#aagain').onclick = start; body.querySelector('#aback2').onclick = () => cfg.back && cfg.back();
+    const s = body.querySelector('.asend');
+    (window.Score ? Score.submit(rec) : Promise.resolve({ ok: false, local: true })).then(r => {
+      s.textContent = r && r.ok ? '✔ 成績已上傳到班級排行榜' : '（離線模式：成績未上傳，請讓老師看此畫面）'; s.className = 'asend ' + (r && r.ok ? 'ok' : '');
+    }).catch(() => { s.textContent = '（成績上傳失敗，請讓老師看此畫面）'; });
+  }
+  /* 全班同步挑戰：老師按「準備」→ 顯示等待；按「開始」→ 停在開始畫面的組別自動開始（10 分鐘內有效） */
+  let live = null;
+  function onLive(d) {
+    live = d; const el = body.querySelector('#alive'); if (!el) return;
+    const mine = d && (!d.cls || d.cls === (curCls() || who.cls));
+    if (mine && d.state === 'ready') { el.className = 'alive on'; el.textContent = '🔔 老師準備開始全班挑戰！填好班級、組別後等待，老師按開始會自動進入。'; }
+    else if (mine && d.state === 'go' && Date.now() - (d.goAt || 0) < 600000) { el.className = 'alive go'; el.textContent = '🚀 全班挑戰開始！'; body.querySelector('#ago').click(); }
+    else { el.className = 'alive'; el.textContent = ''; }
+  }
+  if (window.Score && Score.watchLive) Score.watchLive(cfg.code, d => onLive(d));
+  const _start = start; start = function () { _start(); if (live) onLive(Object.assign({}, live, live.state === 'go' ? { state: 'done' } : {})); };
+  start();
+  return { start };
 }
 
 /* V8 活塞環的任務 */
@@ -484,5 +729,6 @@ const V8 = {
   ],
 };
 
+V8.code="Ch2-V8";V8.activity={"title": "第 8 節｜活塞環任務挑戰", "rounds": [{"type": "match", "title": "零件 ↔ 功用", "pairs": [["壓縮環", "保持氣密、協助活塞頭散熱"], ["油環", "刮除汽缸壁多餘機油"], ["活塞銷", "連接活塞與連桿小端"], ["活塞裙部", "引導活塞做直線運動"], ["第一道壓縮環鍍鉻", "提高耐磨性"]]}, {"type": "classify", "title": "鑄鐵活塞還是鋁合金活塞？", "bins": ["鑄鐵活塞", "鋁合金活塞"], "items": [["強度大、耐磨", 0], ["膨脹係數小", 0], ["用於中低速柴油引擎", 0], ["重量輕", 1], ["散熱快", 1], ["用於現代高速汽油引擎", 1], ["裙部做成橢圓形", 1]]}, {"type": "classify", "title": "活塞銷的固定方式", "bins": ["固定式", "半浮式", "全浮式"], "items": [["銷固定在活塞銷轂", 0], ["連桿小端裝銅套", 0], ["銷固定在連桿小端", 1], ["活塞銷轂內裝銅套", 1], ["兩端用扣環定位", 2], ["大多數引擎採用", 2]]}, {"type": "choice", "title": "藍煙之謎", "qs": [["「吃機油、排氣冒藍煙」最可能是哪個機件磨損？", ["活塞環", "汽缸床墊", "火星塞", "汽缸蓋"], "機油從環縫竄進燃燒室一起燒掉。"], ["下列何者「不是」鋁合金活塞的優點？", ["強度較大", "重量較輕", "導熱較佳", "慣性損失較小"], "強度大是鑄鐵活塞的優點。"], ["鋁合金橢圓形活塞，哪個方向是短徑？", ["活塞銷方向", "與活塞銷垂直的方向", "上下方向", "沒有長短徑"], "受熱膨脹後變成正圓形。"]]}]};
 Player(V8);
 </script></body></html>

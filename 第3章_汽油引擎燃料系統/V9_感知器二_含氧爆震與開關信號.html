@@ -447,7 +447,7 @@ function Activity(root, cfg) {
   const COLORS = ['#38c6ff', '#ffd166', '#3ddc84', '#ff8a3d', '#c79bff', '#5ee0d0', '#ff6b9a', '#a3e635'];
   const R = cfg.rounds, total = R.reduce((a, r) => a + (r.type === 'choice' ? r.qs.length : r.type === 'match' ? r.pairs.length : r.items.length), 0);
   let who = { cls: store.get('act_cls'), grp: store.get('act_grp') }, ri = 0, got = 0, t0 = 0, tick = null, detail = [];
-  root.innerHTML = `<div class="act"><div class="acthead"><button class="aback">◀ 回動畫</button><span class="tag">互學挑戰</span><h2>${esc(cfg.title)}</h2><span class="ainfo"></span></div><div class="abody"></div></div>`;
+  root.innerHTML = `<div class="act"><div class="acthead"><button class="aback">${esc(cfg.backText || '◀ 回動畫')}</button><span class="tag">互學挑戰</span><h2>${esc(cfg.title)}</h2><span class="ainfo"></span></div><div class="abody"></div></div>`;
   const body = root.querySelector('.abody'), info = root.querySelector('.ainfo');
   root.querySelector('.aback').onclick = () => { cfg.back && cfg.back(); };
   const setInfo = () => { info.innerHTML = t0 ? `${esc(who.cls)} 第 ${esc(who.grp)} 組｜第 ${Math.min(ri + 1, R.length)} / ${R.length} 關｜得分 <b>${got}</b> / ${total}｜⏱ <b>${fmt((Date.now() - t0) / 1000)}</b>` : ''; };
@@ -598,7 +598,7 @@ function Activity(root, cfg) {
       <table class="atab">${detail.map(d => `<tr><td>${esc(d.round)}</td><td>${d.got} / ${d.of}</td></tr>`).join('')}</table>
       <p class="asend">成績上傳中…</p>
       <p class="amut">請舉手讓老師確認此畫面。${pct < 70 ? '建議回動畫重看答錯的段落，再挑戰一次！' : ''}</p>
-      <button class="apri" id="aagain">再挑戰一次</button> <button class="asec" id="aback2">◀ 回動畫</button></div>`;
+      <button class="apri" id="aagain">再挑戰一次</button> <button class="asec" id="aback2">${esc(cfg.backText || '◀ 回動畫')}</button></div>`;
     info.innerHTML = '';
     body.querySelector('#aagain').onclick = start; body.querySelector('#aback2').onclick = () => cfg.back && cfg.back();
     const s = body.querySelector('.asend');
