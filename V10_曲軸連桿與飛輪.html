@@ -870,8 +870,14 @@ const V10 = {
       enter(S) { S.pick = null; },
       onClick(x, y, S) {
         if (!S.pick) return;
-        const zones = { small: [640, 130, 34], big: [640, 400, 46], cap: [640, 452, 40] };
-        const hit = Object.keys(zones).find(k => Math.hypot(x - zones[k][0], y - zones[k][1]) < zones[k][2]);
+        // 依實際畫出的形狀判定（座標同 draw：X=640、小端 Y1=130、大端 Y2=400、軸承蓋＝大端下半圈，拆開時下移 S.capOff）
+        const X = 640, Y1 = 130, Y2 = 400, co = S.capOff || 0;
+        const inCap = y >= Y2 - 2 + co && Math.hypot(x - X, y - (Y2 + co)) <= 54;
+        const inBigUpper = y < Y2 + 2 && Math.hypot(x - X, y - Y2) <= 54;
+        const inSmall = Math.hypot(x - X, y - Y1) <= 40;
+        // 點軸承蓋時判為軸承蓋；選「大端」時，點上半圈或軸承蓋（屬於大端的一部分）都算對
+        const hit = S.pick === 'big' ? (inBigUpper || inCap ? 'big' : inSmall ? 'small' : null)
+          : inSmall ? 'small' : inCap ? 'cap' : inBigUpper ? 'big' : null;
         const name = { small: '小端', big: '大端', cap: '軸承蓋' }[S.pick];
         if (hit === S.pick) { S._fb && S._fb(true, `✔ 對！這裡是${name}`); S.flash = { k: hit, t: performance.now() }; S.pick = null; }
         else S._fb && S._fb(false, `✘ 這裡不是${name}，再找找看`);
@@ -884,6 +890,7 @@ const V10 = {
         // 右：放大的連桿（直立）
         const X = 640, Y1 = 130, Y2 = 400;
         const cap = t >= 28 && t < 40 ? 52 * ease(prog(t, 28, 31)) * (1 - ease(prog(t, 36, 39))) : 0;
+        S.capOff = cap;
         ctx.save();
         ctx.fillStyle = '#aab8cc'; ctx.beginPath(); ctx.moveTo(X - 14, Y1 + 24); ctx.lineTo(X + 14, Y1 + 24); ctx.lineTo(X + 22, Y2 - 40); ctx.lineTo(X - 22, Y2 - 40); ctx.closePath(); ctx.fill();
         ctx.fillStyle = '#8796ad'; ctx.fillRect(X - 4, Y1 + 34, 8, Y2 - Y1 - 84);
