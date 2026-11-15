@@ -51,4 +51,8 @@ window.LINKS = {
   form9: '',              // Google 表單單元評量＋課程學習回饋
   video9: '',             // 補課包：NotebookLM 影片摘要（YouTube 網址）
   edcafeR9: '',           // 補課包：Edcafe YouTube 影片測驗網址
+  // 第 10 節（第2章 2-4 曲軸、連桿與飛輪）
+  form10: '',             // Google 表單隨堂測驗（6 題）
+  video10: '',            // 補課包：補課影片（YouTube 網址）——待補
+  edcafeR10: '',          // 補課包：Edcafe 補課影片測驗網址（與 form10 分開）——待補
 };
