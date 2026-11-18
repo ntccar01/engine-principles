@@ -8,12 +8,12 @@ window.LINKS = {
   // 第 1 節
   edcafe1: '',            // V1 Edcafe 影片測驗
   form1: '',              // Google 表單隨堂測驗
-  video1: '',             // 補課包：NotebookLM 影片摘要（YouTube 網址）
+  video1: 'https://youtu.be/T2D9Amhd2fY',             // 補課包：ep01 熱機是什麼？
   edcafeR1: '',           // 補課包：Edcafe YouTube 影片測驗網址
   // 第 2 節
   edcafe2: '',            // V2 Edcafe 影片測驗
   form2: '',              // Google 表單隨堂測驗
-  video2: '',             // 補課包：NotebookLM 影片摘要（YouTube 網址）
+  video2: 'https://youtu.be/3uoP9y0Hv_I',             // 補課包：ep02 看懂 P-V 圖
   edcafeR2: '',           // 補課包：Edcafe YouTube 影片測驗網址
   // 第 3 節
   canva3: '',             // Canva 引擎分類資訊卡範本（分享連結）
@@ -53,6 +53,12 @@ window.LINKS = {
   edcafeR9: '',           // 補課包：Edcafe YouTube 影片測驗網址
   // 第 10 節（第2章 2-4 曲軸、連桿與飛輪）
   form10: '',             // Google 表單隨堂測驗（6 題）
-  video10: '',            // 補課包：補課影片（YouTube 網址）——待補
+  video10: '▶ 2-4① 曲軸與連桿如何傳動|https://youtu.be/BHWHLYHkKug ; ▶ 2-4② 飛輪的功用與前後端分工|https://youtu.be/5KUU6dDFR1M',
   edcafeR10: '',          // 補課包：Edcafe 補課影片測驗網址（與 form10 分開）——待補
 };
+/* 自動載入補課包內建 6 題測驗模組（免修改 R1～R10.html，全部自動生效！） */
+if (typeof document !== 'undefined' && document.querySelector('.step[data-k="2"]')) {
+  ['firebase-config.js', 'score.js', 'remedial_quiz_data.js'].forEach(function (src) {
+    var s = document.createElement('script'); s.src = src; document.head.appendChild(s);
+  });
+}
