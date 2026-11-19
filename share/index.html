@@ -106,13 +106,24 @@ footer{padding:36px 0 60px;color:var(--mut);font-size:14px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{font-size:13.5px;text-decoration:none;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:4px 11px}
 .chip:hover{border-color:var(--acc)}
 @media(max-width:560px){.frow{flex-direction:column;align-items:flex-start}.frow>div:last-child{justify-content:flex-start}.frow .btn{margin-left:0;margin-right:6px}}
+.att{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:12px}
+.attc{display:flex;flex-direction:column;gap:12px}
+.attc img{width:100%;max-height:220px;object-fit:cover;object-position:top;border-radius:8px;border:1px solid var(--line);background:#fff}
+.attc.wide{grid-column:1/-1}
+.attc h4{font-size:18px;margin:4px 0 6px}
+.attc p{font-size:15px}
+.attc ol{margin:8px 0 6px 20px;font-size:14.5px;color:var(--mut)}
+.attc ol li{margin:3px 0}
+.atag{display:inline-block;font-size:12.5px;font-weight:700;color:var(--acc2);background:rgba(56,198,255,.1);border:1px solid rgba(56,198,255,.35);border-radius:6px;padding:2px 8px}
+.abtn{display:flex;flex-wrap:wrap;margin-top:6px}
+@media(max-width:760px){.att{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
 <nav class="top"><div class="wrap">
   <a class="home" href="../index.html">← 課程首頁</a>
-  <a href="#why">起點</a><a href="#made">成果</a><a href="#lesson">一節課</a><a href="#flow">開發流程</a><a href="#check">老師把關</a><a href="#tools">工具</a><a href="#pit">踩坑</a><a href="#files">教案學習單</a><a href="#start">開始試試</a>
+  <a href="#why">起點</a><a href="#made">成果</a><a href="#lesson">一節課</a><a href="#flow">開發流程</a><a href="#check">老師把關</a><a href="#tools">工具</a><a href="#pit">踩坑</a><a href="#files">教案學習單</a><a href="#attach">附件專區</a><a href="#start">開始試試</a>
 </div></nav>
 
 <header class="hero"><div class="wrap">
@@ -267,16 +278,63 @@ footer{padding:36px 0 60px;color:var(--mut);font-size:14px}
 </div></section>
 
 <section id="files"><div class="wrap">
-  <div class="num">08｜教案與學習單</div>
+  <div class="num">08｜教案、學習單與附件</div>
   <h2>教案、學習單、附件：點了就能看</h2>
   <p class="mut">每份都有<b class="acc">PDF（直接在瀏覽器看）</b>和<b class="acc">Word 範本（下載後可改成自己的課）</b>。學習單只公開學生版；含解答的教師版請直接與作者聯繫。</p>
   <div class="grid g2" style="margin-top:14px">
     <div class="card"><h3>📘 高優教案（5 份）</h3><div class="frow"><div><b>單元一 熱機與內燃機之認識</b><span>第1章・6 節・15 頁</span></div><div><a class="btn" href="docs/lp_u1.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/lp_u1.docx" download="單元一 熱機與內燃機之認識.docx">⬇ Word 範本</a></div></div><div class="frow"><div><b>單元二 引擎本體的構造及功用</b><span>第2章 2-1～2-3・3 節・10 頁</span></div><div><a class="btn" href="docs/lp_u2.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/lp_u2.docx" download="單元二 引擎本體的構造及功用.docx">⬇ Word 範本</a></div></div><div class="frow"><div><b>單元二續 引擎本體後半（初稿）</b><span>第2章 2-4・目前完成第10節・5 頁</span></div><div><a class="btn" href="docs/lp_u2b.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/lp_u2b.docx" download="單元二續 引擎本體後半（初稿）.docx">⬇ Word 範本</a></div></div><div class="frow"><div><b>單元三 燃料與化油器</b><span>第3章 3-1～3-2・4 節・11 頁</span></div><div><a class="btn" href="docs/lp_u3.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/lp_u3.docx" download="單元三 燃料與化油器.docx">⬇ Word 範本</a></div></div><div class="frow"><div><b>單元四 汽油噴射系統</b><span>第3章 3-3～3-4・6 節・13 頁</span></div><div><a class="btn" href="docs/lp_u4.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/lp_u4.docx" download="單元四 汽油噴射系統.docx">⬇ Word 範本</a></div></div></div>
     <div class="card"><h3>📝 學習單（5 份）</h3><div class="frow"><div><b>學習單 單元一（第1-6節）</b><span>學生版・12 頁</span></div><div><a class="btn" href="docs/ws_u1.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/ws_u1.docx" download="學習單 單元一（第1-6節）.docx">⬇ Word 範本</a></div></div><div class="frow"><div><b>學習單 單元二（第7-9節）</b><span>學生版・6 頁</span></div><div><a class="btn" href="docs/ws_u2.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/ws_u2.docx" download="學習單 單元二（第7-9節）.docx">⬇ Word 範本</a></div></div><div class="frow"><div><b>學習單 單元二續（第10節 2-4）</b><span>學生版・3 頁</span></div><div><a class="btn" href="docs/ws_u2b.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/ws_u2b.docx" download="學習單 單元二續（第10節 2-4）.docx">⬇ Word 範本</a></div></div><div class="frow"><div><b>學習單 單元三（第3章第1-4節）</b><span>學生版・8 頁</span></div><div><a class="btn" href="docs/ws_u3.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/ws_u3.docx" download="學習單 單元三（第3章第1-4節）.docx">⬇ Word 範本</a></div></div><div class="frow"><div><b>學習單 單元四（第3章第5-10節）</b><span>學生版・13 頁</span></div><div><a class="btn" href="docs/ws_u4.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/ws_u4.docx" download="學習單 單元四（第3章第5-10節）.docx">⬇ Word 範本</a></div></div></div>
   </div>
-  <div class="grid g2" style="margin-top:14px">
-    <div class="card"><h3>🧩 拼圖法任務卡（共學）</h3><div class="frow"><div><b>第3節 拼圖法任務卡（11組）＋教師說明</b><span>第1章 1-3・7 頁</span></div><div><a class="btn" href="docs/jigsaw_c1l3.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/jigsaw_c1l3.docx" download="第3節 拼圖法任務卡（11組）＋教師說明.docx">⬇ Word 範本</a><a class="btn sec" href="docs/jigsaw_c1l3_canva.pptx" download="引擎分類資訊卡_Canva範本.pptx">⬇ Canva 資訊卡範本</a></div></div></div>
-    <div class="card"><h3>🩹 補課包：NotebookLM 來源講義</h3><p class="mut" style="font-size:14px;margin-bottom:8px">把講義丟進 NotebookLM 就能產生影片摘要。</p><div class="chips"><a class="chip" href="docs/r_c12_1.pdf" target="_blank">第1節</a><a class="chip" href="docs/r_c12_2.pdf" target="_blank">第2節</a><a class="chip" href="docs/r_c12_3.pdf" target="_blank">第3節</a><a class="chip" href="docs/r_c12_4.pdf" target="_blank">第4節</a><a class="chip" href="docs/r_c12_5.pdf" target="_blank">第5節</a><a class="chip" href="docs/r_c12_6.pdf" target="_blank">第6節</a><a class="chip" href="docs/r_c12_7.pdf" target="_blank">第7節</a><a class="chip" href="docs/r_c12_8.pdf" target="_blank">第8節</a><a class="chip" href="docs/r_c12_9.pdf" target="_blank">第9節</a><a class="chip" href="docs/r_c12_10.pdf" target="_blank">第10節</a></div><div class="chips" style="margin-top:8px"><a class="chip" href="docs/r_c3_1.pdf" target="_blank">3章第1節</a><a class="chip" href="docs/r_c3_2.pdf" target="_blank">3章第2節</a><a class="chip" href="docs/r_c3_3.pdf" target="_blank">3章第3節</a><a class="chip" href="docs/r_c3_4.pdf" target="_blank">3章第4節</a><a class="chip" href="docs/r_c3_5.pdf" target="_blank">3章第5節</a><a class="chip" href="docs/r_c3_6.pdf" target="_blank">3章第6節</a><a class="chip" href="docs/r_c3_7.pdf" target="_blank">3章第7節</a><a class="chip" href="docs/r_c3_8.pdf" target="_blank">3章第8節</a><a class="chip" href="docs/r_c3_9.pdf" target="_blank">3章第9節</a><a class="chip" href="docs/r_c3_10.pdf" target="_blank">3章第10節</a></div></div>
+
+  <h3 id="attach" style="margin-top:34px;font-size:24px">🧰 附件專區 <span class="mut" style="font-size:15px;font-weight:400">（選用：依自己的班級挑著用，不用全部照做）</span></h3>
+  <div class="att">
+    <div class="card attc">
+      <img src="img/att_taskcard.jpg" alt="拼圖法任務卡預覽" loading="lazy">
+      <div>
+        <div class="atag">第 1 章 第 3 節｜1-3 往復式活塞引擎之分類｜共學・拼圖法</div>
+        <h4>🧩 拼圖法任務卡（11 組）＋教師說明</h4>
+        <p>每組負責一種分類方式（熱力循環、工作循環、燃料、冷卻、汽缸排列、汽門位置、點火），當「專家」查課本、用 AI 找實例並查證，做成資訊卡。</p>
+        <ol><li>列印前 6 頁，沿虛線裁成 11 張（可護貝重複用）。</li><li>上課：說明任務 7 分 → 專家小組 15 分 → Padlet 畫廊漫步 12 分。</li><li>接著用網頁的 <a href="https://ntccar01.github.io/engine-principles/C3_%E7%AC%AC3%E7%AF%80%E4%BA%92%E5%AD%B8%E6%8C%91%E6%88%B0_%E4%B8%83%E7%A8%AE%E5%88%86%E9%A1%9E.html" target="_blank">七種分類互學挑戰</a> 檢核。</li></ol>
+        <div class="abtn"><a class="btn" href="docs/jigsaw_c1l3.pdf" target="_blank">📄 線上看 PDF</a><a class="btn sec" href="docs/jigsaw_c1l3.docx" download="第3節_拼圖法任務卡(11組)＋教師說明.docx">⬇ Word</a></div>
+      </div>
+    </div>
+    <div class="card attc">
+      <img src="img/att_canva.jpg" alt="Canva 資訊卡範本預覽" loading="lazy">
+      <div>
+        <div class="atag">第 1 章 第 3 節｜搭配上面的任務卡</div>
+        <h4>🎨 引擎分類資訊卡（Canva 範本，13 頁）</h4>
+        <p>第 1 頁是老師示範卡（轉子引擎），第 2 頁空白通用，第 3～13 頁已標好第 1～11 組的分類。欄位：名稱與特點、優點、缺點、圖片、實際車款、資料來源。</p>
+        <ol><li>下載 .pptx → Canva 首頁「上傳」→ 自動轉成可編輯設計。</li><li>每組複製一份（或用「範本連結」分享），把連結轉 QR Code 貼到任務卡右上角。</li><li>學生完成後下載成圖片，上傳到 Padlet 對應欄位（7 欄）。</li></ol>
+        <div class="abtn"><a class="btn" href="docs/jigsaw_c1l3_canva.pdf" target="_blank">📄 預覽 13 頁</a><a class="btn sec" href="docs/jigsaw_c1l3_canva.pptx" download="引擎分類資訊卡_Canva範本.pptx">⬇ 下載 PPTX（匯入 Canva）</a></div>
+      </div>
+    </div>
+    <div class="card attc noimg">
+      <div>
+        <div class="atag">第 3 章 第 8 節｜3-4 感知器（一）｜拼圖法・免列印</div>
+        <h4>🌐 網頁版拼圖法：感知器專家頁</h4>
+        <p>不用印任務卡：同一支動畫加上 <code>?part=A／B／C</code>，只顯示該專家要學的段落，每段底部有「要教的三句話」。</p>
+        <ol><li>組內三人各選專家 A 溫度、B 空氣量、C 位置。</li><li>專家組 12 分 → 回原組每人教 4 分 → 全組闖整合關 8 分（教師大螢幕即時排名）。</li></ol>
+        <div class="abtn"><a class="btn" href="../%E7%AC%AC3%E7%AB%A0_%E6%B1%BD%E6%B2%B9%E5%BC%95%E6%93%8E%E7%87%83%E6%96%99%E7%B3%BB%E7%B5%B1/V8_%E6%84%9F%E7%9F%A5%E5%99%A8%E4%B8%80_%E6%BA%AB%E5%BA%A6%E7%A9%BA%E6%B0%A3%E9%87%8F%E4%BD%8D%E7%BD%AE.html?part=A" target="_blank">🌡️ 專家 A</a><a class="btn" href="../%E7%AC%AC3%E7%AB%A0_%E6%B1%BD%E6%B2%B9%E5%BC%95%E6%93%8E%E7%87%83%E6%96%99%E7%B3%BB%E7%B5%B1/V8_%E6%84%9F%E7%9F%A5%E5%99%A8%E4%B8%80_%E6%BA%AB%E5%BA%A6%E7%A9%BA%E6%B0%A3%E9%87%8F%E4%BD%8D%E7%BD%AE.html?part=B" target="_blank">💨 專家 B</a><a class="btn" href="../%E7%AC%AC3%E7%AB%A0_%E6%B1%BD%E6%B2%B9%E5%BC%95%E6%93%8E%E7%87%83%E6%96%99%E7%B3%BB%E7%B5%B1/V8_%E6%84%9F%E7%9F%A5%E5%99%A8%E4%B8%80_%E6%BA%AB%E5%BA%A6%E7%A9%BA%E6%B0%A3%E9%87%8F%E4%BD%8D%E7%BD%AE.html?part=C" target="_blank">📐 專家 C</a><a class="btn sec" href="../%E7%AC%AC3%E7%AB%A0_%E6%B1%BD%E6%B2%B9%E5%BC%95%E6%93%8E%E7%87%83%E6%96%99%E7%B3%BB%E7%B5%B1/S8_%E7%AC%AC8%E7%AF%80_%E6%84%9F%E7%9F%A5%E5%99%A8%EF%BC%88%E4%B8%80%EF%BC%89%E6%8B%BC%E5%9C%96%E6%B3%95.html" target="_blank">本節上課簡報</a></div>
+      </div>
+    </div>
+    <div class="card attc noimg">
+      <div>
+        <div class="atag">第 1～10 節｜隨堂測驗（每節 6 題）＋單元測驗（20 題）</div>
+        <h4>📋 Google 表單測驗一鍵產生器（Apps Script）</h4>
+        <p>貼上一段程式按「執行」，約 3 分鐘自動建好全部測驗表單：測驗模式、正確答案、配分、答對／答錯解析都設定好，另附「表單網址總表」。</p>
+        <ol><li>script.google.com → 新增專案 → 貼上 .gs → 執行 <code>buildAll</code>。</li><li>第一次要授權（進階 → 前往 → 允許）。</li><li>把學生作答網址貼進網站 <code>links.js</code> 的 form1～form10。</li></ol>
+        <div class="abtn"><a class="btn" href="docs/gform_guide.txt" target="_blank">📄 看使用說明</a><span class="mut" style="font-size:13.5px;align-self:center;margin-left:6px">程式與題庫含答案，需要請與作者聯繫</span></div>
+      </div>
+    </div>
+    <div class="card attc noimg wide">
+      <div>
+        <div class="atag">每一節｜補課・複習・請假學生</div>
+        <h4>🩹 補課包：NotebookLM 來源講義（20 份）</h4>
+        <p>每節一份 2～3 頁講義，丟進 NotebookLM 就能產生「影片摘要」，放到該節的補課頁（R）讓學生自己補。</p>
+        <ol><li>下載該節 PDF → NotebookLM「新增來源」→ 產生影片摘要。</li><li>上傳 YouTube（不公開）→ 網址貼進 <code>links.js</code> 的 video1～video10。</li></ol>
+        <div class="chips" style="margin-top:8px"><a class="chip" href="docs/r_c12_1.pdf" target="_blank">第1節</a><a class="chip" href="docs/r_c12_2.pdf" target="_blank">第2節</a><a class="chip" href="docs/r_c12_3.pdf" target="_blank">第3節</a><a class="chip" href="docs/r_c12_4.pdf" target="_blank">第4節</a><a class="chip" href="docs/r_c12_5.pdf" target="_blank">第5節</a><a class="chip" href="docs/r_c12_6.pdf" target="_blank">第6節</a><a class="chip" href="docs/r_c12_7.pdf" target="_blank">第7節</a><a class="chip" href="docs/r_c12_8.pdf" target="_blank">第8節</a><a class="chip" href="docs/r_c12_9.pdf" target="_blank">第9節</a><a class="chip" href="docs/r_c12_10.pdf" target="_blank">第10節</a></div><div class="chips" style="margin-top:8px"><a class="chip" href="docs/r_c3_1.pdf" target="_blank">3章第1節</a><a class="chip" href="docs/r_c3_2.pdf" target="_blank">3章第2節</a><a class="chip" href="docs/r_c3_3.pdf" target="_blank">3章第3節</a><a class="chip" href="docs/r_c3_4.pdf" target="_blank">3章第4節</a><a class="chip" href="docs/r_c3_5.pdf" target="_blank">3章第5節</a><a class="chip" href="docs/r_c3_6.pdf" target="_blank">3章第6節</a><a class="chip" href="docs/r_c3_7.pdf" target="_blank">3章第7節</a><a class="chip" href="docs/r_c3_8.pdf" target="_blank">3章第8節</a><a class="chip" href="docs/r_c3_9.pdf" target="_blank">3章第9節</a><a class="chip" href="docs/r_c3_10.pdf" target="_blank">3章第10節</a></div>
+      </div>
+    </div>
   </div>
 </div></section>
 
