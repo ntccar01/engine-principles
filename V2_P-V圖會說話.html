@@ -734,7 +734,7 @@ const V2 = {
         ctx.fillStyle = C.acc2; ctx.beginPath(); ctx.arc(PX(V), PY(0), 8, 0, 7); ctx.fill();
         if (t > 10) { const a = ease(prog(t, 10, 11));
           ctx.globalAlpha = a; ctx.strokeStyle = C.ok; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(PX(2), PY(20)); ctx.lineTo(PX(5), PY(20)); ctx.stroke(); H.text(ctx, '等壓（P 不變）', PX(5) + 10, PY(20), { size: 18, color: C.ok });
-          ctx.strokeStyle = C.fire; ctx.beginPath(); ctx.moveTo(PX(6.5), PY(26)); ctx.lineTo(PX(6.5), PY(38)); ctx.stroke(); H.text(ctx, '等容（V 不變）', PX(6.5) + 10, PY(32), { size: 18, color: C.fire }); ctx.globalAlpha = 1; }
+          ctx.strokeStyle = C.fire; ctx.beginPath(); ctx.moveTo(PX(4), PY(26)); ctx.lineTo(PX(4), PY(38)); ctx.stroke(); H.text(ctx, '等容（V 不變）', PX(4) + 10, PY(32), { size: 18, color: C.fire }); ctx.globalAlpha = 1; }
         H.text(ctx, '壓縮比 = 汽缸總容積 V2 ÷ 燃燒室容積 V1', 690, 40, { size: 20, bold: true, align: 'center', color: C.acc });
       },
       quiz: { q: 'P-V 圖中，一條「垂直線」表示什麼？', opts: ['壓力不變', '容積不變', '溫度不變', '轉速不變'], ans: 1, ex: '垂直線＝V 不變＝等容。' } },
