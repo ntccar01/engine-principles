@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>進階上手｜互動網頁教材與教材短影片</title>
+<style>
+  :root{
+    --ink:#1f2933; --muted:#5b6670; --line:#d9dee3; --bg:#f6f7f9; --card:#fff;
+    --accent:#1d5fa8; --accent-soft:#e8f0fa; --ok:#1f7a4d; --ok-soft:#e6f4ec;
+    --warn:#9a5b00; --warn-soft:#fdf3e1;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;
+    font-size:17px;line-height:1.75}
+  main{max-width:860px;margin:0 auto;padding:32px 20px 64px}
+  h1{font-size:30px;line-height:1.35;margin:0 0 8px}
+  h2{font-size:22px;margin:44px 0 12px;padding-top:8px;border-top:2px solid var(--line)}
+  h3{font-size:19px;margin:0 0 10px}
+  p{margin:8px 0}
+  .lead{color:var(--muted);font-size:18px}
+  .route{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 6px;font-weight:700}
+  .route span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 14px}
+  .route i{font-style:normal;color:var(--muted)}
+  .box{border-radius:10px;padding:14px 18px;margin:14px 0}
+  .box.tip{background:var(--accent-soft)}
+  .box.warn{background:var(--warn-soft)}
+  .box.ok{background:var(--ok-soft)}
+  .box strong:first-child{display:block;margin-bottom:2px}
+  ul,ol{padding-left:1.4em;margin:6px 0}
+  li{margin:3px 0}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0;break-inside:avoid}
+  .step h3 .no{display:inline-block;min-width:2em;height:2em;line-height:2em;text-align:center;
+    border-radius:50%;background:var(--accent);color:#fff;font-size:16px;margin-right:8px}
+  .row{display:grid;grid-template-columns:7.5em 1fr;gap:4px 12px;padding:8px 0;border-top:1px dashed var(--line)}
+  .row:first-of-type{border-top:none}
+  .row .k{font-weight:700;color:var(--accent)}
+  .row.see .k{color:var(--ok)}
+  .ui{background:#eef1f4;border:1px solid #cfd6dc;border-radius:6px;padding:0 6px;font-weight:700;white-space:nowrap}
+  .prompt{position:relative;background:#fbfcfd;border:1px solid var(--line);border-left:4px solid var(--accent);
+    border-radius:8px;padding:12px 14px;margin:8px 0;white-space:pre-wrap;font-family:inherit;font-size:16px}
+  .copy{position:absolute;top:8px;right:8px;border:1px solid var(--accent);background:#fff;color:var(--accent);
+    border-radius:6px;padding:2px 10px;font:inherit;font-size:14px;cursor:pointer}
+  .copy:hover{background:var(--accent-soft)}
+  .fill{background:#fff4c2;border-radius:3px;padding:0 2px}
+  table{width:100%;border-collapse:collapse;background:var(--card);margin:10px 0}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#eef1f4}
+  .check li{list-style:none;margin-left:-1.2em}
+  .check li::before{content:"□ ";font-weight:700}
+  footer{margin-top:48px;color:var(--muted);font-size:15px}
+  @media (max-width:560px){.row{grid-template-columns:1fr}}
+  @media print{
+    body{background:#fff;font-size:12pt}
+    main{padding:0}
+    .copy{display:none}
+    .step,.box{break-inside:avoid}
+    h2{break-after:avoid}
+  }
+</style>
+</head>
+<body>
+<main>
+<p style="margin:0 0 14px"><a href="index.html" style="color:var(--accent);font-weight:700;text-decoration:none">← 回開發歷程分享頁</a></p>
+
+<h1>進階上手：互動網頁教材②與教材短影片④</h1>
+<p class="lead">給已經走過<a href="guide_basic.html">「新手上路」</a>、知道 AI 會一步一步停下來等你確認的老師。這兩包和①③最大的不同是：<b>AI 要能讀寫你電腦裡的資料夾，你也要自己在電腦上點兩下執行一些小程式（.bat 檔）</b>。</p>
+
+<div class="route">
+  <span>選工具與資料夾</span><i>→</i>
+  <span>②網頁：規畫→試作→預覽→完整一節</span><i>→</i>
+  <span>④影片：安裝→規畫→預覽→錄音→產片</span>
+</div>
+
+<div class="box tip">
+  <strong>建議順序</strong>
+  先做②的一節，只在自己電腦預覽，不上線、不設計分。順利了再碰上線（GitHub）和計分（Firebase）。④步驟最多，建議做過②再開始。第一次各預留<b>半天</b>。
+</div>
+
+<h2>開始前：你需要會的三件小事</h2>
+<ul>
+  <li><b>找到資料夾</b>：知道檔案存在哪裡，例如「文件\我的互動教材」。</li>
+  <li><b>點兩下 .bat 檔</b>：會跳出黑色視窗，跑完會顯示結果，按任意鍵關閉。</li>
+  <li><b>看到錯誤不慌</b>：把黑色視窗裡的紅字或最後幾行<b>整段複製貼給 AI</b>，問「這是什麼意思、我下一步要做什麼」。</li>
+</ul>
+<div class="box warn">
+  <strong>三條安全規則</strong>
+  ①工作資料夾要另外新建，不要直接改技能包原檔或已上線的網站。②密碼、私鑰、Token 不貼給 AI。③AI 要你安裝東西、登入、發布或上傳時，先看懂它要做什麼再同意。
+</div>
+
+<h2>第 0 步：選一個能讀寫資料夾的 AI</h2>
+<table>
+  <tr><th style="width:24%">工具</th><th>怎麼讓 AI 用技能、讀到資料夾</th><th style="width:26%">適合</th></tr>
+  <tr><td><b>Claude 桌面版</b></td><td>用「新手上路」步驟 2 上傳過的技能，同一個帳號在桌面版也能用。②④要另外上傳 <code>interactive-lesson-web.zip</code>、<code>textbook-to-short-video.zip</code>（技能包目前試做驗證中，請先向作者索取）。開新對話後，用輸入框的 <span class="ui">＋</span> 選單 <span class="ui">加入資料夾 Add folder</span>，選你的工作資料夾。</td><td>已經在用 Claude 的老師</td></tr>
+  <tr><td><b>Antigravity</b></td><td>用 Antigravity 開啟工作資料夾。把 zip 解壓縮，將整個技能資料夾（例如 <code>interactive-lesson-web</code>）放進工作資料夾裡的 <code>.agents\skills\</code>。在對話面板輸入需求即可。</td><td>習慣看檔案和資料夾的老師</td></tr>
+</table>
+<p style="color:var(--muted);font-size:15px">按鈕名稱可能隨軟體改版而不同。只用網頁版 Claude 或 ChatGPT 也能做②④的「規畫」與「稿件」，但 AI 無法替你在電腦上建檔、執行和預覽，後半段要自己動手，比較吃力。</p>
+
+<h2>Part A　② 互動網頁教材</h2>
+<p>做完會有一節課的五種網頁：<b>V</b> 動畫、<b>C</b> 互學挑戰、<b>S</b> 上課簡報、<b>R</b> 補課包、<b>T</b> 教師大螢幕。</p>
+
+<div class="step">
+  <h3><span class="no">A1</span>安裝 Python（只要一次）</h3>
+  <div class="row"><div class="k">點哪裡</div><div>到 <b>python.org</b> → <span class="ui">Downloads</span> → 下載 Windows 版並安裝。安裝畫面若有 <span class="ui">Add python.exe to PATH</span>，記得勾選。</div></div>
+  <div class="row"><div class="k">貼什麼</div><div>開始選單搜尋「命令提示字元」並打開，輸入 <code>python --version</code> 後按 Enter。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>出現 <code>Python 3.x.x</code>。若顯示找不到指令，重開電腦再試；還是不行，把畫面文字貼給 AI 問。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">A2</span>建立工作資料夾，請 AI 先做「單節規畫」</h3>
+  <div class="row"><div class="k">點哪裡</div><div>新建一個資料夾，例如 <code>文件\我的互動教材</code>，把<b>已確認的教案</b>（新手上路做的 Word）和課本頁放進去。依第 0 步讓 AI 能讀寫這個資料夾。</div></div>
+  <div class="row"><div class="k">貼什麼</div><div>按「複製」，改黃色【】後送出：</div></div>
+  <div class="prompt" id="a2">請使用 interactive-lesson-web 技能，替【科目／單元】製作一節可上課的互動網頁教材。
+
+已確認的教案和課本頁：在這個工作資料夾裡的【檔名】。
+學生與設備：【年級、程度、人數；幾人一台平板；有沒有投影和網路】
+每節：【幾分鐘】
+語音：先用瀏覽器朗讀，之後再決定要不要錄音。
+計分：先用本機示範，不設定 Firebase。
+發布：這次先不上線。
+
+請先做單節規畫：V 動畫分幾段、C 互學挑戰做什麼、S/R/T 怎麼配合。做完停下給我看。
+規畫通過後，再把技能包的 starter 複製到這個工作資料夾裡的新資料夾試作。
+每一步告訴我「做完會看到什麼」，並分清楚已測、未測、待我確認。<button class="copy" data-for="a2">複製</button></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>一份<b>單節規畫</b>：每段動畫畫什麼、學生在哪裡作答、挑戰怎麼玩、這節 50 分鐘怎麼排。看看是不是你想教的樣子，有意見就直接說。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">A3</span>確認規畫 → 試作動畫 V 和挑戰 C</h3>
+  <div class="row"><div class="k">貼什麼</div><div>按「複製」，貼上後送出：</div></div>
+  <div class="prompt" id="a3">規畫確認。請先做 V 動畫和 C 互學挑戰，做完告訴我要按哪個檔案預覽。<button class="copy" data-for="a3">複製</button></div>
+  <div class="row"><div class="k">點哪裡</div><div>AI 做完後，到它建立的專案資料夾，點兩下 <code>預覽.bat</code>。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>黑色視窗顯示 <code>預覽：http://127.0.0.1:8765/</code>，瀏覽器自動打開首頁。點 V、C 實際操作看看。<b>這個黑色視窗不要關</b>，關了網頁就停了；看完再關。</div></div>
+  <div class="box tip" style="margin-bottom:0">
+    <strong>試用小技巧</strong>
+    動畫每段結尾要答對才能往下。自己檢查時，可在網址最後加 <code>?unlock=1</code> 直接切段。直接點兩下 .html 檔會是空白，一定要用 <code>預覽.bat</code> 開。
+  </div>
+</div>
+
+<div class="step">
+  <h3><span class="no">A4</span>回饋修改 → 完成整節五種頁面</h3>
+  <div class="row"><div class="k">貼什麼</div><div>有要改的地方，用「哪一頁、哪一段、改成什麼」描述，例如：</div></div>
+  <div class="prompt" id="a4a">V 第 2 段的箭頭方向反了，應該從【左】流向【右】；C 第 3 題的提示太難，改成先提醒學生看【哪裡】。<button class="copy" data-for="a4a">複製</button></div>
+  <div>V、C 都滿意後：</div>
+  <div class="prompt" id="a4b">V 和 C 確認。請完成 S 簡報、R 補課包、T 教師大螢幕，並依技能的巡檢清單檢查電腦和手機畫面。<button class="copy" data-for="a4b">複製</button></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>再按一次 <code>預覽.bat</code>，首頁五個入口都能打開。AI 會附一份檢查紀錄，寫明哪些測過、哪些還沒測。<b>到這裡就能在教室用投影上課了。</b></div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">A5</span>（選用）全班手機送成績到教師大螢幕：Firebase</h3>
+  <div class="row"><div class="k">點哪裡</div><div>打開技能包裡的 <code>interactive-lesson-web\Firebase引導提示詞.txt</code>，全選複製。</div></div>
+  <div class="row"><div class="k">貼什麼</div><div>貼給 AI，把【課程代碼】【工作資料夾位置】填好。AI 會一次只帶一步，建立專案、登入都由你自己在 Firebase 網站操作。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>約 20～30 分鐘後，用兩台裝置測試：學生頁送出成績，教師大螢幕收得到。過程中若網站要你綁付款方式，先停下來問人。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">A6</span>（選用）放上網路讓學生用網址打開：GitHub Pages</h3>
+  <div class="row"><div class="k">需要</div><div>GitHub 帳號和 Git 程式。第一次設定建議請熟手陪同，或請 AI 依技能的「GitHub Pages與更新」一步一步帶你。</div></div>
+  <div class="row"><div class="k">貼什麼</div><div>按「複製」，貼上後送出：</div></div>
+  <div class="prompt" id="a6">我要把這節網頁放上 GitHub Pages。請依技能的「GitHub Pages與更新」說明，一次只帶我做一步。帳號登入和建立 repo 由我自己操作，你不要替我推送。<button class="copy" data-for="a6">複製</button></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>設定好後，之後每次更新點兩下 <code>更新網站.bat</code>：它先列出要更新的檔案，你輸入 <code>PUBLISH</code> 才會真的上傳。上傳後等幾分鐘，<b>用網址實際打開檢查</b>，不要只看黑色視窗說成功。</div></div>
+</div>
+
+<h2>Part B　④ 教材轉短影片</h2>
+<p>做完會有 3～5 分鐘的卡通教學影片（HQ 版和 LINE 小檔版）和字幕檔。旁白由你在 Google AI Studio 網頁自己產生，<b>不需要 API 金鑰</b>。</p>
+
+<div class="step">
+  <h3><span class="no">B1</span>安裝 Python 和 ffmpeg（只要一次）</h3>
+  <div class="row"><div class="k">點哪裡</div><div>Python 同 A1。ffmpeg：開始選單搜尋「命令提示字元」並打開。</div></div>
+  <div class="row"><div class="k">貼什麼</div><div><code>winget install -e --id Gyan.FFmpeg</code>，按 Enter，問你是否同意時輸入 <code>Y</code>。裝完<b>關掉這個視窗、重開一個</b>，輸入 <code>ffmpeg -version</code>。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>出現 ffmpeg 的版本資訊。如果顯示 winget 無法辨識，請 AI 帶你用下載壓縮檔的方式安裝。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">B2</span>建立影片專案，裝好工具</h3>
+  <div class="row"><div class="k">點哪裡</div><div>解壓縮 <code>textbook-to-short-video.zip</code>，把裡面的 <code>templates\starter</code> 整個複製到新位置，改名為例如 <code>文件\我的教學短影片</code>。用記事本打開裡面的 <code>project-env.bat</code>，把最後的 <code>my-course</code> 改成你的課程英文簡稱（例如 <code>electric-101</code>），存檔。接著點兩下 <code>SETUP.bat</code>。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>黑色視窗下載套件，最後列出檢查結果（Python 套件、ffmpeg、瀏覽器、字型）。有「錯誤」就把整段貼給 AI。之後想再檢查，點 <code>CHECK_ENV.bat</code>。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">B3</span>先看內建示例，確認工具能動</h3>
+  <div class="row"><div class="k">點哪裡</div><div>點兩下 <code>PREVIEW.bat</code>，輸入示例課程前面的編號。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>瀏覽器打開預覽頁，可以選幕、拖時間軸。示例沒有錄音，只是確認工具正常。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">B4</span>請 AI 規畫與寫稿（三次確認）</h3>
+  <div class="row"><div class="k">點哪裡</div><div>依第 0 步讓 AI 能讀寫「我的教學短影片」資料夾，把課本頁放進去。</div></div>
+  <div class="row"><div class="k">貼什麼</div><div>按「複製」，貼上後送出：</div></div>
+  <div class="prompt" id="b4">請使用 textbook-to-short-video 技能，製作【科目／單元】的教學短影片。
+學生：【年級、程度】
+教材：這個資料夾裡的【檔名】，印刷頁【幾～幾】。
+這個資料夾就是影片專案（已從 starter 複製並完成 SETUP），請在 courses 裡建立我的課程。
+每集 3～5 分鐘；角色與風格：請先提案給我選。
+
+請依技能的階段做：先做教材摘要和覆蓋對照表 → 停下；我確認後做分集大綱 → 停下；再確認後寫稿件與分鏡 → 停下。
+課本圖請重畫。不要呼叫任何語音 API，也不要上傳。<button class="copy" data-for="b4">複製</button></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>依序是：①摘要和覆蓋表（課本每一項內容排在哪一集）→ ②每集大綱 → ③每一幕的旁白和畫面。每一步都要看過、回覆確認，AI 才會往下做。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">B5</span>看動畫預覽，確認後才錄音</h3>
+  <div class="row"><div class="k">點哪裡</div><div>AI 做好動畫後，點兩下 <code>PREVIEW.bat</code>，選你的那一集。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>每一幕的畫面隨旁白出現（還沒錄音，時間是估計的）。檢查專業內容、圖的方向、字有沒有被擋。有問題告訴 AI「第幾幕哪裡要改」。<b>畫面和旁白都滿意才進下一步</b>，因為改旁白就要重錄。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">B6</span>到 AI Studio 產生旁白並下載</h3>
+  <div class="row"><div class="k">點哪裡</div><div>點兩下 <code>RUN_TTS.bat</code> → 選集數 → 選 <span class="ui">1</span>（匯出本次錄音稿）。打開該集 <code>audio\本次錄音清單.md</code>，照清單逐份處理 <code>旁白稿_host_1.txt</code> 等檔案：</div></div>
+  <div class="row"><div class="k">貼什麼</div><div>到 <b>aistudio.google.com/generate-speech</b>（用自己的 Google 帳號）。稿件裡「風格欄」的文字貼到風格說明處，「正文欄」以下的文字貼到要唸的內容。選定音色後產生，聽一遍再下載。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>下載的音檔<b>改名成清單寫的檔名</b>（例如 <code>full_host_1.wav</code>），放進該集的 <code>audio</code> 資料夾。同一角色整門課用同一個音色，記下來告訴 AI 寫進設定。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">B7</span>切音、逐幕聽、登記確認</h3>
+  <div class="row"><div class="k">點哪裡</div><div><code>RUN_TTS.bat</code> → 選 <span class="ui">2</span>（切整份音檔）。再開 <code>PREVIEW.bat</code>，每一幕按播放聽：開頭、結尾、數字單位、問答角色有沒有對。全部聽完後，<code>RUN_TTS.bat</code> → 選 <span class="ui">3</span>，輸入 <code>LISTENED</code>。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>切音成功會顯示「已切 N 段」。若說停頓不足或靜音，回 AI Studio 重產那一份（句子之間停久一點）。最後出現「已記錄本次聽檢確認」。</div></div>
+</div>
+
+<div class="step">
+  <h3><span class="no">B8</span>產出影片</h3>
+  <div class="row"><div class="k">點哪裡</div><div>點兩下 <code>BUILD_VIDEO.bat</code>，選集數，等它跑完（幾分鐘）。</div></div>
+  <div class="row see"><div class="k">會看到什麼</div><div>該集 <code>output</code> 資料夾裡有 <code>_hq.mp4</code>（品質較好）、<code>_line.mp4</code>（小檔，方便傳 LINE）和 <code>.srt</code> 字幕。<b>完整看一遍</b>：聲音、畫面、字幕對得上，問答公布答案正確。</div></div>
+  <div class="box tip" style="margin-bottom:0">
+    <strong>要放 YouTube？</strong>
+    最簡單是自己到 YouTube Studio 手動上傳 HQ 版，先設「不公開」，字幕上傳同一次產生的 .srt。技能內的自動上傳工具需要另外設定 Google 授權，熟手再用。
+  </div>
+</div>
+
+<h2>交出去之前：老師的檢查</h2>
+<ul class="check">
+  <li>網頁：電腦、平板、手機都打開看過；動畫每段的問題和答案正確；學生頁看不到教師答案。</li>
+  <li>網頁上線：用實際網址打開，不只看「推送成功」。</li>
+  <li>影片：專有名詞、數字單位、圖的方向和課本一致；字幕和聲音同步；完整播放過一次。</li>
+  <li>課本原圖沒有直接貼進網頁或影片（都要重畫）；沒有學生個資。</li>
+</ul>
+
+<h2>卡住了怎麼辦</h2>
+<table>
+  <tr><th style="width:38%">狀況</th><th>這樣做</th></tr>
+  <tr><td>點 .bat 後黑色視窗一閃就關</td><td>在資料夾空白處按右鍵 → <span class="ui">在終端機中開啟</span>，輸入 <code>.\預覽.bat</code>（換成那個 .bat 的檔名）按 Enter，視窗就會留著顯示錯誤，再把訊息貼給 AI。</td></tr>
+  <tr><td>顯示找不到 python 或 ffmpeg</td><td>安裝後要關掉舊的黑色視窗再開新的；還是不行就重開電腦，再試 <code>python --version</code>、<code>ffmpeg -version</code>。</td></tr>
+  <tr><td>網頁打開是空白</td><td>不要直接點 .html，用 <code>預覽.bat</code>。改了內容沒變化，就按 Ctrl+F5 重新整理。</td></tr>
+  <tr><td>AI 說讀不到資料夾</td><td>確認已依第 0 步加入資料夾，或檔案真的放在那個資料夾裡。</td></tr>
+  <tr><td>影片工具說「須為1～4個」「14字內」</td><td>這一幕放太多東西了。請 AI 拆成兩幕或改短，不要硬塞。</td></tr>
+  <tr><td>改了旁白後，切音說要重錄</td><td>這是正常保護：舊錄音已移到「舊錄音」資料夾。照新的錄音清單重產。</td></tr>
+  <tr><td>Firebase 或 GitHub 要付款、要權限、看不懂</td><td>先停下，不要一直按「同意」。截圖問熟手，或貼給 AI 問這一步是做什麼的。</td></tr>
+</table>
+
+<div class="box ok">
+  <strong>更多細節</strong>
+  每包資料夾裡都有更完整的說明：②看 <code>interactive-lesson-web\SKILL.md</code> 與 <code>references</code>；④看 <code>templates\starter\開始使用.md</code>。工具只支援 Windows 的 .bat；Mac 的老師請 AI 依「開始使用」改用終端機指令。
+</div>
+
+<footer>教師共備技能包｜進階上手（②互動網頁教材、④教材轉短影片）｜2026-11</footer>
+</main>
+
+<script>
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var box = document.getElementById(btn.dataset.for);
+      var text = box.innerText.replace(/複製$|已複製$/, '').trim();
+      var done = function () { btn.textContent = '已複製'; setTimeout(function () { btn.textContent = '複製'; }, 1500); };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done, function () { fallback(text); done(); });
+      } else { fallback(text); done(); }
+    });
+  });
+  function fallback(text) {
+    var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t);
+    t.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(t);
+  }
+</script>
+</body>
+</html>
