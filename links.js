@@ -55,6 +55,15 @@ window.LINKS = {
   form10: '',             // Google 表單隨堂測驗（6 題）
   video10: '▶ 2-4① 曲軸與連桿如何傳動|https://youtu.be/BHWHLYHkKug ; ▶ 2-4② 飛輪的功用與前後端分工|https://youtu.be/5KUU6dDFR1M',
   edcafeR10: '',          // 補課包：Edcafe 補課影片測驗網址（與 form10 分開）——待補
+  // 第 11 節（第2章 2-5 汽門機構）
+  form11: 'https://docs.google.com/forms/d/e/1FAIpQLSfltWmjkrLiJjv4QzRIAsdDeZsdmEYjB-fTk8ZXfiP8Lu3K6w/viewform',             // Google 表單隨堂測驗（6 題）
+  video11: '',            // 補課包影片：單支網址，或多集「▶ 標題|網址 ; ▶ 標題|網址」
+  edcafeR11: '',          // 選填：Edcafe 影片測驗（R11 已內建 6 題，可留空）
+  // 第 12 節（第2章 2-6 引擎軸承與第2章統整）
+  form12: 'https://docs.google.com/forms/d/e/1FAIpQLSeGv9BdEUfAk5jWEzAr3jjG7b4s-Cj75rM30_4uhQPIwISvQA/viewform',             // Google 表單隨堂測驗（6 題）
+  video12: '',            // 補課包影片：單支網址，或多集「▶ 標題|網址 ; ▶ 標題|網址」
+  edcafeR12: '',          // 選填：Edcafe 影片測驗（R12 已內建 6 題，可留空）
+  unit2b: 'https://docs.google.com/forms/d/e/1FAIpQLSdIYUwv0Kt8fTJ2PKm8s3DyJlOyEp9swf1JthwoMhWciLZrGA/viewform',             // 單元二（續）測驗（第 10～12 節，20 題）
 };
 /* 自動載入補課包內建 6 題測驗模組（免修改 R1～R10.html，全部自動生效！） */
 if (typeof document !== 'undefined' && document.querySelector('.step[data-k="2"]')) {
