@@ -295,6 +295,7 @@ function Player(cfg) {
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
+    <div class="seek" id="seekrow" title="拖曳到想講解的畫面（拖動時自動暫停）"><input type="range" id="seek" min="0" max="1000" step="1" value="0"><div class="ticks" id="ticks"></div></div>
     <div class="controls">
       <button id="prev" title="上一段">⏮</button><button class="main-btn" id="play">▶ 播放</button><button id="step" title="逐格（暫停時）">逐格 ▸</button><button id="next" title="下一段">⏭</button>
       <select id="spd"><option value=".25">0.25x</option><option value=".5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
@@ -303,10 +304,12 @@ function Player(cfg) {
     <div class="caption" id="cap"></div>
     <div class="panel" id="panel"></div>
   </div>
-  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>每段結束有小問題，答對才會繼續。</div></aside></div></div>`;
+  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>下方拉桿可直接拖到想講的畫面（刻度＝每句字幕開頭），↑ ↓ 跳上一句／下一句。<br>每段結束有小問題，答對才會繼續。</div></aside></div></div>`;
   const cv = $('#cv'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = W * dpr; cv.height = HGT * dpr; ctx.scale(dpr, dpr);
   const chs = cfg.chapters, S = Object.assign({}, cfg.state || {}), passed = chs.map(() => false), firstOk = chs.map(() => null);
+  let muteCap = false, dragging = false;
+  { const st = document.createElement('style'); st.textContent = '.seek{position:relative;margin:8px 0 0;padding-bottom:10px}.seek input{width:100%;margin:0;height:22px;accent-color:#ffb020;cursor:pointer}.seek .ticks{position:absolute;left:0;right:0;bottom:0;height:10px;pointer-events:none}.seek .ticks i{position:absolute;bottom:0;width:2px;height:9px;background:#9fb0cf;opacity:.75;transform:translateX(-1px)}.seek.off{opacity:.35}.seek.off input{cursor:not-allowed}'; document.head.append(st); }
   let ci = 0, t = 0, playing = false, speed = 1, lastCap = '', last = performance.now(), ended = false;
   const durOf = c => c.loop ? (c.nominal || 20) : c.dur;
   // 章節清單與進度條
@@ -314,17 +317,19 @@ function Player(cfg) {
   const tot = chs.reduce((a, c) => a + durOf(c), 0);
   $('#bar').innerHTML = chs.map(c => `<div style="flex:${durOf(c) / tot}"><i></i></div>`).join('');
   $('#list').onclick = e => { const li = e.target.closest('li'); if (li) go(+li.dataset.i, true); };
-  $('#bar').onclick = e => { const d = e.target.closest('div'); const i = [...$('#bar').children].indexOf(d); if (i >= 0) go(i, true); };
+  $('#bar').onclick = e => { const d = e.target.closest('#bar > div'); const i = [...$('#bar').children].indexOf(d); if (i < 0) return; const r = d.getBoundingClientRect(), f = clamp((e.clientX - r.left) / r.width, 0, 1);
+    go(i, true); if (!chs[i].loop && f > .03) seekTo(f * chs[i].dur, true); };
   const setPlay = p => { playing = p; $('#play').textContent = p ? '⏸ 暫停' : '▶ 播放'; if (!p && window.speechSynthesis) speechSynthesis.pause(); else if (window.speechSynthesis) speechSynthesis.resume(); if (curAudio) { if (p) curAudio.play().catch(() => { }); else curAudio.pause(); } };
-  $('#play').onclick = () => { if (ended) { restart(); return; } if ($('#quiz').classList.contains('show')) return; setPlay(!playing); };
+  $('#play').onclick = () => { if (ended) { restart(); return; } if ($('#quiz').classList.contains('show')) return; if (!playing && muteCap) { muteCap = false; lastCap = ''; } setPlay(!playing); };
   $('#prev').onclick = () => go(Math.max(0, ci - 1), true);
   $('#next').onclick = () => { if (ci < chs.length - 1) go(ci + 1, true); };
   $('#step').onclick = () => { setPlay(false); t = Math.min(t + 1 / 15, chs[ci].loop ? 1e9 : chs[ci].dur); };
   $('#spd').onchange = e => { speed = +e.target.value; if (curAudio) curAudio.playbackRate = Math.min(2, Math.max(.5, speed)); };
   $('#tts').onchange = e => { if (!e.target.checked && window.speechSynthesis) { stopTTS(); } else { lastCap = ''; } };
   document.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT') return;
+    if (e.target.tagName === 'INPUT' && e.target.id !== 'seek') return; if (e.target.id === 'seek' && /Arrow/.test(e.code)) e.preventDefault();
     if (e.code === 'Space') { e.preventDefault(); $('#play').click(); }
+    if (e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); jump(e.code === 'ArrowDown' ? 1 : -1); }
     if (e.code === 'ArrowRight') $('#next').click(); if (e.code === 'ArrowLeft') $('#prev').click(); if (e.key === 'r' || e.key === 'R') restart();
   });
   cv.addEventListener('click', e => {
@@ -343,7 +348,20 @@ function Player(cfg) {
     [...$('#list').children].forEach((li, k) => { li.classList.toggle('on', k === i); li.classList.toggle('ok', passed[k]); });
     $('#cht').textContent = `第 ${i + 1} 段｜${chs[i].title}`; $('#cht').classList.remove('hide'); clearTimeout(window.__ht); window.__ht = setTimeout(() => $('#cht').classList.add('hide'), 2500);
     if (!keepPlay) setPlay(false);
+    setTicks();
   }
+  /* 本段時間拉桿：拖到哪停到哪；字幕起點有刻度，靠近時自動吸附 */
+  const marksOf = c => [0, ...(c.captions || []).map(x => x[0]).filter(a => a > 0 && a < c.dur)].sort((a, b) => a - b);
+  function setTicks() { const c = chs[ci], row = $('#seekrow'), sk = $('#seek'); if (!row) return; row.classList.toggle('off', !!c.loop); sk.disabled = !!c.loop; sk.value = 0;
+    $('#ticks').innerHTML = c.loop ? '' : marksOf(c).map(a => `<i style="left:calc(8px + (100% - 16px) * ${(a / c.dur).toFixed(4)})"></i>`).join(''); }
+  function seekTo(tt, quiet) { const c = chs[ci]; if (c.loop || $('#quiz').classList.contains('show')) return; stopTTS(); t = clamp(tt, 0, c.dur - .01); muteCap = !playing; if (playing) lastCap = ''; }
+  function jump(dir) { const c = chs[ci]; if (c.loop) return; const m = marksOf(c); let tt;
+    if (dir > 0) { tt = m.find(a => a > t + .05); if (tt == null) return; } else { const p = m.filter(a => a < t - .4); tt = p.length ? p[p.length - 1] : 0; }
+    setPlay(false); seekTo(tt); }
+  { const sk = $('#seek');
+    sk.addEventListener('input', () => { const c = chs[ci]; if (c.loop) return; dragging = true; if (playing) setPlay(false); let tt = sk.value / 1000 * c.dur;
+      const near = marksOf(c).reduce((b, a) => Math.abs(a - tt) < Math.abs(b - tt) ? a : b, 0); if (Math.abs(near - tt) < c.dur * .03) tt = near; seekTo(tt); });
+    sk.addEventListener('change', () => { dragging = false; sk.blur(); }); sk.addEventListener('pointerup', () => { dragging = false; }); }
   function score() { const n = firstOk.filter(x => x === true).length, q = chs.filter(c => c.quiz).length; $('#score').textContent = `首次答對 ${n} / ${q}`; return n; }
   function showQuiz() {
     if (document.body.classList.contains('embed')) $('#panel').style.display = 'none';  /* 嵌入時讓出空間給小問題 */
@@ -397,12 +415,13 @@ function Player(cfg) {
       t = nt; if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } } }
     // 字幕
     let cap = '', say = ''; (c.captions || []).forEach(([at, s, sy]) => { if (t >= at) { cap = s; say = sy; } });
-    if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap) { try { speak(cap, say); } catch (e) { speaking = false; } } }
+    if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap && !muteCap) { try { speak(cap, say); } catch (e) { speaking = false; } } }
     ctx.clearRect(0, 0, W, HGT); ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, HGT);
     try { c.draw(ctx, t, S); } catch (err) { console.error(err); }
     const d = durOf(c), shown = c.loop ? (t % d) : t;
     $('#tm').textContent = c.loop ? '互動模式' : `${shown.toFixed(1)} / ${d.toFixed(0)} 秒`;
     [...$('#bar').children].forEach((b, k) => { b.firstChild.style.width = (k < ci ? 100 : k === ci ? (c.loop ? 100 : 100 * t / d) : 0) + '%'; b.classList.toggle('done', passed[k]); });
+    if (!dragging && !c.loop) $('#seek').value = Math.round(1000 * Math.min(t, c.dur) / c.dur);
     requestAnimationFrame(frame);
   }
   // 互動章節：「完成本段」按鈕
