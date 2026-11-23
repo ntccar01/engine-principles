@@ -769,7 +769,7 @@ function along(pts, k) {
   return pts[pts.length - 1];
 }
 /* 膜片式（機械式）汽油泵：凸輪 → 搖臂 → 拉桿 → 膜片；th＝凸輪角度（弧度），full＝浮筒室已滿 */
-function fuelPump(ctx, th, full, t) {
+function fuelPump(ctx, th, full, t, damp = true) {
   const cx = 230, e = 26, R = 45, Px = cx + 110, Py = 350, Cx = cx + 220, Cy = Py + R;
   const innerY = Py + e * Math.cos(th), sinPhi = e * Math.cos(th) / 110;             /* 凸輪頂起外端 → 內端下壓（拉膜片） */
   const vel = -Math.sin(th);                                                          /* >0：內端往下（膜片下拉） */
@@ -789,13 +789,26 @@ function fuelPump(ctx, th, full, t) {
   H.text(ctx, '進油閥', 176, 106, { size: 13, bold: true, color: inOpen ? C.ok : C.mut }); H.text(ctx, '出油閥', 284, 106, { size: 13, bold: true, align: 'right', color: outOpen ? C.ok : C.mut });
   H.text(ctx, '進油閥', 730, 285, { size: 18, bold: true, align: 'right', color: C.mut }); H.text(ctx, inOpen ? '開' : '關', 742, 285, { size: 18, bold: true, color: inOpen ? C.ok : C.bad });
   H.text(ctx, '出油閥', 830, 285, { size: 18, bold: true, align: 'right', color: C.mut }); H.text(ctx, outOpen ? '開' : '關', 842, 285, { size: 18, bold: true, color: outOpen ? C.ok : C.bad });
+  /* 脈動緩衝室（出油閥下游）：橡皮減震膜片下方是汽油、上方是空氣室。
+     送油時壓力升高 → 膜片向上微鼓、空氣受壓（先存一些油）；吸油時出油閥關 → 空氣把膜片推回，存的油繼續送出 */
+  const bul = !damp ? 0 : full ? .45 : .5 + .5 * Math.sin(th - .5), dis = damp && !full && Math.cos(th - .5) < 0, chg = damp && !full && outOpen > 0 && !dis;
+  const dY = 64 - bul * 16;
+  ctx.fillStyle = '#2b3850'; ctx.fillRect(188, 20, 94, 70); ctx.fillRect(280, 66, 12, 14);
+  ctx.fillStyle = damp ? 'rgba(124,199,255,.28)' : 'rgba(124,199,255,.08)'; ctx.beginPath(); ctx.moveTo(194, 26); ctx.lineTo(276, 26); ctx.lineTo(276, 64); ctx.quadraticCurveTo(235, dY * 2 - 64, 194, 64); ctx.closePath(); ctx.fill();
+  if (damp) { ctx.fillStyle = AIR; for (let i = 0; i < 9; i++) { const ax = 202 + (i % 3) * 32, ay = 31 + Math.floor(i / 3) * (dY - 34) / 3; ctx.globalAlpha = .7; ctx.beginPath(); ctx.arc(ax, ay, 2.5, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; }
+  ctx.fillStyle = 'rgba(255,209,102,.45)'; ctx.beginPath(); ctx.moveTo(194, 64); ctx.quadraticCurveTo(235, dY * 2 - 64, 276, 64); ctx.lineTo(276, 84); ctx.lineTo(194, 84); ctx.closePath(); ctx.fill(); ctx.fillRect(276, 68, 16, 10);
+  ctx.strokeStyle = damp ? '#4a4f5a' : '#33394a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(192, 64); ctx.quadraticCurveTo(235, dY * 2 - 64, 278, 64); ctx.stroke();
+  if (!damp) H.text(ctx, '（不使用）', 235, 46, { size: 12, align: 'center', color: C.mut });
   /* 汽油流動 */
-  const fdot = (x, y) => { ctx.fillStyle = FU; ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); };
+  const fdot = (x, y, a = 1) => { ctx.globalAlpha = a; ctx.fillStyle = FU; ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); ctx.globalAlpha = 1; };
   if (inOpen) for (let i = 0; i < 6; i++) { const k = (t * 1.2 + i / 6) % 1, P = along([[40, 55], [150, 55], [150, 115]], k); fdot(P[0], P[1]); }
-  if (outOpen) for (let i = 0; i < 6; i++) { const k = (t * 1.2 + i / 6) % 1, P = along([[310, 110], [310, 55], [430, 55]], k); fdot(P[0], P[1]); }
+  if (outOpen) for (let i = 0; i < 6; i++) { const k = (t * 1.2 + i / 6) % 1, P = along([[310, 110], [310, 55], [430, 55]], k); fdot(P[0], P[1], chg ? .75 : 1); }
+  if (chg) for (let i = 0; i < 3; i++) { const k = (t * 1.2 + i / 3) % 1, P = along([[300, 73], [262, 73]], k); fdot(P[0], P[1]); }
+  if (dis) for (let i = 0; i < 6; i++) { const k = (t * 1.2 + i / 6) % 1, P = along([[262, 73], [310, 73], [310, 55], [430, 55]], k); fdot(P[0], P[1], .75); }
   /* 膜片 */
   ctx.strokeStyle = C.acc; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(cx - 150, 200); ctx.quadraticCurveTo(cx, yc + (yc - 200) * .6, cx + 150, 200); ctx.stroke();
   H.label(ctx, cx + 120, 202, cx + 185, 182, '膜片');
+  H.label(ctx, 262, 34, 455, 24, '空氣室', { color: AIR }); H.label(ctx, 252, dY + 4, 455, 112, '橡皮減震膜片', { color: '#b9c2d0' });
   /* 下殼＋膜片彈簧（把膜片往上推） */
   ctx.strokeStyle = '#5c6f8a'; ctx.lineWidth = 3; ctx.strokeRect(cx - 90, 205, 180, 100);
   ctx.strokeStyle = '#7fd1ae'; ctx.lineWidth = 3; ctx.beginPath(); const sTop = yc + 6, sBot = 302, nC = 7; for (let i = 0; i <= nC * 2; i++) { const y = sTop + (sBot - sTop) * i / (nC * 2), x = cx + (i % 2 ? 26 : -26); i ? ctx.lineTo(x, y) : ctx.moveTo(cx, y); } ctx.stroke();
@@ -821,6 +834,7 @@ function pumpText(ctx, ph) {
   H.text(ctx, PHT[ph][1], 730, 130, { size: 19, align: 'center' });
   H.text(ctx, '送油壓力來自「膜片彈簧」\n不是凸輪直接推出去的！', 730, 340, { size: 17, bold: true, align: 'center', color: '#ffd166' });
   H.text(ctx, '真空端 150～300 mmHg ｜ 壓力端 0.2～0.4 bar', 730, 420, { size: 15, align: 'center', color: C.mut });
+  H.text(ctx, '上方「橡皮減震膜片＋空氣室」\n緩衝供油的脈動，出油較穩定', 730, 466, { size: 16, align: 'center', color: AIR });
 }
 const SCEN = [['冷車早上發動', 'choke', .1, 1], ['停紅燈怠速', 'idle', 0, 0], ['平路巡航（中高速）', 'high', .5, 0], ['猛踩油門超車的瞬間', 'accel', .6, 0], ['滿載爬陡坡（全負荷）', 'power', .9, 0]];
 const V4 = {
@@ -849,6 +863,7 @@ const V4 = {
     { title: '汽油泵與濾清器', dur: 30,
       captions: [[0, '<b>機械式汽油泵</b>（膜片式）由<b>凸輪軸</b>帶動：凸輪推動搖臂，把膜片往下拉，泵室產生真空，汽油被<b>吸入</b>。 <a href="https://www.youtube.com/watch?v=ZjZtvH9pAzs" target="_blank" rel="noopener" style="color:#38c6ff;white-space:nowrap">▶ 看真實影片</a>', '機械式汽油泵，又叫膜片式，由凸輪軸帶動：凸輪推動搖臂，把膜片往下拉，泵室產生真空，汽油被吸入。'],
         [6, '凸輪轉過最高點後，<b>膜片彈簧</b>把膜片往上推，汽油從出油閥<b>送</b>到化油器。送油的力量來自<b>膜片彈簧</b>。', '凸輪轉過最高點後，膜片彈簧把膜片往上推，汽油從出油閥送到化油器。送油的力量來自膜片彈簧。'],
+        [10, '上方的<b>橡皮減震膜片</b>和<b>空氣室</b>能緩衝<b>供油的脈動</b>：送油時膜片微鼓、空氣受壓；壓力回落時空氣把油繼續推出，出油比較穩定。它不是另一個吸油行程。', '上方的橡皮減震膜片和空氣室能緩衝供油的脈動：送油時膜片微鼓、空氣受壓；壓力回落時空氣把油繼續推出，出油比較穩定。它不是另一個吸油行程。'],
         [13, '浮筒室滿了、汽油送不出去：膜片停在下方，搖臂照轉卻碰不到拉桿，這叫<b>調節時期</b>（搖臂空動）。', '浮筒室滿了、汽油送不出去：膜片停在下方，搖臂照轉卻碰不到拉桿，這叫調節時期，搖臂空動。'],
         [17, '<b>電動式汽油泵</b>由馬達帶動：可裝在溫度低的地方減少氣阻、一打開點火開關就能供油、供油穩定，多用在<b>汽油噴射系統</b>。 <a href="https://www.youtube.com/watch?v=l-2XY81tJE0" target="_blank" rel="noopener" style="color:#38c6ff;white-space:nowrap">▶ 看真實影片</a>', '<b>電動式汽油泵</b>由馬達帶動：可裝在溫度低的地方減少氣阻、一打開點火開關就能供油、供油穩定，多用在<b>汽油噴射系統</b>。'],
         [24, '<b>汽油濾清器</b>過濾雜質和水分，要定期更換，而且<b>有方向性</b>，裝反就濾不掉水分。']],
@@ -866,17 +881,17 @@ const V4 = {
       quiz: { q: '下列何者「不是」電動式汽油泵的優點？', opts: ['由凸輪軸直接帶動', '可裝在溫度較低處減少氣阻', '引擎未起動前即可供油', '供油較穩定'], ans: 0, ex: '凸輪軸帶動的是機械式（膜片式）汽油泵。' } },
 
     { title: '膜片式汽油泵（互動）', loop: true, nominal: 24,
-      captions: [[0, '拉動滑桿慢慢轉凸輪，或按「自動轉」。看搖臂、拉桿、膜片怎麼連動，進油閥、出油閥什麼時候開。再按「浮筒室已滿」看調節時期。三個時期都看到後按「完成本段」。', '拉動滑桿慢慢轉凸輪，或按自動轉。看搖臂、拉桿、膜片怎麼連動，進油閥、出油閥什麼時候開。再按浮筒室已滿，看調節時期。三個時期都看到後，按完成本段。']],
+      captions: [[0, '拉動滑桿慢慢轉凸輪，或按「自動轉」。看搖臂、拉桿、膜片怎麼連動，進油閥、出油閥什麼時候開。再按「浮筒室已滿」看調節時期；按「減震」切換有無空氣室，比較出油口的汽油是連續還是一陣一陣。三個時期都看到後按「完成本段」。', '拉動滑桿慢慢轉凸輪，或按自動轉。看搖臂、拉桿、膜片怎麼連動，進油閥、出油閥什麼時候開。再按浮筒室已滿，看調節時期；按減震切換有無空氣室，比較出油口的汽油是連續還是一陣一陣。三個時期都看到後，按完成本段。']],
       panel(el, S) {
-        el.innerHTML = `<div class="box"><div class="row">凸輪角度 <input type="range" id="r" min="0" max="360" value="${S.cam}"> <b id="rv"></b>　<button id="au">▶ 自動轉</button><button id="fl">浮筒室：未滿</button></div>
+        el.innerHTML = `<div class="box"><div class="row">凸輪角度 <input type="range" id="r" min="0" max="360" value="${S.cam}"> <b id="rv"></b>　<button id="au">▶ 自動轉</button><button id="fl">浮筒室：未滿</button><button id="dp">減震：有</button></div>
         <div class="row"><span style="color:#9fb0cf">已看到：<b id="seen">0</b> / 3（吸油・送油・調節）</span><button onclick="finishLoop()">完成本段 ✔</button></div></div>`;
-        const g = id => el.querySelector('#' + id), upd = () => { g('rv').textContent = Math.round(S.cam) + '°'; g('au').textContent = S.auto ? '⏸ 停止' : '▶ 自動轉'; g('au').className = S.auto ? 'pri' : ''; g('fl').textContent = S.full ? '浮筒室：已滿' : '浮筒室：未滿'; g('fl').className = S.full ? 'pri' : ''; };
-        g('r').oninput = () => { S.cam = +g('r').value; S.auto = false; upd(); }; g('au').onclick = () => { S.auto = !S.auto; upd(); }; g('fl').onclick = () => { S.full = !S.full; upd(); };
+        const g = id => el.querySelector('#' + id), upd = () => { g('rv').textContent = Math.round(S.cam) + '°'; g('au').textContent = S.auto ? '⏸ 停止' : '▶ 自動轉'; g('au').className = S.auto ? 'pri' : ''; g('fl').textContent = S.full ? '浮筒室：已滿' : '浮筒室：未滿'; g('fl').className = S.full ? 'pri' : ''; g('dp').textContent = S.nodamp ? '減震：無（比較用）' : '減震：有'; g('dp').className = S.nodamp ? '' : 'pri'; };
+        g('r').oninput = () => { S.cam = +g('r').value; S.auto = false; upd(); }; g('au').onclick = () => { S.auto = !S.auto; upd(); }; g('fl').onclick = () => { S.full = !S.full; upd(); }; g('dp').onclick = () => { S.nodamp = !S.nodamp; upd(); };
         S.tick = () => { g('seen').textContent = S.pseen.length; if (S.auto) { g('r').value = S.cam; g('rv').textContent = Math.round(S.cam) + '°'; } }; upd();
       },
       draw(ctx, t, S) {
         const now = performance.now() / 1000, dt = clamp(now - (S.lt || now), 0, .1); S.lt = now; if (S.auto) S.cam = (S.cam + dt * 72) % 360;
-        const th = S.cam * Math.PI / 180, ph = fuelPump(ctx, th, S.full, now);
+        const th = S.cam * Math.PI / 180, ph = fuelPump(ctx, th, S.full, now, !S.nodamp);
         /* 手動轉時：用凸輪下一刻的方向判斷吸油／送油 */
         const shown = S.full ? 2 : (Math.sin(th) < 0 ? 0 : 1); if (!S.pseen.includes(shown)) S.pseen.push(shown); pumpText(ctx, shown); if (S.tick) S.tick();
       },
