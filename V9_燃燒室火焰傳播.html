@@ -689,7 +689,7 @@ const V9 = {
         chamber(ctx, 270, 330, SH.hemi, loopT(t, 3, 4), { scale: 1.4 });
         notes(ctx, '燃燒室設計要求', ['① 進汽門位置 → 良好進氣渦流', '② 排汽門位置 → 排氣順暢', '③ 火星塞別太靠近排汽門', '④ 火焰傳播路徑盡量縮短', '⑤ 配合活塞頂 → 壓縮渦流', '⑥ S/V（表面積／容積）愈小愈好'], C.acc, t, 6);
       },
-      quiz: { q: '燃燒室的「表面積與容積比（S/V）」應該？', opts: ['愈大愈好', '愈小愈好', '等於 1', '沒有影響'], ans: 1, ex: 'S/V 小 → 熱能損失少、熱效率高、HC 少。' } },
+      quiz: { q: '燃燒室的「表面積與容積比（S/V）」應該？', opts: ['愈大愈好', '等於 1', '沒有影響', '愈小愈好'], ans: 3, ex: 'S/V 小 → 熱能損失少、熱效率高、HC 少。' } },
     { title: '圓頂室式（半球形）', dur: 16,
       captions: [[0, '<b>圓頂室式</b>又稱半球型燃燒室，大多用於 <b>DOHC</b> 引擎，進、排汽門分在汽缸蓋兩側。'], [5, '火星塞在<b>正中央</b> → 火焰傳播距離<b>最短</b>；<b>S/V 最小</b>，熱損失最少、HC 較少。'], [11, '缺點：燃燒最高溫度較高，<b>NOx</b> 排出量較多。']],
       draw(ctx, t) { chamber(ctx, 270, 330, SH.hemi, loopT(t, 1, 5), { scale: 1.4, timer: true }); notes(ctx, '圓頂室式', ['● DOHC 引擎多用', '● 火星塞在正中央', '● 傳播距離短、S/V 最小', '● 最高溫度高 → NOx 較多'], C.ok, t); },
@@ -705,17 +705,17 @@ const V9 = {
       draw(ctx, t) { chamber(ctx, 270, 330, SH.tub, loopT(t, 1, 6), { scale: 1.4, timer: true });
         if (t > 5) { H.arrow(ctx, 110, 310, 160, 280, { color: C.acc2, lw: 4 }); H.arrow(ctx, 430, 310, 380, 280, { color: C.acc2, lw: 4 }); }
         notes(ctx, '浴槽室式', ['● OHV 引擎多用', '● 汽門垂直安裝', '● 壓縮渦流較佳', '● 混合氣較均勻'], '#b48cff', t); },
-      quiz: { q: '浴槽室式燃燒室的汽門如何安裝？', opts: ['分在兩側', '傾斜 20°', '排成一列並垂直安裝', '裝在汽缸體'], ans: 2 } },
+      quiz: { q: '浴槽室式燃燒室的汽門如何安裝？', opts: ['排成一列並垂直安裝', '分在兩側', '傾斜 20°', '裝在汽缸體'], ans: 0 } },
     { title: '三種燃燒室比一比', dur: 14,
       captions: [[0, '同樣的火焰速度，三種燃燒室同時點火，誰最先燒完？'], [7, '火星塞在中央、傳播距離最短的<b>圓頂室式</b>最快！（時間為示意值）']],
       draw(ctx, t) { const ft = loopT(t, 1, 9); [['hemi', 165], ['wedge', 480], ['tub', 795]].forEach(([k, x]) => chamber(ctx, x, 280, SH[k], ft, { scale: 1.05, timer: true })); },
-      quiz: { q: '縮短火焰傳播路徑，主要的好處是？', opts: ['增加積碳', '縮短最高燃燒溫度時間，減少 HC、CO、NOx', '降低壓縮比', '增加噪音'], ans: 1 } },
+      quiz: { q: '縮短火焰傳播路徑，主要的好處是？', opts: ['增加積碳', '降低壓縮比', '增加噪音', '縮短最高燃燒溫度時間，減少 HC、CO、NOx'], ans: 3 } },
     { title: '特殊型：雙火星塞、副燃燒室', dur: 18,
       captions: [[0, '<b>雙火星塞式</b>：每缸裝兩個火星塞<b>同時點火</b>，火焰傳播路徑縮短，減少 CO、HC、NOx。'], [8, '<b>副燃燒室</b>（如 HONDA CVCC）：先點燃副室的濃混合氣，再引燃主室的稀薄混合氣；但構造複雜、易積碳，現已不用。'], [13, '<b>凸出壁式</b>：在進氣孔設凸出壁，產生強烈進氣渦流。']],
       draw(ctx, t) { const ft = loopT(t, 1, 7.5); chamber(ctx, 250, 260, SH.tub, ft, { scale: 1.1, timer: true, label: false }); chamber(ctx, 700, 260, SH.twin, ft, { scale: 1.1, timer: true, label: false });
         H.text(ctx, '單火星塞', 250, 90, { size: 22, bold: true, align: 'center', color: C.mut }); H.text(ctx, '雙火星塞', 700, 90, { size: 22, bold: true, align: 'center', color: C.acc });
         if (t > 8) { const a = ease(prog(t, 8, 9)); H.box(ctx, 120, 420, 720, 90, { alpha: a, stroke: C.acc2 }); H.text(ctx, '副燃燒室：濃混合氣先點燃 → 引燃主室稀混合氣（CVCC）', 480, 450, { size: 19, align: 'center', alpha: a }); H.text(ctx, '凸出壁式：進氣孔凸出壁 → 強烈進氣渦流', 480, 486, { size: 19, align: 'center', alpha: ease(prog(t, 13, 14)) }); } },
-      quiz: { q: '雙火星塞式燃燒室的主要優點是？', opts: ['構造簡單', '縮短火焰傳播路徑、減少污染排放', '不需點火系統', '可用柴油'], ans: 1 } },
+      quiz: { q: '雙火星塞式燃燒室的主要優點是？', opts: ['縮短火焰傳播路徑、減少污染排放', '構造簡單', '不需點火系統', '可用柴油'], ans: 0 } },
   ],
 };
 

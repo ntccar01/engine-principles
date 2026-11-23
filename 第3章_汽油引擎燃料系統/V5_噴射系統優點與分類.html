@@ -678,6 +678,59 @@ function cyl4(ctx, mode, t) {
   if (mode === 'spi') { injector(ctx, 140, 118, 0, true, t, POS.tbi[1]); H.text(ctx, '只有 1 支', 140, 60, { size: 18, bold: true, align: 'center', color: POS.tbi[1] }); }
   else H.text(ctx, '每缸 1 支，共 4 支', 480, 440, { size: 20, bold: true, align: 'center', color: POS.port[1] });
 }
+/* 電磁式噴油嘴剖面（真實構造示意）：cx,top＝位置；t＝時間；P＝噴射週期；d＝通電比例；lab＝零件標示
+   通電 → 線圈電流建立磁場（需一點時間）→ 磁力大於回位彈簧時吸起銜鐵與針閥 → 噴油；斷電 → 磁場消失 → 彈簧把針閥壓回閥座 → 停止 */
+function solInjector(ctx, cx, top, t, o = {}) {
+  const P = o.P || 1.2, d = o.d ?? .5, u = t % P, onT = d * P, on = u < onT, tau = .07;
+  const mEnd = 1 - Math.exp(-onT / tau), m = on ? 1 - Math.exp(-u / tau) : mEnd * Math.exp(-(u - onT) / (tau * .8));
+  const lift = clamp((m - .45) / .35, 0, 1), L = lift * 12, FUc = '#ffd166';
+  ctx.save(); ctx.translate(cx, top);
+  /* 外殼與噴嘴 */
+  ctx.fillStyle = '#3d4d6b'; H.rr(ctx, -60, 40, 120, 214, 12); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-60, 240); ctx.lineTo(60, 240); ctx.lineTo(24, 292); ctx.lineTo(-24, 292); ctx.closePath(); ctx.fill();
+  /* 入油口與濾網 */
+  ctx.fillStyle = '#3d4d6b'; ctx.fillRect(-20, 0, 40, 44); ctx.fillStyle = 'rgba(255,209,102,.45)'; ctx.fillRect(-12, 0, 24, 44);
+  ctx.strokeStyle = '#c3d1e4'; ctx.lineWidth = 1; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(-12, 10 + i * 5); ctx.lineTo(12, 10 + i * 5); ctx.stroke(); }
+  /* 內部油道（汽油一直充滿，保持油壓） */
+  ctx.fillStyle = 'rgba(255,209,102,.38)'; ctx.fillRect(-7, 40, 14, 120); ctx.fillRect(-20, 150, 40, 120); ctx.beginPath(); ctx.moveTo(-20, 270); ctx.lineTo(20, 270); ctx.lineTo(4, 290); ctx.lineTo(-4, 290); ctx.closePath(); ctx.fill();
+  /* 固定鐵心（中空，汽油從中間通過） */
+  ctx.fillStyle = '#8a97ad'; ctx.fillRect(-22, 40, 15, 110); ctx.fillRect(7, 40, 15, 110);
+  /* 電磁線圈（剖面：銅線斷面），通電時發亮並標電流方向 */
+  [-1, 1].forEach(sg => { const x0 = sg < 0 ? -56 : 24;
+    ctx.fillStyle = on ? '#e08a3c' : '#7a5530'; ctx.fillRect(x0, 62, 32, 92);
+    ctx.fillStyle = on ? '#ffd9a8' : '#a07850';
+    for (let r = 0; r < 6; r++) for (let c = 0; c < 2; c++) { const px = x0 + 9 + c * 14, py = 72 + r * 14; ctx.beginPath(); ctx.arc(px, py, 4.5, 0, 7); ctx.fill();
+      if (on) { ctx.strokeStyle = '#3a2410'; ctx.lineWidth = 1.4; if (sg < 0) { ctx.fillStyle = '#3a2410'; ctx.beginPath(); ctx.arc(px, py, 1.4, 0, 7); ctx.fill(); ctx.fillStyle = '#ffd9a8'; } else { ctx.beginPath(); ctx.moveTo(px - 2.5, py - 2.5); ctx.lineTo(px + 2.5, py + 2.5); ctx.moveTo(px + 2.5, py - 2.5); ctx.lineTo(px - 2.5, py + 2.5); ctx.stroke(); } } } });
+  /* 接頭與導線（ECU 信號） */
+  ctx.fillStyle = '#2b3850'; ctx.fillRect(-104, 72, 46, 40); ctx.fillStyle = '#c3d1e4'; ctx.fillRect(-100, 80, 14, 5); ctx.fillRect(-100, 98, 14, 5);
+  ctx.strokeStyle = on ? C.acc : '#5c6f8a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-86, 82); ctx.lineTo(-56, 76); ctx.moveTo(-86, 100); ctx.lineTo(-56, 140); ctx.stroke();
+  if (on) for (let i = 0; i < 3; i++) { const k = (t * 3 + i / 3) % 1; ctx.fillStyle = C.acc; ctx.beginPath(); ctx.arc(-86 + 30 * k, 82 - 6 * k, 2.5, 0, 7); ctx.fill(); }
+  /* 磁力線：鐵心 → 銜鐵 → 外殼繞回（隨磁場強弱變化） */
+  if (m > .05) { ctx.save(); ctx.globalAlpha = Math.min(1, m); ctx.strokeStyle = '#c79bff'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.lineDashOffset = -t * 30;
+    [-1, 1].forEach(sg => { ctx.beginPath(); ctx.moveTo(sg * 14, 150); ctx.lineTo(sg * 14, 54); ctx.lineTo(sg * 58, 54); ctx.lineTo(sg * 58, 176); ctx.lineTo(sg * 14, 176); ctx.closePath(); ctx.stroke(); });
+    ctx.restore(); }
+  /* 回位彈簧（在鐵心孔內，把銜鐵往下壓） */
+  const armT = 162 - L; ctx.strokeStyle = '#7fd1ae'; ctx.lineWidth = 2; ctx.beginPath(); const s0 = 96, s1 = armT; for (let i = 0; i <= 10; i++) { const y = s0 + (s1 - s0) * i / 10, x = i % 2 ? 5 : -5; i ? ctx.lineTo(x, y) : ctx.moveTo(0, y); } ctx.stroke();
+  /* 銜鐵＋針閥 */
+  ctx.fillStyle = '#b9c2d0'; ctx.fillRect(-18, armT, 36, 34); ctx.fillStyle = '#e8eef9'; ctx.fillRect(-4, armT + 34, 8, 280 - armT - 34 - L);
+  ctx.beginPath(); ctx.moveTo(-4, 280 - L); ctx.lineTo(4, 280 - L); ctx.lineTo(0, 288 - L); ctx.closePath(); ctx.fill();
+  /* 氣隙標示 */
+  /* 噴霧 */
+  if (lift > .1) { ctx.fillStyle = 'rgba(255,209,102,.18)'; ctx.globalAlpha = lift; ctx.beginPath(); ctx.moveTo(-3, 292); ctx.lineTo(-34, 380); ctx.lineTo(34, 380); ctx.lineTo(3, 292); ctx.closePath(); ctx.fill();
+    for (let j = 0; j < 7; j++) for (let n = 0; n < 5; n++) { const k = (t * 2.2 + n / 5 + j * .13) % 1, a = (j - 3) * .11; ctx.fillStyle = FUc; ctx.globalAlpha = (1 - k * .8) * lift; ctx.beginPath(); ctx.arc(Math.sin(a) * 95 * k, 294 + 90 * k, 2.6, 0, 7); ctx.fill(); } }
+  ctx.globalAlpha = 1; ctx.restore();
+  if (o.lab) { const X = x => cx + x, Y = y => top + y, lc = { size: 14 };
+    H.label(ctx, X(-104), Y(92), X(-125), Y(60), '接頭', Object.assign({ align: 'right', color: on ? C.acc : '#9fb0cf' }, lc));
+    H.label(ctx, X(-40), Y(120), X(-125), Y(130), '電磁線圈', Object.assign({ align: 'right', color: on ? '#ffb46b' : '#c9a27a' }, lc));
+    H.label(ctx, X(-15), Y(armT + 18), X(-125), Y(200), '銜鐵', Object.assign({ align: 'right', color: '#b9c2d0' }, lc));
+    H.label(ctx, X(0), Y(285 - L), X(-125), Y(270), '噴孔', Object.assign({ align: 'right', color: '#9fb0cf' }, lc));
+    H.label(ctx, X(0), Y(20), X(80), Y(14), '汽油入口（濾網）', Object.assign({ color: FUc }, lc));
+    H.label(ctx, X(4), Y(120), X(80), Y(100), '回位彈簧', Object.assign({ color: '#7fd1ae' }, lc));
+    H.label(ctx, X(16), Y(70), X(80), Y(57), '鐵心', Object.assign({ color: '#c3d1e4' }, lc));
+    H.label(ctx, X(4), Y(230), X(80), Y(220), '針閥', Object.assign({ color: '#e8eef9' }, lc));
+    if (m > .05) H.label(ctx, X(58), Y(170), X(80), Y(170), '磁力線', Object.assign({ color: '#c79bff' }, lc)); }
+  return { on, m, lift };
+}
 const V5 = {
   code: 'Ch3-V5', title: '汽油噴射系統（一）：電腦接手，噴油嘴放哪裡？', sub: '第3章 汽油引擎燃料系統｜第 5 節',
   state: { q: null, n: 0, pick: null },
@@ -707,7 +760,7 @@ const V5 = {
           H.box(ctx, x, y, 420, 210, { stroke: k > 0 ? col : '#22324f', fill: k > 0 ? '#16223a' : '#121c30' }); H.text(ctx, n, x + 20, y + 35, { size: 26, bold: true, color: k > 0 ? col : '#2c3f63' });
           if (k > 0) H.text(ctx, d, x + 24, y + 90, { size: 21, alpha: k }); });
       },
-      quiz: { q: '下列何者「不是」汽油噴射引擎的優點？', opts: ['進氣阻力較大', '低溫發動性較佳', '燃料消耗率較低', '各缸混合比較平均'], ans: 0, ex: '噴射系統沒有文氏管，進氣阻力反而較小。' } },
+      quiz: { q: '下列何者「不是」汽油噴射引擎的優點？', opts: ['低溫發動性較佳', '進氣阻力較大', '燃料消耗率較低', '各缸混合比較平均'], ans: 1, ex: '噴射系統沒有文氏管，進氣阻力反而較小。' } },
 
     { title: '分類一：依噴射位置', dur: 30,
       captions: [[0, '噴油嘴裝在哪裡？依<b>噴射位置</b>分成三種。'],
@@ -720,7 +773,7 @@ const V5 = {
         if (hl) { const p = POS[hl]; H.box(ctx, 60, 300, 400, 120, { stroke: p[1] }); H.text(ctx, p[0], 260, 335, { size: 21, bold: true, align: 'center', color: p[1] }); H.text(ctx, p[2], 260, 385, { size: 20, align: 'center' }); }
         else H.text(ctx, '三個可能的位置', 260, 360, { size: 24, bold: true, align: 'center', color: C.acc });
       },
-      quiz: { q: '目前大多數汽油引擎採用哪一種噴射位置？', opts: ['進氣口噴射', '節氣門體噴射', '化油器', '連續噴射'], ans: 0, ex: '進氣口噴射：各缸混合比均勻、動力平均、運轉穩定。' } },
+      quiz: { q: '目前大多數汽油引擎採用哪一種噴射位置？', opts: ['節氣門體噴射', '化油器', '連續噴射', '進氣口噴射'], ans: 3, ex: '進氣口噴射：各缸混合比均勻、動力平均、運轉穩定。' } },
 
     { title: '找找噴油嘴（互動）', loop: true, nominal: 20,
       captions: [[0, '按「下一題」，畫面會亮出一支噴油嘴，判斷它是哪一種噴射位置。答對 3 題按「完成本段」。', '按下一題，畫面會亮出一支噴油嘴，判斷它是哪一種噴射位置。答對三題，按完成本段。']],
@@ -734,7 +787,7 @@ const V5 = {
           g('m').innerHTML = ok ? `<span class="fb ok">✔ 正確！${POS[S.q][2]}</span>` : '<span class="fb bad">✘ 看看噴油嘴在節氣門前、進汽門前，還是汽缸蓋上？</span>'; });
       },
       draw(ctx, t, S) { if (S.q) intake(ctx, S.q, t); else intake(ctx, null, t, { all: true }); if (S.pick) H.text(ctx, POS[S.pick][0], 260, 360, { size: 22, bold: true, align: 'center', color: POS[S.pick][1] }); },
-      quiz: { q: '缸內直噴（GDI）的噴油嘴裝在哪裡？', opts: ['汽缸蓋上，直接噴入汽缸', '節氣門上方', '進汽門前方', '油箱內'], ans: 0, ex: '在進氣行程或壓縮行程把汽油直接噴入汽缸。' } },
+      quiz: { q: '缸內直噴（GDI）的噴油嘴裝在哪裡？', opts: ['節氣門上方', '進汽門前方', '汽缸蓋上，直接噴入汽缸', '油箱內'], ans: 2, ex: '在進氣行程或壓縮行程把汽油直接噴入汽缸。' } },
 
     { title: '分類二：依噴射點數', dur: 18,
       captions: [[0, '<b>單點噴射（SPI）</b>：整具引擎只有<b>一支</b>噴油嘴，裝在節氣門上方，也就是節氣門體噴射（TBI）。'],
@@ -746,19 +799,26 @@ const V5 = {
       captions: [[0, '<b>間歇噴射</b>：噴油嘴是電磁式，由電腦（ECU）控制。<b>電磁線圈通電</b>把針閥吸上來就噴油，斷電後彈簧把針閥推回就停止。'],
         [11, '<b>連續噴射</b>（K 型）：引擎運轉時噴油嘴<b>一直開著</b>，只要油壓大於彈簧力就持續噴油，<b>熄火才關閉</b>。機械控制式噴射屬於這種。']],
       draw(ctx, t) {
-        const inter = t < 11, on = inter ? (t * 2) % 1 < .45 : true;
-        ctx.save(); ctx.translate(330, 80);
-        ctx.fillStyle = '#4a5d7d'; H.rr(ctx, -60, 0, 120, 260, 14); ctx.fill();
-        if (inter) { ctx.fillStyle = on ? C.acc : '#7a5a2a'; ctx.fillRect(-56, 80, 112, 70); H.text(ctx, '電磁線圈', 0, 115, { size: 16, bold: true, align: 'center', color: '#0d1526' }); }
-        else { ctx.fillStyle = '#5c6f8a'; ctx.fillRect(-56, 80, 112, 70); H.text(ctx, '彈簧', 0, 115, { size: 16, bold: true, align: 'center' }); }
-        const lift = on ? -10 : 0; ctx.fillStyle = '#c3d1e4'; ctx.fillRect(-8, 150 + lift, 16, 104); H.text(ctx, '針閥', 50, 210, { size: 15, color: C.mut });
-        if (on) for (let i = 0; i < 14; i++) { const k = (t * 2 + i / 14) % 1, a = (i % 7 - 3) * .1; ctx.fillStyle = FU5; ctx.globalAlpha = 1 - k; ctx.beginPath(); ctx.arc(Math.sin(a) * 80 * k, 265 + 80 * k, 3, 0, 7); ctx.fill(); }
-        ctx.restore();
+        const inter = t < 11; let on = true;
+        if (inter) { on = solInjector(ctx, 330, 60, t, { lab: true }).on; }
+        else { ctx.save(); ctx.translate(330, 80);
+          ctx.fillStyle = '#4a5d7d'; H.rr(ctx, -60, 0, 120, 260, 14); ctx.fill();
+          ctx.fillStyle = '#5c6f8a'; ctx.fillRect(-56, 80, 112, 70); H.text(ctx, '彈簧', 0, 115, { size: 16, bold: true, align: 'center' });
+          ctx.fillStyle = '#c3d1e4'; ctx.fillRect(-8, 140, 16, 104); H.text(ctx, '針閥', 50, 210, { size: 15, color: C.mut });
+          for (let i = 0; i < 14; i++) { const k = (t * 2 + i / 14) % 1, a = (i % 7 - 3) * .1; ctx.fillStyle = FU5; ctx.globalAlpha = 1 - k; ctx.beginPath(); ctx.arc(Math.sin(a) * 80 * k, 265 + 80 * k, 3, 0, 7); ctx.fill(); }
+          ctx.restore(); }
         H.box(ctx, 520, 90, 380, 260, { stroke: inter ? C.acc : C.acc2 }); H.text(ctx, inter ? '間歇噴射' : '連續噴射（K 型）', 710, 125, { size: 26, bold: true, align: 'center', color: inter ? C.acc : C.acc2 });
-        H.text(ctx, inter ? '・電磁式，電腦 ECU 控制\n・線圈通電 → 針閥上提 → 噴油\n・斷電 → 彈簧推回 → 停止' : '・運轉期間一直開著\n・油壓 ＞ 彈簧力就噴油\n・引擎熄火才關閉\n・機械控制式屬於此種', 540, 190, { size: 20 });
-        H.text(ctx, inter ? (on ? '⚡ 通電：噴油' : '斷電：停止') : '持續噴油中…', 330, 480, { size: 22, bold: true, align: 'center', color: on ? C.acc : C.mut });
+        H.text(ctx, inter ? '・電磁式，電腦 ECU 控制\n・線圈通電 → 磁力吸起針閥 → 噴油\n・斷電 → 彈簧推回 → 停止' : '・運轉期間一直開著\n・油壓 ＞ 彈簧力就噴油\n・引擎熄火才關閉\n・機械控制式屬於此種', 540, 180, { size: 19 });
+        if (inter) { /* ECU 噴射信號（通電／斷電） */
+          const P = 1.2, x0 = 545, x1 = 875, yH = 290, yL = 325, sx = (x1 - x0) / (3 * P);
+          H.text(ctx, 'ECU 信號', x1, 272, { size: 14, align: 'right', color: C.mut });
+          ctx.strokeStyle = C.acc; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x0, yL);
+          for (let c = 0; c < 3; c++) { const a = x0 + c * P * sx, m = a + .5 * P * sx; ctx.lineTo(a, yL); ctx.lineTo(a, yH); ctx.lineTo(m, yH); ctx.lineTo(m, yL); } ctx.lineTo(x1, yL); ctx.stroke();
+          const px = x0 + (t % (3 * P)) * sx; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px, yH - 10); ctx.lineTo(px, yL + 8); ctx.stroke();
+          H.text(ctx, '通電', x0 + .25 * P * sx, yH - 12, { size: 13, align: 'center', color: C.acc }); H.text(ctx, '斷電', x0 + .75 * P * sx, yL + 18, { size: 13, align: 'center', color: C.mut }); }
+        H.text(ctx, inter ? (on ? '⚡ 通電：磁力吸起針閥 → 噴油' : '斷電：彈簧壓回針閥 → 停止') : '持續噴油中…', 330, 500, { size: 22, bold: true, align: 'center', color: on ? C.acc : C.mut });
       },
-      quiz: { q: '連續噴射系統的噴油嘴何時關閉？', opts: ['引擎熄火時', '每個排氣行程', '電磁線圈斷電時', '節氣門關閉時'], ans: 0, ex: '連續噴射在引擎運轉期間一直打開，熄火才關閉。' } },
+      quiz: { q: '連續噴射系統的噴油嘴何時關閉？', opts: ['每個排氣行程', '電磁線圈斷電時', '節氣門關閉時', '引擎熄火時'], ans: 3, ex: '連續噴射在引擎運轉期間一直打開，熄火才關閉。' } },
 
     { title: '分類四：依控制方式', dur: 32,
       captions: [[0, '最後，依<b>控制方式</b>分成四種。'],
@@ -773,7 +833,7 @@ const V5 = {
           H.text(ctx, n, x + 20, y + 32, { size: 24, bold: true, color: k > 0 ? col : '#2c3f63' }); H.text(ctx, a, x + 410, y + 32, { size: 18, align: 'right', color: k > 0 ? C.ink : '#2c3f63' });
           if (k > 0) { H.text(ctx, d, x + 20, y + 95, { size: 20, alpha: k }); H.text(ctx, e, x + 20, y + 180, { size: 16, color: C.mut, alpha: k }); } });
       },
-      quiz: { q: '電子控制式汽油噴射系統的噴油量，主要靠控制什麼？', opts: ['噴油嘴開啟時間', '噴油壓力', '噴油嘴孔徑', '針閥上升高度'], ans: 0, ex: '電腦控制噴油嘴通電（開啟）的時間長短。' } },
+      quiz: { q: '電子控制式汽油噴射系統的噴油量，主要靠控制什麼？', opts: ['噴油壓力', '噴油嘴開啟時間', '噴油嘴孔徑', '針閥上升高度'], ans: 1, ex: '電腦控制噴油嘴通電（開啟）的時間長短。' } },
   ],
   activity: {
     title: '第 5 節｜噴射系統分類大挑戰',

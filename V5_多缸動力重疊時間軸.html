@@ -706,7 +706,7 @@ const V5 = {
         el.querySelector('#eo').oninput = e => { S.EO = +e.target.value; el.querySelector('#eov').textContent = S.EO + '°'; };
       },
       draw(ctx, t, S) { timeline(ctx, S.N, S.EO, t); infoLine(ctx, S.N, S.EO); },
-      quiz: { q: '動力重疊度數的公式為何？', opts: ['動力行程度數＋動力間隔', '(180°－排汽門早開)－(720°÷缸數)', '進汽門早開＋排汽門晚關', '720°－四行程度數和'], ans: 1, ex: '選項 C 是「汽門重疊」，不要搞混！' } },
+      quiz: { q: '動力重疊度數的公式為何？', opts: ['動力行程度數＋動力間隔', '進汽門早開＋排汽門晚關', '(180°－排汽門早開)－(720°÷缸數)', '720°－四行程度數和'], ans: 2, ex: '選項 C 是「汽門重疊」，不要搞混！' } },
   ],
 };
 

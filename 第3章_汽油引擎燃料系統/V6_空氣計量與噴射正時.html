@@ -673,11 +673,11 @@ function airPath(ctx, hl, t) {
   ctx.globalAlpha = 1;
   H.box(ctx, 60, y - 30, 80, 60, { fill: '#2b3850' }); H.text(ctx, '空氣\n濾清器', 100, y - 10, { size: 13, align: 'center' });
   const part = (x, n, key, col) => { const on = hl === key; H.box(ctx, x - 50, y - 95, 100, 46, { stroke: on ? col : '#3a4a66', fill: on ? '#2a3b5e' : '#16223a', lw: on ? 4 : 2 }); H.text(ctx, n, x, y - 72, { size: 15, bold: true, align: 'center', color: on ? col : '#5c6f8a' });
-    ctx.strokeStyle = on ? col : '#3a4a66'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y - 49); ctx.lineTo(x, y - 30); ctx.stroke(); if (on) { H.arrow(ctx, x, y + 50, x, 330, { color: col }); } };
+    ctx.strokeStyle = on ? col : '#3a4a66'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y - 49); ctx.lineTo(x, y - 30); ctx.stroke(); if (on) { H.arrow(ctx, x, y + 50, clamp(x, 380, 580), 330, { color: col }); } };
   part(260, '空氣流量計', 'L', C.ok);
-  ctx.strokeStyle = '#c3d1e4'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(430, y - 26); ctx.lineTo(450, y + 26); ctx.stroke(); H.text(ctx, '節氣門', 440, y + 62, { size: 14, align: 'center', color: C.mut });
+  ctx.strokeStyle = '#c3d1e4'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(430, y - 26); ctx.lineTo(450, y + 26); ctx.stroke(); H.text(ctx, '節氣門', 456, y + 62, { size: 14, color: C.mut });
   part(440, '節氣門位置', 'T', '#c79bff');
-  part(650, '歧管壓力', 'D', C.acc2); H.text(ctx, '進氣歧管', 650, y + 62, { size: 14, align: 'center', color: C.mut });
+  part(650, '歧管壓力', 'D', C.acc2); H.text(ctx, '進氣歧管', 666, y + 62, { size: 14, color: C.mut });
   H.box(ctx, 830, y - 30, 60, 60, { fill: '#4a5d7d' }); H.text(ctx, '引擎', 860, y, { size: 14, align: 'center' });
   H.box(ctx, 360, 330, 240, 70, { stroke: C.acc }); H.text(ctx, '電腦 ECU', 480, 355, { size: 20, bold: true, align: 'center', color: C.acc }); H.text(ctx, '＋ 引擎轉速信號', 480, 383, { size: 14, align: 'center', color: C.mut });
   H.arrow(ctx, 600, 365, 700, 365); H.text(ctx, '計算噴油量', 760, 365, { size: 16, bold: true, color: C.acc });
@@ -705,7 +705,7 @@ const V6 = {
       draw(ctx, t) { const hl = t < 10 ? 'D' : t < 20 ? 'L' : t < 28 ? 'T' : null; airPath(ctx, hl, t);
         const info = { D: ['壓力計量式（D 型）', '歧管壓力＋轉速 → 推算空氣量\n又稱速度密度式', C.acc2], L: ['空氣流量計量式（L 型）', '節氣門前方空氣流量計直接量\n翼板式・熱線式・卡門渦流式', C.ok], T: ['節氣門計量式', '節氣門開度＋轉速 → 推算\n反應靈敏，用於部分賽車', '#c79bff'] }[hl];
         if (info) { H.box(ctx, 60, 420, 840, 100, { stroke: info[2] }); H.text(ctx, info[0], 80, 450, { size: 22, bold: true, color: info[2] }); H.text(ctx, info[1], 440, 448, { size: 19 }); } },
-      quiz: { q: '空氣流量計裝在哪裡？', opts: ['節氣門前方', '進氣歧管上', '排氣管', '汽缸蓋上'], ans: 0, ex: 'L 型：空氣流量計在節氣門前方；D 型則是歧管壓力感知器在進氣歧管。' } },
+      quiz: { q: '空氣流量計裝在哪裡？', opts: ['進氣歧管上', '節氣門前方', '排氣管', '汽缸蓋上'], ans: 1, ex: 'L 型：空氣流量計在節氣門前方；D 型則是歧管壓力感知器在進氣歧管。' } },
 
     { title: '分類六：同期噴射（互動）', loop: true, nominal: 24,
       captions: [[0, '<b>同期噴射</b>：電腦要參考<b>點火信號和曲軸角度</b>決定什麼時候噴。點選下方三種方式，觀察四個汽缸的噴油時機（▼）。看完三種再按「完成本段」。', '同期噴射：電腦要參考點火信號和曲軸角度，決定什麼時候噴。點選下方三種方式，觀察四個汽缸的噴油時機。看完三種，再按完成本段。']],
@@ -717,7 +717,7 @@ const V6 = {
         el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { S.mode = b.dataset.m; seen.add(S.mode); upd(); }); upd();
       },
       draw(ctx, t, S) { H.text(ctx, INJ[S.mode][0], 480, 40, { size: 26, bold: true, align: 'center', color: C.acc }); timeline(ctx, S.mode, t, { y: 110 }); },
-      quiz: { q: '分組噴射是如何分組的？', opts: ['1、2 缸一組，3、4 缸一組', '1、3 缸一組，2、4 缸一組', '每缸各自一組', '四缸全部一組'], ans: 0, ex: '先噴 1、2 缸，曲軸再轉 360° 噴 3、4 缸。' } },
+      quiz: { q: '分組噴射是如何分組的？', opts: ['1、3 缸一組，2、4 缸一組', '每缸各自一組', '1、2 缸一組，3、4 缸一組', '四缸全部一組'], ans: 2, ex: '先噴 1、2 缸，曲軸再轉 360° 噴 3、4 缸。' } },
 
     { title: '非同期噴射', dur: 18,
       captions: [[0, '<b>非同期噴射</b>：噴油時機和<b>曲軸角度完全無關</b>。'], [5, '例如三菱的卡門渦流超音波式：空氣流量計每送出 <b>3 個波</b>，電腦就噴一次。'], [11, '轉速越快 → 空氣越多 → 波越密 → <b>噴射次數越多</b>，噴油量也越多。']],
@@ -730,7 +730,7 @@ const V6 = {
         H.text(ctx, '噴油（每 3 個波噴一次）', 100, 240, { size: 16, color: C.mut });
         H.box(ctx, 200, 350, 560, 110, { stroke: C.acc }); H.text(ctx, '與曲軸轉角無關・只與轉速（空氣量）有關', 480, 390, { size: 22, bold: true, align: 'center', color: C.acc }); H.text(ctx, '例：三菱卡門渦流超音波控制式', 480, 430, { size: 18, align: 'center', color: C.mut });
       },
-      quiz: { q: '非同期噴射的噴射時機與什麼「無關」？', opts: ['曲軸旋轉角度', '空氣流量計信號', '引擎轉速', '電腦'], ans: 0, ex: '非同期噴射完全不參考曲軸角度。' } },
+      quiz: { q: '非同期噴射的噴射時機與什麼「無關」？', opts: ['空氣流量計信號', '引擎轉速', '電腦', '曲軸旋轉角度'], ans: 3, ex: '非同期噴射完全不參考曲軸角度。' } },
 
     { title: '分類七：BOSCH 解碼', dur: 32,
       captions: [[0, '德國 <b>BOSCH（波細）</b>很早就研發汽油噴射，很多系統都用它的名稱分類。<b>Jetronic</b> 是德文「噴射」的意思。'],
@@ -744,7 +744,7 @@ const V6 = {
           H.text(ctx, n, x + 20, y + 30, { size: 22, bold: true, color: on ? C.acc : '#2c3f63' });
           if (on) { H.text(ctx, de, x + 410, y + 30, { size: 15, align: 'right', color: C.mut, alpha: kk }); H.text(ctx, '→ ' + zh, x + 20, y + 70, { size: 20, alpha: kk }); } });
       },
-      quiz: { q: '以「壓力計量」方式的系統是哪一種？', opts: ['D-Jetronic', 'L-Jetronic', 'K-Jetronic', 'LH-Jetronic'], ans: 0, ex: 'D＝Druck（壓力）。' } },
+      quiz: { q: '以「壓力計量」方式的系統是哪一種？', opts: ['L-Jetronic', 'K-Jetronic', 'D-Jetronic', 'LH-Jetronic'], ans: 2, ex: 'D＝Druck（壓力）。' } },
 
     { title: 'BOSCH 解碼練習', loop: true, nominal: 20,
       captions: [[0, '按「下一題」，看名稱選出它的意思。答對 3 題按「完成本段」。', '按下一題，看名稱選出它的意思。答對三題，按完成本段。']],
@@ -759,7 +759,7 @@ const V6 = {
       },
       draw(ctx, t, S) { if (!S.q) { H.text(ctx, 'BOSCH 解碼器', 480, 240, { size: 40, bold: true, align: 'center', color: C.acc }); return; }
         H.text(ctx, S.q[0], 480, 200, { size: 56, bold: true, align: 'center', color: S.done ? C.ok : C.acc }); if (S.done) H.text(ctx, S.q[3], 480, 290, { size: 30, align: 'center' }); },
-      quiz: { q: 'LH-Jetronic 的空氣流量計是哪一種？', opts: ['熱線式', '翼板式', '卡門渦流超音波式', '葉片式'], ans: 0, ex: 'LH＝L 型＋熱線式（Hot wire）。' } },
+      quiz: { q: 'LH-Jetronic 的空氣流量計是哪一種？', opts: ['翼板式', '卡門渦流超音波式', '葉片式', '熱線式'], ans: 3, ex: 'LH＝L 型＋熱線式（Hot wire）。' } },
   ],
   activity: {
     title: '第 6 節｜噴射密碼破解',

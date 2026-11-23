@@ -756,19 +756,19 @@ const V2 = {
           ctx.strokeStyle = C.fire; ctx.beginPath(); ctx.moveTo(PX(4), PY(26)); ctx.lineTo(PX(4), PY(38)); ctx.stroke(); H.text(ctx, '等容（V 不變）', PX(4) + 10, PY(32), { size: 18, color: C.fire }); ctx.globalAlpha = 1; }
         H.text(ctx, '壓縮比 = 汽缸總容積 V2 ÷ 燃燒室容積 V1', 690, 40, { size: 20, bold: true, align: 'center', color: C.acc });
       },
-      quiz: { q: 'P-V 圖中，一條「垂直線」表示什麼？', opts: ['壓力不變', '容積不變', '溫度不變', '轉速不變'], ans: 1, ex: '垂直線＝V 不變＝等容。' } },
+      quiz: { q: 'P-V 圖中，一條「垂直線」表示什麼？', opts: ['壓力不變', '溫度不變', '轉速不變', '容積不變'], ans: 3, ex: '垂直線＝V 不變＝等容。' } },
     { title: '等容循環（奧圖）', dur: cycDur(CYC.otto), captions: cycCaps(CYC.otto, '<b>等容循環</b>又稱<b>奧圖循環</b>，屬於<b>四行程汽油引擎</b>。注意看燃燒那一段！'),
       draw(ctx, t) { drawCycle(ctx, t, CYC.otto, '等容循環（奧圖循環）→ 汽油引擎'); },
-      quiz: { q: '奧圖循環的燃燒是在什麼條件下完成？', opts: ['等壓', '等容', '先等容再等壓', '等溫'], ans: 1, ex: '火星塞點火後在上死點瞬間完成燃燒，容積不變。' } },
+      quiz: { q: '奧圖循環的燃燒是在什麼條件下完成？', opts: ['等壓', '先等容再等壓', '等容', '等溫'], ans: 2, ex: '火星塞點火後在上死點瞬間完成燃燒，容積不變。' } },
     { title: '等壓循環（狄塞爾）', dur: cycDur(CYC.diesel), captions: cycCaps(CYC.diesel, '<b>等壓循環</b>又稱<b>狄塞爾循環</b>，屬於<b>低速柴油引擎</b>，沒有火星塞。'),
       draw(ctx, t) { drawCycle(ctx, t, CYC.diesel, '等壓循環（狄塞爾循環）→ 低速柴油引擎'); },
       quiz: { q: '狄塞爾循環屬於哪一種引擎？', opts: ['四行程汽油引擎', '低速柴油引擎', '高速柴油引擎', '米勒引擎'], ans: 1 } },
     { title: '等容等壓循環（混合）', dur: cycDur(CYC.dual), captions: cycCaps(CYC.dual, '<b>等容等壓循環</b>又稱<b>混合循環／雙燃燒循環</b>，屬於<b>高速柴油引擎</b>。'),
       draw(ctx, t) { drawCycle(ctx, t, CYC.dual, '等容等壓循環（混合循環）→ 高速柴油引擎'); },
-      quiz: { q: '現代「高速柴油引擎」屬於哪一種循環？', opts: ['奧圖循環', '狄塞爾循環', '雙燃燒（混合）循環', '米勒循環'], ans: 2, ex: '燃燒先等容、再等壓，所以叫雙燃燒循環。' } },
+      quiz: { q: '現代「高速柴油引擎」屬於哪一種循環？', opts: ['雙燃燒（混合）循環', '奧圖循環', '狄塞爾循環', '米勒循環'], ans: 0, ex: '燃燒先等容、再等壓，所以叫雙燃燒循環。' } },
     { title: '米勒循環', dur: cycDur(CYC.miller), captions: cycCaps(CYC.miller, '<b>米勒循環</b>：裝有<b>機械增壓器</b>的奧圖循環引擎，關鍵在<b>進汽門晚關</b>。'),
       draw(ctx, t) { drawCycle(ctx, t, CYC.miller, '米勒循環 → 裝機械增壓器的奧圖引擎'); },
-      quiz: { q: '哪一種循環引擎需要裝設增壓器？', opts: ['奧圖循環', '狄塞爾循環', '雙燃燒循環', '米勒循環'], ans: 3, ex: '進汽門晚關會讓進氣流失，所以用機械增壓器補足。' } },
+      quiz: { q: '哪一種循環引擎需要裝設增壓器？', opts: ['奧圖循環', '米勒循環', '狄塞爾循環', '雙燃燒循環'], ans: 1, ex: '進汽門晚關會讓進氣流失，所以用機械增壓器補足。' } },
     { title: '四種循環總整理', dur: 14,
       captions: [[0, '最後整理：看「燃燒方式」就能分辨循環。'], [6, '口訣：<b>汽油等容、低速柴油等壓、高速柴油兩段燒、米勒晚關要增壓</b>。']],
       draw(ctx, t) {

@@ -690,6 +690,59 @@ function throttleBody(ctx, open, t, o = {}) {
 }
 const LOADS = [['start', '起動中', 0.30], ['cold', '冷車（水溫低）', 0.22], ['ac', '開冷氣 A/C', 0.16], ['lamp', '開頭燈（電器負載）', 0.10], ['ps', '轉方向盤（動力轉向）', 0.12], ['gear', '排入 D 檔（非 P/N）', 0.12]];
 const mm2bar = mm => mm * 0.001333;
+/* 電磁式噴油嘴剖面（真實構造示意）：cx,top＝位置；t＝時間；P＝噴射週期；d＝通電比例；lab＝零件標示
+   通電 → 線圈電流建立磁場（需一點時間）→ 磁力大於回位彈簧時吸起銜鐵與針閥 → 噴油；斷電 → 磁場消失 → 彈簧把針閥壓回閥座 → 停止 */
+function solInjector(ctx, cx, top, t, o = {}) {
+  const P = o.P || 1.2, d = o.d ?? .5, u = t % P, onT = d * P, on = u < onT, tau = .07;
+  const mEnd = 1 - Math.exp(-onT / tau), m = on ? 1 - Math.exp(-u / tau) : mEnd * Math.exp(-(u - onT) / (tau * .8));
+  const lift = clamp((m - .45) / .35, 0, 1), L = lift * 12, FUc = '#ffd166';
+  ctx.save(); ctx.translate(cx, top);
+  /* 外殼與噴嘴 */
+  ctx.fillStyle = '#3d4d6b'; H.rr(ctx, -60, 40, 120, 214, 12); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-60, 240); ctx.lineTo(60, 240); ctx.lineTo(24, 292); ctx.lineTo(-24, 292); ctx.closePath(); ctx.fill();
+  /* 入油口與濾網 */
+  ctx.fillStyle = '#3d4d6b'; ctx.fillRect(-20, 0, 40, 44); ctx.fillStyle = 'rgba(255,209,102,.45)'; ctx.fillRect(-12, 0, 24, 44);
+  ctx.strokeStyle = '#c3d1e4'; ctx.lineWidth = 1; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(-12, 10 + i * 5); ctx.lineTo(12, 10 + i * 5); ctx.stroke(); }
+  /* 內部油道（汽油一直充滿，保持油壓） */
+  ctx.fillStyle = 'rgba(255,209,102,.38)'; ctx.fillRect(-7, 40, 14, 120); ctx.fillRect(-20, 150, 40, 120); ctx.beginPath(); ctx.moveTo(-20, 270); ctx.lineTo(20, 270); ctx.lineTo(4, 290); ctx.lineTo(-4, 290); ctx.closePath(); ctx.fill();
+  /* 固定鐵心（中空，汽油從中間通過） */
+  ctx.fillStyle = '#8a97ad'; ctx.fillRect(-22, 40, 15, 110); ctx.fillRect(7, 40, 15, 110);
+  /* 電磁線圈（剖面：銅線斷面），通電時發亮並標電流方向 */
+  [-1, 1].forEach(sg => { const x0 = sg < 0 ? -56 : 24;
+    ctx.fillStyle = on ? '#e08a3c' : '#7a5530'; ctx.fillRect(x0, 62, 32, 92);
+    ctx.fillStyle = on ? '#ffd9a8' : '#a07850';
+    for (let r = 0; r < 6; r++) for (let c = 0; c < 2; c++) { const px = x0 + 9 + c * 14, py = 72 + r * 14; ctx.beginPath(); ctx.arc(px, py, 4.5, 0, 7); ctx.fill();
+      if (on) { ctx.strokeStyle = '#3a2410'; ctx.lineWidth = 1.4; if (sg < 0) { ctx.fillStyle = '#3a2410'; ctx.beginPath(); ctx.arc(px, py, 1.4, 0, 7); ctx.fill(); ctx.fillStyle = '#ffd9a8'; } else { ctx.beginPath(); ctx.moveTo(px - 2.5, py - 2.5); ctx.lineTo(px + 2.5, py + 2.5); ctx.moveTo(px + 2.5, py - 2.5); ctx.lineTo(px - 2.5, py + 2.5); ctx.stroke(); } } } });
+  /* 接頭與導線（ECU 信號） */
+  ctx.fillStyle = '#2b3850'; ctx.fillRect(-104, 72, 46, 40); ctx.fillStyle = '#c3d1e4'; ctx.fillRect(-100, 80, 14, 5); ctx.fillRect(-100, 98, 14, 5);
+  ctx.strokeStyle = on ? C.acc : '#5c6f8a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-86, 82); ctx.lineTo(-56, 76); ctx.moveTo(-86, 100); ctx.lineTo(-56, 140); ctx.stroke();
+  if (on) for (let i = 0; i < 3; i++) { const k = (t * 3 + i / 3) % 1; ctx.fillStyle = C.acc; ctx.beginPath(); ctx.arc(-86 + 30 * k, 82 - 6 * k, 2.5, 0, 7); ctx.fill(); }
+  /* 磁力線：鐵心 → 銜鐵 → 外殼繞回（隨磁場強弱變化） */
+  if (m > .05) { ctx.save(); ctx.globalAlpha = Math.min(1, m); ctx.strokeStyle = '#c79bff'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.lineDashOffset = -t * 30;
+    [-1, 1].forEach(sg => { ctx.beginPath(); ctx.moveTo(sg * 14, 150); ctx.lineTo(sg * 14, 54); ctx.lineTo(sg * 58, 54); ctx.lineTo(sg * 58, 176); ctx.lineTo(sg * 14, 176); ctx.closePath(); ctx.stroke(); });
+    ctx.restore(); }
+  /* 回位彈簧（在鐵心孔內，把銜鐵往下壓） */
+  const armT = 162 - L; ctx.strokeStyle = '#7fd1ae'; ctx.lineWidth = 2; ctx.beginPath(); const s0 = 96, s1 = armT; for (let i = 0; i <= 10; i++) { const y = s0 + (s1 - s0) * i / 10, x = i % 2 ? 5 : -5; i ? ctx.lineTo(x, y) : ctx.moveTo(0, y); } ctx.stroke();
+  /* 銜鐵＋針閥 */
+  ctx.fillStyle = '#b9c2d0'; ctx.fillRect(-18, armT, 36, 34); ctx.fillStyle = '#e8eef9'; ctx.fillRect(-4, armT + 34, 8, 280 - armT - 34 - L);
+  ctx.beginPath(); ctx.moveTo(-4, 280 - L); ctx.lineTo(4, 280 - L); ctx.lineTo(0, 288 - L); ctx.closePath(); ctx.fill();
+  /* 氣隙標示 */
+  /* 噴霧 */
+  if (lift > .1) { ctx.fillStyle = 'rgba(255,209,102,.18)'; ctx.globalAlpha = lift; ctx.beginPath(); ctx.moveTo(-3, 292); ctx.lineTo(-34, 380); ctx.lineTo(34, 380); ctx.lineTo(3, 292); ctx.closePath(); ctx.fill();
+    for (let j = 0; j < 7; j++) for (let n = 0; n < 5; n++) { const k = (t * 2.2 + n / 5 + j * .13) % 1, a = (j - 3) * .11; ctx.fillStyle = FUc; ctx.globalAlpha = (1 - k * .8) * lift; ctx.beginPath(); ctx.arc(Math.sin(a) * 95 * k, 294 + 90 * k, 2.6, 0, 7); ctx.fill(); } }
+  ctx.globalAlpha = 1; ctx.restore();
+  if (o.lab) { const X = x => cx + x, Y = y => top + y, lc = { size: 14 };
+    H.label(ctx, X(-104), Y(92), X(-125), Y(60), '接頭', Object.assign({ align: 'right', color: on ? C.acc : '#9fb0cf' }, lc));
+    H.label(ctx, X(-40), Y(120), X(-125), Y(130), '電磁線圈', Object.assign({ align: 'right', color: on ? '#ffb46b' : '#c9a27a' }, lc));
+    H.label(ctx, X(-15), Y(armT + 18), X(-125), Y(200), '銜鐵', Object.assign({ align: 'right', color: '#b9c2d0' }, lc));
+    H.label(ctx, X(0), Y(285 - L), X(-125), Y(270), '噴孔', Object.assign({ align: 'right', color: '#9fb0cf' }, lc));
+    H.label(ctx, X(0), Y(20), X(80), Y(14), '汽油入口（濾網）', Object.assign({ color: FUc }, lc));
+    H.label(ctx, X(4), Y(120), X(80), Y(100), '回位彈簧', Object.assign({ color: '#7fd1ae' }, lc));
+    H.label(ctx, X(16), Y(70), X(80), Y(57), '鐵心', Object.assign({ color: '#c3d1e4' }, lc));
+    H.label(ctx, X(4), Y(230), X(80), Y(220), '針閥', Object.assign({ color: '#e8eef9' }, lc));
+    if (m > .05) H.label(ctx, X(58), Y(170), X(80), Y(170), '磁力線', Object.assign({ color: '#c79bff' }, lc)); }
+  return { on, m, lift };
+}
 const V7 = {
   code: 'Ch3-V7', title: '噴射系統的空氣系統與燃料系統', sub: '第3章 汽油引擎燃料系統｜第 7 節',
   state: { loads: { cold: false, ac: false }, seenL: 0, vac: 0, seenP: 0 },
@@ -712,7 +765,7 @@ const V7 = {
         H.text(ctx, isD ? 'D 型：沒有空氣流量計' : 'L 型：有空氣流量計', 480, 330, { size: 26, bold: true, align: 'center', color: isD ? C.acc2 : C.ok });
         if (t >= 21) ['🔇 減少進氣噪音', '🧹 過濾灰塵雜質', '🔥 阻擋回火火焰'].forEach((s, i) => { const k = ease(prog(t, 21 + i * .6, 22 + i * .6)); H.box(ctx, 80 + i * 280, 390, 250, 60, { stroke: C.acc, alpha: k }); H.text(ctx, s, 205 + i * 280, 420, { size: 20, bold: true, align: 'center', alpha: k }); });
       },
-      quiz: { q: 'D 型噴射系統的空氣系統，和 L 型最大的不同是？', opts: ['沒有空氣流量計，改用歧管壓力感知器', '沒有空氣濾清器', '沒有節氣門', '沒有進氣歧管'], ans: 0, ex: 'D 型以歧管壓力＋轉速推算空氣量，構造較簡單、進氣阻力較小。' } },
+      quiz: { q: 'D 型噴射系統的空氣系統，和 L 型最大的不同是？', opts: ['沒有空氣濾清器', '沒有節氣門', '沒有進氣歧管', '沒有空氣流量計，改用歧管壓力感知器'], ans: 3, ex: 'D 型以歧管壓力＋轉速推算空氣量，構造較簡單、進氣阻力較小。' } },
 
     { title: '空氣流量計三兄弟', dur: 34,
       captions: [[0, '<b>翼板式</b>：空氣推動翼板，帶動電壓計送出類比信號。旁通道有 <b>CO 調整螺絲</b>：鎖入→翼板動得更多→混合比<b>變濃</b>、CO 升高。現已不採用。', '翼板式：空氣推動翼板，帶動電壓計送出類比信號。旁通道有 C O 調整螺絲：鎖入，翼板動得更多，混合比變濃，C O 升高。現在已經不採用。'],
@@ -777,7 +830,7 @@ const V7 = {
         H.text(ctx, '沒有加油鋼索！', 300, 100, { size: 22, bold: true, align: 'center', color: C.bad });
         if (t >= 22) { H.box(ctx, 120, 410, 720, 80, { stroke: C.acc }); H.text(ctx, '優點：加減速靈敏・減少機械磨損與保養・可省略怠速控制閥', 480, 450, { size: 20, bold: true, align: 'center', color: C.acc }); }
       },
-      quiz: { q: '節氣門室的怠速調整螺絲「鎖入」時，引擎怠速會？', opts: ['降低', '升高', '不變', '熄火'], ans: 0, ex: '鎖入→旁通道空氣量減少→進氣變少→怠速降低。' } },
+      quiz: { q: '節氣門室的怠速調整螺絲「鎖入」時，引擎怠速會？', opts: ['升高', '降低', '不變', '熄火'], ans: 1, ex: '鎖入→旁通道空氣量減少→進氣變少→怠速降低。' } },
 
     { title: '怠速好幫手：空氣調整器與 ISCV', dur: 26,
       captions: [[0, '<b>空氣調整器</b>（空氣輔助閥）裝在旁通道，受<b>溫度</b>控制：溫度越低，開度越<b>大</b>，冷車轉速提高，相當於化油器的快怠速機構。', '空氣調整器，也叫空氣輔助閥，裝在旁通道，受溫度控制：溫度越低，開度越大，冷車轉速提高，相當於化油器的快怠速機構。'],
@@ -795,7 +848,7 @@ const V7 = {
         H.arrow(ctx, 562, 240, 680, 240); H.box(ctx, 680, 200, 220, 80, { stroke: C.fire }); H.text(ctx, '怠速控制閥', 790, 230, { size: 20, bold: true, align: 'center', color: C.fire }); H.text(ctx, '（作動器）', 790, 258, { size: 15, align: 'center', color: C.mut });
         if (t >= 19) ['線性電磁閥', '迴轉電磁閥', '步進馬達'].forEach((s, i) => { const k = ease(prog(t, 19 + i * .7, 20 + i * .7)); H.box(ctx, 600 + 0, 320 + i * 62, 300, 50, { stroke: C.fire, alpha: k }); H.text(ctx, `${i + 1}. ${s}`, 750, 345 + i * 62, { size: 19, bold: true, align: 'center', alpha: k }); });
       },
-      quiz: { q: '空氣調整器的開度與溫度的關係是？', opts: ['溫度越低，開度越大', '溫度越高，開度越大', '與溫度無關', '只在高溫時打開'], ans: 0, ex: '開度與溫度成反比，冷車時讓更多空氣進入，提高轉速。' } },
+      quiz: { q: '空氣調整器的開度與溫度的關係是？', opts: ['溫度越高，開度越大', '與溫度無關', '溫度越低，開度越大', '只在高溫時打開'], ans: 2, ex: '開度與溫度成反比，冷車時讓更多空氣進入，提高轉速。' } },
 
     { title: 'ISCV 什麼時候開大？（互動）', loop: true, nominal: 24,
       captions: [[0, '怠速時加上負荷，引擎轉速會掉、會抖。點選下方情況，看 ISCV 怎麼開大來補空氣。至少試 3 種，再按「完成本段」。', '怠速時加上負荷，引擎轉速會掉、會抖。點選下方情況，看 I S C V 怎麼開大來補空氣。至少試三種，再按完成本段。']],
@@ -816,7 +869,7 @@ const V7 = {
         H.text(ctx, '負荷↑ → ISCV 開大\n→ 補空氣 → 不熄火、不抖', 805, 330, { size: 15, align: 'center', color: C.mut });
         const on = LOADS.filter(([k]) => S.loads[k]).map(l => l[1]); H.text(ctx, on.length ? '目前：' + on.join('、') : '目前：暖車後、無負荷', 60, 460, { size: 18, color: '#ffd166' });
       },
-      quiz: { q: '引擎怠速時打開冷氣，怠速控制閥（ISCV）會？', opts: ['開度變大', '開度變小', '完全關閉', '不受影響'], ans: 0, ex: '負荷增加時 ISCV 開大，補充空氣以提高運轉穩定性。' } },
+      quiz: { q: '引擎怠速時打開冷氣，怠速控制閥（ISCV）會？', opts: ['開度變小', '完全關閉', '不受影響', '開度變大'], ans: 3, ex: '負荷增加時 ISCV 開大，補充空氣以提高運轉穩定性。' } },
 
     { title: '燃料系統：汽油怎麼走？', dur: 34,
       captions: [[0, '燃料系統流程：<b>油箱 → 電動汽油泵 → 燃油濾清器 → 脈動緩衝器 → 燃油軌 → 噴油嘴</b>，多的汽油經<b>壓力調整器</b>和回油管回油箱。', '燃料系統流程：油箱，到電動汽油泵，到燃油濾清器，到脈動緩衝器，到燃油軌，到噴油嘴，多的汽油經壓力調整器和回油管回油箱。'],
@@ -827,7 +880,7 @@ const V7 = {
         if (t >= 12 && t < 27) { H.box(ctx, 240, 380, 420, 70, { stroke: C.acc }); H.text(ctx, t < 19 ? '濕式馬達・積極式・4.0～5.0 bar・1.5～2.5 L/min' : '單向閥＝保持殘壓　釋放閥＝過壓洩放', 450, 415, { size: 18, bold: true, align: 'center', color: C.acc }); }
         if (t >= 27) { H.box(ctx, 240, 380, 420, 70, { stroke: C.acc }); H.text(ctx, '膜片＋彈簧 → 吸收脈動、保持殘壓', 450, 415, { size: 19, bold: true, align: 'center', color: C.acc }); }
  },
-      quiz: { q: '汽油泵出口端的「單向閥」有什麼作用？', opts: ['引擎停轉後保持油路殘壓', '油壓過高時洩壓', '過濾汽油雜質', '控制噴射量'], ans: 0, ex: '保持殘壓讓下次發動較容易；過壓洩放是「釋放閥」的工作。' } },
+      quiz: { q: '汽油泵出口端的「單向閥」有什麼作用？', opts: ['油壓過高時洩壓', '過濾汽油雜質', '引擎停轉後保持油路殘壓', '控制噴射量'], ans: 2, ex: '保持殘壓讓下次發動較容易；過壓洩放是「釋放閥」的工作。' } },
 
     { title: '汽油泵安全電路', dur: 18,
       captions: [[0, '<b>燃油泵安全控制電路</b>：只要引擎一熄火，就算鑰匙還在 ON，汽油泵也要<b>停止</b>，避免漏油危險。', '燃油泵安全控制電路：只要引擎一熄火，就算鑰匙還在 ON，汽油泵也要停止，避免漏油危險。'],
@@ -841,7 +894,7 @@ const V7 = {
         ctx.fillStyle = run ? C.ok : C.bad; ctx.beginPath(); ctx.arc(740, 240, 60, 0, 7); ctx.fill(); H.text(ctx, 'M', 740, 230, { size: 40, bold: true, align: 'center', color: '#0d1526' }); H.text(ctx, run ? '運轉' : '停止', 740, 270, { size: 18, bold: true, align: 'center', color: '#0d1526' });
         H.text(ctx, ph === 0 ? (run ? '引擎運轉中' : '💥 引擎熄火 → 汽油泵停！') : ph === 1 ? '鑰匙 ON → 先轉 3～5 秒建立油壓' : (run ? '行駛中' : '💥 撞擊 → 汽油泵停！'), 480, 400, { size: 24, bold: true, align: 'center', color: run ? C.ok : C.bad });
       },
-      quiz: { q: '「燃油泵安全控制電路」的目的，是讓汽油泵在什麼時候停止？', opts: ['引擎熄火時（即使鑰匙仍在 ON）', '冷氣打開時', '加速時', '怠速時'], ans: 0, ex: '引擎一熄火汽油泵就停，防止燃料洩漏造成危險。' } },
+      quiz: { q: '「燃油泵安全控制電路」的目的，是讓汽油泵在什麼時候停止？', opts: ['冷氣打開時', '引擎熄火時（即使鑰匙仍在 ON）', '加速時', '怠速時'], ans: 1, ex: '引擎一熄火汽油泵就停，防止燃料洩漏造成危險。' } },
 
     { title: '壓力調整器（互動）', loop: true, nominal: 26,
       captions: [[0, '電腦用<b>噴油時間</b>決定噴油量，所以噴射壓力必須固定。壓力調整器接進氣歧管真空，讓<b>油軌壓力－歧管壓力＝彈簧力 2.85 bar</b>。拉動滑桿或按按鈕試三種情況。', '電腦用噴油時間決定噴油量，所以噴射壓力必須固定。壓力調整器接進氣歧管真空，讓油軌壓力減歧管壓力，等於彈簧力 2.85 bar。拉動滑桿或按按鈕，試三種情況。']],
@@ -874,10 +927,8 @@ const V7 = {
         [21, '<b>冷車起動閥</b>：相當於化油器的阻風油路，只在<b>冷車且起動時</b>多噴油，受<b>熱時間開關</b>控制，最長約 7.5 秒；現在大多已省略。', '冷車起動閥：相當於化油器的阻風油路，只在冷車而且起動時多噴油，受熱時間開關控制，最長約 7.5 秒；現在大多已經省略。'],
         [29, '近代引擎多用<b>無回油管</b>設計：壓力調整器放進油箱，油氣少、保養簡單。']],
       draw(ctx, t) {
-        if (t < 21) { const ms = 2 + 8 * (.5 + .5 * Math.sin(t * .6)), on = (t * 2) % 1 < .5, x = 250;
-          ctx.fillStyle = '#4a5d7d'; ctx.fillRect(x - 40, 80, 80, 260); ctx.fillStyle = on ? C.acc : '#7a5a2a'; ctx.fillRect(x - 36, 140, 72, 90); H.label(ctx, x + 36, 185, x + 80, 150, '電磁線圈');
-          ctx.fillStyle = '#c3d1e4'; ctx.fillRect(x - 6, 230 - (on ? 8 : 0), 12, 110); H.label(ctx, x + 6, 300, x + 80, 300, '針閥');
-          if (on) { ctx.fillStyle = 'rgba(255,209,102,.6)'; ctx.beginPath(); ctx.moveTo(x, 345); ctx.lineTo(x - 40, 440); ctx.lineTo(x + 40, 440); ctx.closePath(); ctx.fill(); }
+        if (t < 21) { const ms = 2 + 8 * (.5 + .5 * Math.sin(t * .6)), x = 250;
+          solInjector(ctx, x, 70, t, { lab: true });
           if (t < 11) { H.box(ctx, 480, 100, 430, 260, {}); H.text(ctx, '噴射時間（通電時間）', 695, 130, { size: 20, bold: true, align: 'center' }); ctx.fillStyle = C.acc; ctx.fillRect(510, 170, 370 * ms / 10, 40);
             H.text(ctx, `${ms.toFixed(1)} ms`, 695, 240, { size: 30, bold: true, align: 'center', color: C.acc }); H.text(ctx, '時間長 → 噴得多\n（壓力差固定才成立）', 695, 300, { size: 18, align: 'center', color: C.mut }); }
           else { H.box(ctx, 480, 90, 210, 160, { stroke: C.ok }); H.text(ctx, '高電阻式\n12～17 Ω\n直接接', 585, 125, { size: 20, bold: true, align: 'center', color: C.ok });
@@ -892,7 +943,7 @@ const V7 = {
         H.box(ctx, 60, 120, 400, 240, { stroke: '#3a4a66' }); H.text(ctx, '傳統：有回油管', 260, 150, { size: 22, bold: true, align: 'center', color: C.mut }); H.text(ctx, '調整器在引擎室\n熱汽油回油箱 → 易產生油氣 HC', 260, 230, { size: 18, align: 'center' });
         H.box(ctx, 500, 120, 400, 240, { stroke: C.ok }); H.text(ctx, '無回油管', 700, 150, { size: 22, bold: true, align: 'center', color: C.ok }); H.text(ctx, '調整器放進油箱\n油箱→燃油軌只有一條管\n✔ 降低油氣　✔ 保養簡易', 700, 220, { size: 18, align: 'center' });
       },
-      quiz: { q: '電子控制式噴射系統，電腦主要是用什麼來決定噴油量？', opts: ['噴油嘴的通電（噴射）時間', '汽油泵轉速', '油箱油量', '噴油嘴電阻大小'], ans: 0, ex: '針閥升程與壓力差固定，所以噴射時間越長、噴油越多。' } },
+      quiz: { q: '電子控制式噴射系統，電腦主要是用什麼來決定噴油量？', opts: ['汽油泵轉速', '油箱油量', '噴油嘴電阻大小', '噴油嘴的通電（噴射）時間'], ans: 3, ex: '針閥升程與壓力差固定，所以噴射時間越長、噴油越多。' } },
   ],
   activity: {
     title: '第 7 節｜汽油與空氣的旅程',
