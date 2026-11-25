@@ -67,6 +67,7 @@ window.LINKS = {
   unit2: 'https://docs.google.com/forms/d/e/1FAIpQLSek-7cGbM3W7GPrIF9PdnIyOgCArgVw2x_QXs4fwty44pgytA/viewform',   // 單元測驗（網站目前無按鈕，可放 Classroom）
   unit2b: 'https://docs.google.com/forms/d/e/1FAIpQLSdIYUwv0Kt8fTJ2PKm8s3DyJlOyEp9swf1JthwoMhWciLZrGA/viewform',             // 單元二（續）測驗（第 10～12 節，20 題）
   unit5: '',              // 單元五測驗（第 4、5 章潤滑與冷卻，第 23～28 節，20 題）；第 4、5 章各節的 video／edcafeR／form 設定在各章資料夾的 links.js
+  unit6: '',              // 單元六測驗（第 6 章點火系統，第 29～33 節，20 題）；第 6 章各節的 video／edcafeR／form 設定在 第6章_點火系統\\links.js
 };
 /* 自動載入補課包內建 6 題測驗模組（免修改 R1～R10.html，全部自動生效！） */
 if (typeof document !== 'undefined' && document.querySelector('.step[data-k="2"]')) {

@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第3章 S8～S9 感知器裝在哪裡？（D 型）</title>
+<style>
+:root{
+  --bg:#f4f6f9; --panel:#fff; --ink:#1f2933; --muted:#5f6b7a; --line:#d5dbe3;
+  --accent:#1f6feb; --accent-soft:#e3edff; --ok:#1a7f37; --ok-soft:#dcf5e3;
+  --bad:#c62828; --bad-soft:#fde4e4; --pin:#ff8a00;
+  --tag-fs:20px; --pin-size:40px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;font-size:16px;line-height:1.5}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;color:var(--ink)}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.primary:hover{filter:brightness(1.08)}
+button:disabled{opacity:.45;cursor:not-allowed}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#14213d;color:#fff}
+header h1{font-size:18px;margin:0;flex:1;min-width:200px}
+header .tabs{display:flex;gap:6px}
+header .tabs button{background:transparent;color:#cfd8e6;border-color:#3a4a6b}
+header .tabs button.on{background:#fff;color:#14213d;border-color:#fff}
+main{padding:14px;max-width:1400px;margin:0 auto}
+.hidden{display:none!important}
+
+/* ---------- 共用：圖面 ---------- */
+.stage{position:relative;width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.stage{display:flex;justify-content:center;align-items:flex-start}
+.canvas{position:relative;display:inline-block;max-width:100%;line-height:0}
+.stage img.base{display:block;max-width:100%;max-height:calc(100vh - 110px);width:auto;height:auto;pointer-events:none}
+body.embed .stage img.base{max-height:calc(100vh - 30px)}
+.stage .empty{padding:80px 20px;text-align:center;color:var(--muted)}
+.pin{position:absolute;transform:translate(-50%,-50%);width:var(--pin-size);height:var(--pin-size);border-radius:50%;
+  background:var(--pin);color:#fff;font-weight:700;font-size:calc(var(--pin-size) * .45);display:flex;align-items:center;justify-content:center;
+  border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45);z-index:4}
+.pin.target{outline:3px dashed var(--accent);outline-offset:3px}
+.pin.filled{background:var(--accent)}
+#playStage .pin.todo{animation:pinPulse 1.6s ease-in-out infinite}
+@keyframes pinPulse{0%,100%{box-shadow:0 1px 5px rgba(0,0,0,.45),0 0 0 0 rgba(255,138,0,.55)}50%{box-shadow:0 1px 5px rgba(0,0,0,.45),0 0 0 9px rgba(255,138,0,0)}}
+@media (prefers-reduced-motion:reduce){#playStage .pin.todo{animation:none}}
+.legend{font-size:13px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;margin-top:-4px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.pin.ok{background:var(--ok)}
+.pin.bad{background:var(--bad)}
+.pin.hot{transform:translate(-50%,-50%) scale(1.25)}
+.tag{position:absolute;transform:translate(-50%,calc(var(--pin-size) * .5 + 4px));z-index:3;width:max-content;max-width:11em;
+  background:#fff;border:3px solid var(--accent);border-radius:10px;padding:3px 10px;font-size:var(--tag-fs);font-weight:700;line-height:1.3;
+  text-align:center;word-break:keep-all;overflow-wrap:anywhere;box-shadow:0 2px 6px rgba(0,0,0,.35);cursor:pointer}
+.tag.up{transform:translate(-50%,calc(-100% - var(--pin-size) * .5 - 4px))}
+.leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+.anchor{position:absolute;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#263238;border:3px solid #fff;
+  box-shadow:0 0 0 1px #263238;z-index:2;pointer-events:none}
+.edit-wrap .anchor{pointer-events:auto;cursor:move;width:18px;height:18px;touch-action:none;background:#ff8a00}
+.tag.left{transform:translate(calc(-100% - var(--pin-size) * .5 - 4px),-50%)}
+.tag.right{transform:translate(calc(var(--pin-size) * .5 + 4px),-50%)}
+.tag.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);cursor:default}
+.tag.bad{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+
+/* ---------- 作答 ---------- */
+.play-wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;position:sticky;top:10px}
+.side h2{font-size:17px;margin:0 0 4px}
+.side .inst{color:var(--muted);font-size:14px;margin:0 0 10px}
+.bank{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;padding:8px;border:2px dashed var(--line);border-radius:8px}
+.chip{padding:8px 14px;font-size:max(17px,calc(var(--tag-fs) * .9));border-radius:999px;background:var(--accent-soft);border:2px solid transparent;font-weight:600;
+  cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.chip.sel{border-color:var(--accent);background:#fff}
+.ghost{position:fixed;z-index:999;pointer-events:none;padding:8px 14px;font-size:var(--tag-fs);border-radius:999px;background:var(--accent);color:#fff;
+  font-weight:600;transform:translate(-50%,-50%);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.status{margin:10px 0;font-size:15px;min-height:24px}
+.feedback{margin-top:10px;font-size:14px}
+.feedback li{margin-bottom:6px}
+.feedback .hint{color:var(--bad)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.done{background:var(--ok-soft);border:1px solid var(--ok);border-radius:8px;padding:10px;margin-top:10px}
+.done b{color:var(--ok)}
+
+/* ---------- 編輯 ---------- */
+.edit-wrap{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px;align-items:start}
+.edit-wrap .stage{cursor:crosshair}
+.edit-wrap .pin{cursor:move;touch-action:none}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.panel h3{font-size:15px;margin:0 0 8px}
+.panel label{display:block;font-size:14px;color:var(--muted);margin:8px 0 3px}
+.panel input[type=text],.panel textarea,.panel select{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fff}
+.panel textarea{min-height:70px;resize:vertical}
+.pinrow{display:grid;grid-template-columns:30px 1fr 34px;gap:6px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}
+.pinrow .num{width:28px;height:28px;border-radius:50%;background:var(--pin);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px;margin-top:3px}
+.pinrow .fields input{margin-bottom:4px}
+.pinrow .fields select{width:auto;padding:3px 6px;font-size:13px}
+.pinrow button{padding:4px 0}
+.pinrow.hot{background:#fff7ea}
+.tip{font-size:13px;color:var(--muted)}
+.sizebar{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;margin:0 0 10px;font-size:14px;color:var(--muted)}
+.sizebar .grp{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.sizebar button{padding:4px 10px;font-weight:700;white-space:nowrap;min-width:40px}
+.stage.zoomed{display:block;overflow:auto;max-height:78vh;-webkit-overflow-scrolling:touch}
+.stage.zoomed img.base{max-width:none;max-height:none}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#14213d;color:#fff;padding:10px 18px;border-radius:8px;z-index:1000;font-size:14px}
+
+/* 嵌入模式 */
+body.embed header{display:none}
+body.embed main{padding:8px}
+
+@media (max-width:900px){
+  .play-wrap,.edit-wrap{grid-template-columns:1fr}
+  .side{position:static}
+  .tag{border-width:2px;padding:2px 8px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="appTitle">標記圖表工具</h1>
+  <div class="tabs" id="tabs">
+    <button id="tabEdit" class="on">✏️ 編輯題目</button>
+    <button id="tabPlay">▶ 作答預覽</button>
+  </div>
+</header>
+
+<main>
+  <!-- ================= 編輯模式 ================= -->
+  <section id="editView">
+    <div class="edit-wrap">
+      <div>
+        <div class="stage" id="editStage"><div class="empty">先在右側載入底圖（SVG 或照片），再點圖面新增圈圈</div></div>
+        <p class="tip">在圖上點一下＝新增圈圈；拖曳圈圈＝調整位置；右側可填名稱、答錯提示，零件靠很近時可改「標籤位置」錯開，或按「＋指引線」把圈圈移到空白處、用細線指向物件。</p>
+      </div>
+      <div>
+        <div class="panel">
+          <h3>① 底圖</h3>
+          <div class="btnrow" style="margin-top:0">
+            <button id="btnLoadImg">載入圖片檔（JPG／PNG／SVG）</button>
+            <button id="btnPasteSvg">貼上 SVG 程式碼</button>
+            <button id="btnSample">載入範例</button>
+          </div>
+          <input type="file" id="fileImg" accept="image/*,.svg" class="hidden">
+          <div id="svgPasteBox" class="hidden">
+            <label for="svgCode">SVG 程式碼</label>
+            <textarea id="svgCode" placeholder="<svg ...> ... </svg>"></textarea>
+            <div class="btnrow"><button class="primary" id="btnUseSvg">使用這段 SVG</button></div>
+          </div>
+          <p class="tip">照片會自動縮到最長邊 1600px，避免檔案太大。</p>
+        </div>
+
+        <div class="panel">
+          <h3>② 題目設定</h3>
+          <label for="inTitle">標題</label>
+          <input type="text" id="inTitle">
+          <label for="inInst">作答說明</label>
+          <input type="text" id="inInst">
+          <label for="inFeedback">回饋方式</label>
+          <select id="inFeedback">
+            <option value="submit">全部放好後按「檢查」（像 Wordwall）</option>
+            <option value="instant">每放一個就立刻判斷</option>
+          </select>
+          <label for="inSize">圖上文字大小（學生作答時還能自己按 A＋／A− 調整）</label>
+          <select id="inSize">
+            <option value="m">中</option>
+            <option value="l">大（建議）</option>
+            <option value="xl">特大（投影用）</option>
+          </select>
+          <label for="inDistract">干擾選項（每行一個，不對應任何圈圈，可留白）</label>
+          <textarea id="inDistract"></textarea>
+        </div>
+
+        <div class="panel">
+          <h3>③ 圈圈與名稱 <span class="tip" id="pinCount"></span></h3>
+          <div id="pinList"></div>
+        </div>
+
+        <div class="panel">
+          <h3>④ 存檔與匯出</h3>
+          <div class="btnrow" style="margin-top:0">
+            <button class="primary" id="btnExportHtml">匯出作答網頁（.html）</button>
+            <button id="btnExportJson">匯出題目檔（.json）</button>
+            <button id="btnImportJson">開啟題目檔</button>
+            <button id="btnClear">清空重來</button>
+          </div>
+          <input type="file" id="fileJson" accept=".json,application/json" class="hidden">
+          <p class="tip">作答網頁是單一檔案，題目和圖片都包在裡面，可直接放上網站或用 iframe 嵌入簡報。題目檔可以之後再開啟、修改。編輯內容會自動暫存在這個瀏覽器。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 作答模式 ================= -->
+  <section id="playView" class="hidden">
+    <div class="play-wrap">
+      <div class="stage" id="playStage"></div>
+      <aside class="side">
+        <h2 id="playTitle"></h2>
+        <p class="inst" id="playInst"></p>
+        <div class="sizebar"><span class="grp">文字<button id="btnSmaller" aria-label="字變小">A−</button><button id="btnBigger" aria-label="字變大">A＋</button></span>
+          <span class="grp">圖片<button id="btnZoomOut" aria-label="圖片縮小">－</button><button id="btnZoomIn" aria-label="圖片放大">＋</button></span></div>
+        <div class="bank" id="bank" aria-label="名稱標籤"></div>
+        <div class="status" id="status"></div>
+        <div class="legend"><span><i style="background:var(--pin)"></i>還沒放</span><span><i style="background:var(--accent)"></i>已放</span><span><i style="background:var(--ok)"></i>答對</span><span><i style="background:var(--bad)"></i>答錯</span></div>
+        <div class="btnrow">
+          <button class="primary" id="btnCheck">檢查</button>
+          <button id="btnReset">重新開始</button>
+        </div>
+        <ul class="feedback" id="feedback"></ul>
+        <div id="doneBox"></div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<!-- 匯出作答頁時，題目資料會寫進這裡 -->
+<script id="presetData" type="application/json">{"__locked": true, "title": "第3章 S8～S9 感知器裝在哪裡？（D 型）", "instruction": "這是 D 型（用進氣歧管壓力推算空氣量）。把感知器名稱拖到正確的圈圈上。小心：有兩個名稱不會出現在這張圖上！手機請橫放或按「圖片＋」放大。", "feedback": "submit", "labelSize": "m", "image": {"src": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221120%22%20height%3D%22680%22%20viewBox%3D%22-120%20-60%201120%20680%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22metal%22%20x1%3D%220%22%20x2%3D%220%22%20y1%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23dde3ea%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a9b3be%22/%3E%3C/linearGradient%3E%0A%20%20%20%20%3Cmarker%20id%3D%22ar%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%228%22%20refY%3D%225%22%20markerWidth%3D%226%22%20markerHeight%3D%226%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M0%200L10%205L0%2010z%22%20fill%3D%22%2378909c%22/%3E%3C/marker%3E%0A%20%20%20%20%3C/defs%3E%0A%20%20%20%20%3Crect%20x%3D%22-120%22%20y%3D%22-60%22%20width%3D%221120%22%20height%3D%22680%22%20fill%3D%22%23fbfcfe%22/%3E%0A%20%20%20%20%3C%21--%20%E7%A9%BA%E6%B0%A3%E6%BF%BE%E6%B8%85%E5%99%A8%20--%3E%0A%20%20%20%20%3Crect%20x%3D%2230%22%20y%3D%22100%22%20width%3D%22120%22%20height%3D%2290%22%20rx%3D%2210%22%20fill%3D%22%23cfd8dc%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3Cg%20stroke%3D%22%2390a4ae%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%2245%22%20y1%3D%22115%22%20x2%3D%2245%22%20y2%3D%22175%22/%3E%3Cline%20x1%3D%2260%22%20y1%3D%22115%22%20x2%3D%2260%22%20y2%3D%22175%22/%3E%3Cline%20x1%3D%2275%22%20y1%3D%22115%22%20x2%3D%2275%22%20y2%3D%22175%22/%3E%3Cline%20x1%3D%2290%22%20y1%3D%22115%22%20x2%3D%2290%22%20y2%3D%22175%22/%3E%3Cline%20x1%3D%22105%22%20y1%3D%22115%22%20x2%3D%22105%22%20y2%3D%22175%22/%3E%3Cline%20x1%3D%22120%22%20y1%3D%22115%22%20x2%3D%22120%22%20y2%3D%22175%22/%3E%3Cline%20x1%3D%22135%22%20y1%3D%22115%22%20x2%3D%22135%22%20y2%3D%22175%22/%3E%3C/g%3E%0A%20%20%20%20%3C%21--%20%E9%80%B2%E6%B0%A3%E7%AE%A1%20--%3E%0A%20%20%20%20%3Crect%20x%3D%22150%22%20y%3D%22128%22%20width%3D%22230%22%20height%3D%2240%22%20fill%3D%22%23eceff1%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3C%21--%20%E7%A9%BA%E6%B0%A3%E6%B5%81%E9%87%8F%E8%A8%88%E6%9C%AC%E9%AB%94%EF%BC%88%E5%A5%97%E5%9C%A8%E7%AE%A1%E4%B8%8A%EF%BC%89%20--%3E%0A%20%20%20%20%0A%20%20%20%20%3C%21--%20%E7%AF%80%E6%B0%A3%E9%96%80%E9%AB%94%20--%3E%0A%20%20%20%20%3Crect%20x%3D%22300%22%20y%3D%22118%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%226%22%20fill%3D%22%23b0bec5%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%222.5%22/%3E%0A%20%20%20%20%3Cline%20x1%3D%22318%22%20y1%3D%22164%22%20x2%3D%22342%22%20y2%3D%22132%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22330%22%20cy%3D%22148%22%20r%3D%224%22%20fill%3D%22%2337474f%22/%3E%0A%20%20%20%20%3C%21--%20%E9%80%B2%E6%B0%A3%E6%AD%A7%E7%AE%A1%EF%BC%88%E7%A8%B3%E5%A3%93%E7%AE%B1%EF%BC%8B%E6%AD%A7%E7%AE%A1%EF%BC%89%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M380%20120%20L650%20120%20Q670%20120%20670%20140%20L670%20165%20L380%20165%20Z%22%20fill%3D%22%23cfd8dc%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3Cg%20fill%3D%22%23cfd8dc%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22%3E%3Cpath%20d%3D%22M425%20165%20L445%20165%20L450%20200%20L420%20200%20Z%22/%3E%3Cpath%20d%3D%22M505%20165%20L525%20165%20L530%20200%20L500%20200%20Z%22/%3E%3Cpath%20d%3D%22M585%20165%20L605%20165%20L610%20200%20L580%20200%20Z%22/%3E%3Cpath%20d%3D%22M645%20165%20L665%20165%20L670%20200%20L640%20200%20Z%22/%3E%3C/g%3E%0A%20%20%20%20%3C%21--%20%E6%B1%BD%E7%BC%B8%E8%93%8B%20--%3E%0A%20%20%20%20%3Crect%20x%3D%22380%22%20y%3D%22200%22%20width%3D%22380%22%20height%3D%2270%22%20fill%3D%22url%28%23metal%29%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3Crect%20x%3D%22392%22%20y%3D%22236%22%20width%3D%22356%22%20height%3D%2216%22%20rx%3D%226%22%20fill%3D%22%2364b5f6%22%20stroke%3D%22%231e88e5%22%20stroke-width%3D%221.5%22/%3E%0A%20%20%20%20%3C%21--%20%E6%B1%BD%E7%BC%B8%E9%AB%94%20--%3E%0A%20%20%20%20%3Crect%20x%3D%22380%22%20y%3D%22270%22%20width%3D%22380%22%20height%3D%22180%22%20fill%3D%22url%28%23metal%29%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%2378909c%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%226%205%22%3E%3Crect%20x%3D%22400%22%20y%3D%22280%22%20width%3D%2275%22%20height%3D%22110%22/%3E%3Crect%20x%3D%22485%22%20y%3D%22280%22%20width%3D%2275%22%20height%3D%22110%22/%3E%3Crect%20x%3D%22580%22%20y%3D%22280%22%20width%3D%2275%22%20height%3D%22110%22/%3E%3Crect%20x%3D%22665%22%20y%3D%22280%22%20width%3D%2275%22%20height%3D%22110%22/%3E%3C/g%3E%0A%20%20%20%20%3Cg%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%2378909c%22%20text-anchor%3D%22middle%22%3E%3Ctext%20x%3D%22437%22%20y%3D%22340%22%3E1%3C/text%3E%3Ctext%20x%3D%22522%22%20y%3D%22340%22%3E2%3C/text%3E%3Ctext%20x%3D%22617%22%20y%3D%22340%22%3E3%3C/text%3E%3Ctext%20x%3D%22702%22%20y%3D%22340%22%3E4%3C/text%3E%3C/g%3E%0A%20%20%20%20%3C%21--%20%E6%B2%B9%E5%BA%95%E6%AE%BC%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M390%20450%20L750%20450%20L730%20500%20L410%20500%20Z%22%20fill%3D%22%23b0bec5%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3C%21--%20%E6%9B%B2%E8%BB%B8%E7%9A%AE%E5%B8%B6%E7%9B%A4%EF%BC%88%E5%89%8D%E7%AB%AF%EF%BC%89%20--%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22358%22%20cy%3D%22425%22%20r%3D%2234%22%20fill%3D%22%2390a4ae%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22358%22%20cy%3D%22425%22%20r%3D%2240%22%20fill%3D%22none%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22%20stroke-dasharray%3D%225%204%22/%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22358%22%20cy%3D%22425%22%20r%3D%229%22%20fill%3D%22%2337474f%22/%3E%0A%20%20%20%20%3C%21--%20%E6%8E%92%E6%B0%A3%E6%AD%A7%E7%AE%A1%20%E2%86%92%20%E8%A7%B8%E5%AA%92%20%E2%86%92%20%E6%8E%92%E6%B0%A3%E7%AE%A1%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M760%20215%20L800%20215%20Q830%20215%20840%20240%20L860%20240%20L860%20265%20L835%20265%20Q825%20255%20800%20255%20L760%20255%20Z%22%20fill%3D%22%23a1887f%22%20stroke%3D%22%234e342e%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3Crect%20x%3D%22860%22%20y%3D%22232%22%20width%3D%2280%22%20height%3D%2242%22%20rx%3D%2214%22%20fill%3D%22%23bcaaa4%22%20stroke%3D%22%234e342e%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3Crect%20x%3D%22940%22%20y%3D%22243%22%20width%3D%2255%22%20height%3D%2220%22%20fill%3D%22%23a1887f%22%20stroke%3D%22%234e342e%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3C%21--%20%E8%AE%8A%E9%80%9F%E7%AE%B1%E8%88%87%E8%BC%B8%E5%87%BA%E8%BB%B8%20--%3E%0A%20%20%20%20%3Cpath%20d%3D%22M760%20300%20L800%20285%20L880%20300%20L880%20450%20L800%20450%20L760%20440%20Z%22%20fill%3D%22%23cfd8dc%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%223%22/%3E%0A%20%20%20%20%3Crect%20x%3D%22880%22%20y%3D%22408%22%20width%3D%22100%22%20height%3D%2222%22%20fill%3D%22%2390a4ae%22%20stroke%3D%22%2337474f%22%20stroke-width%3D%222.5%22/%3E%0A%20%20%20%20%3C%21--%20%E6%B0%A3%E6%B5%81%E7%AE%AD%E9%A0%AD%20--%3E%0A%20%20%20%20%3Cg%20stroke%3D%22%2378909c%22%20stroke-width%3D%223%22%20marker-end%3D%22url%28%23ar%29%22%3E%3Cline%20x1%3D%220%22%20y1%3D%22145%22%20x2%3D%2226%22%20y2%3D%22145%22/%3E%3Cline%20x1%3D%22262%22%20y1%3D%22148%22%20x2%3D%22292%22%20y2%3D%22148%22/%3E%3C/g%3E%0A%20%20%20%20%3C%21--%20%E6%9B%B2%E8%BB%B8%E4%B8%AD%E5%BF%83%E7%B7%9A%20--%3E%0A%20%20%20%20%3Cline%20x1%3D%22392%22%20y1%3D%22425%22%20x2%3D%22752%22%20y2%3D%22425%22%20stroke%3D%22%23546e7a%22%20stroke-width%3D%223%22%20stroke-dasharray%3D%2214%207%22/%3E%0A%20%20%20%20%3C%21--%20%E9%9B%B6%E4%BB%B6%E5%90%8D%E7%A8%B1%EF%BC%88%E7%81%B0%E8%89%B2%E5%B0%8F%E5%AD%97%EF%BC%8C%E9%9D%9E%E9%A1%8C%E7%9B%AE%EF%BC%89%20--%3E%0A%20%20%20%20%3Cg%20font-family%3D%22Microsoft%20JhengHei%2C%20PingFang%20TC%2C%20Noto%20Sans%20TC%2C%20sans-serif%22%20font-size%3D%2221%22%20fill%3D%22%23546e7a%22%20text-anchor%3D%22middle%22%20font-weight%3D%22bold%22%3E%0A%20%20%20%20%3Ctext%20x%3D%2290%22%20y%3D%22216%22%3E%E7%A9%BA%E6%B0%A3%E6%BF%BE%E6%B8%85%E5%99%A8%3C/text%3E%3Ctext%20x%3D%22330%22%20y%3D%22202%22%3E%E7%AF%80%E6%B0%A3%E9%96%80%3C/text%3E%3Ctext%20x%3D%22530%22%20y%3D%22150%22%3E%E9%80%B2%E6%B0%A3%E6%AD%A7%E7%AE%A1%3C/text%3E%0A%20%20%20%20%3Ctext%20x%3D%22716%22%20y%3D%22228%22%3E%E6%B1%BD%E7%BC%B8%E8%93%8B%3C/text%3E%3Ctext%20x%3D%22470%22%20y%3D%22412%22%3E%E6%B1%BD%E7%BC%B8%E9%AB%94%3C/text%3E%3Ctext%20x%3D%22696%22%20y%3D%22418%22%3E%E6%9B%B2%E8%BB%B8%3C/text%3E%3Ctext%20x%3D%22660%22%20y%3D%22486%22%3E%E6%B2%B9%E5%BA%95%E6%AE%BC%3C/text%3E%0A%20%20%20%20%3Ctext%20x%3D%22285%22%20y%3D%22548%22%3E%E6%9B%B2%E8%BB%B8%E7%9A%AE%E5%B8%B6%E7%9B%A4%3C/text%3E%3Ctext%20x%3D%22800%22%20y%3D%22246%22%20font-size%3D%2215%22%20fill%3D%22%23fff%22%3E%E6%8E%92%E6%B0%A3%E6%AD%A7%E7%AE%A1%3C/text%3E%3Ctext%20x%3D%22900%22%20y%3D%22260%22%20font-size%3D%2217%22%20fill%3D%22%234e342e%22%3E%E8%A7%B8%E5%AA%92%3C/text%3E%0A%20%20%20%20%3Ctext%20x%3D%22822%22%20y%3D%22380%22%3E%E8%AE%8A%E9%80%9F%E7%AE%B1%3C/text%3E%3Ctext%20x%3D%22868%22%20y%3D%22500%22%3E%E8%BC%B8%E5%87%BA%E8%BB%B8%3C/text%3E%0A%20%20%20%20%3C/g%3E%0A%20%20%20%20%3Cg%20stroke%3D%22%2378909c%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%22300%22%20y1%3D%22528%22%20x2%3D%22345%22%20y2%3D%22462%22/%3E%3Cline%20x1%3D%22878%22%20y1%3D%22480%22%20x2%3D%22900%22%20y2%3D%22432%22/%3E%3C/g%3E%3Ccircle%20cx%3D%22345%22%20cy%3D%22462%22%20r%3D%224%22%20fill%3D%22%2378909c%22/%3E%3Ccircle%20cx%3D%22900%22%20cy%3D%22432%22%20r%3D%224%22%20fill%3D%22%2378909c%22/%3E%0A%20%20%20%20%3C%21--%20%E6%84%9F%E7%9F%A5%E5%99%A8%EF%BC%88%E5%A4%96%E8%A7%80%E7%9B%B8%E5%90%8C%EF%BC%89%20--%3E%0A%20%20%20%20%3Cg%20transform%3D%22translate%28250%20118%29%20rotate%280%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-14%22%20width%3D%2218%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23263238%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.5%22/%3E%3Crect%20x%3D%22-6%22%20y%3D%22-22%22%20width%3D%2212%22%20height%3D%229%22%20rx%3D%222%22%20fill%3D%22%23fbc02d%22%20stroke%3D%22%23263238%22%20stroke-width%3D%221.5%22/%3E%3Cpath%20d%3D%22M0%20-22%20q0%20-14%2014%20-18%22%20fill%3D%22none%22%20stroke%3D%22%23263238%22%20stroke-width%3D%222.5%22/%3E%3C/g%3E%0A%20%20%20%20%3Cg%20transform%3D%22translate%28330%20112%29%20rotate%280%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-14%22%20width%3D%2218%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23263238%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.5%22/%3E%3Crect%20x%3D%22-6%22%20y%3D%22-22%22%20width%3D%2212%22%20height%3D%229%22%20rx%3D%222%22%20fill%3D%22%23fbc02d%22%20stroke%3D%22%23263238%22%20stroke-width%3D%221.5%22/%3E%3Cpath%20d%3D%22M0%20-22%20q0%20-14%2014%20-18%22%20fill%3D%22none%22%20stroke%3D%22%23263238%22%20stroke-width%3D%222.5%22/%3E%3C/g%3E%0A%20%20%20%20%3Cg%20transform%3D%22translate%28470%20118%29%20rotate%280%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-14%22%20width%3D%2218%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23263238%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.5%22/%3E%3Crect%20x%3D%22-6%22%20y%3D%22-22%22%20width%3D%2212%22%20height%3D%229%22%20rx%3D%222%22%20fill%3D%22%23fbc02d%22%20stroke%3D%22%23263238%22%20stroke-width%3D%221.5%22/%3E%3Cpath%20d%3D%22M0%20-22%20q0%20-14%2014%20-18%22%20fill%3D%22none%22%20stroke%3D%22%23263238%22%20stroke-width%3D%222.5%22/%3E%3C/g%3E%0A%20%20%20%20%3Cg%20transform%3D%22translate%28398%20236%29%20rotate%28-90%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-14%22%20width%3D%2218%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23263238%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.5%22/%3E%3Crect%20x%3D%22-6%22%20y%3D%22-22%22%20width%3D%2212%22%20height%3D%229%22%20rx%3D%222%22%20fill%3D%22%23fbc02d%22%20stroke%3D%22%23263238%22%20stroke-width%3D%221.5%22/%3E%3Cpath%20d%3D%22M0%20-22%20q0%20-14%2014%20-18%22%20fill%3D%22none%22%20stroke%3D%22%23263238%22%20stroke-width%3D%222.5%22/%3E%3C/g%3E%0A%20%20%20%20%3Cg%20transform%3D%22translate%28820%20212%29%20rotate%280%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-14%22%20width%3D%2218%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23263238%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.5%22/%3E%3Crect%20x%3D%22-6%22%20y%3D%22-22%22%20width%3D%2212%22%20height%3D%229%22%20rx%3D%222%22%20fill%3D%22%23fbc02d%22%20stroke%3D%22%23263238%22%20stroke-width%3D%221.5%22/%3E%3Cpath%20d%3D%22M0%20-22%20q0%20-14%2014%20-18%22%20fill%3D%22none%22%20stroke%3D%22%23263238%22%20stroke-width%3D%222.5%22/%3E%3C/g%3E%0A%20%20%20%20%3Cg%20transform%3D%22translate%28570%20404%29%20rotate%28-90%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-14%22%20width%3D%2218%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23263238%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.5%22/%3E%3Crect%20x%3D%22-6%22%20y%3D%22-22%22%20width%3D%2212%22%20height%3D%229%22%20rx%3D%222%22%20fill%3D%22%23fbc02d%22%20stroke%3D%22%23263238%22%20stroke-width%3D%221.5%22/%3E%3Cpath%20d%3D%22M0%20-22%20q0%20-14%2014%20-18%22%20fill%3D%22none%22%20stroke%3D%22%23263238%22%20stroke-width%3D%222.5%22/%3E%3C/g%3E%0A%20%20%20%20%3Cg%20transform%3D%22translate%28312%20425%29%20rotate%28-90%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-14%22%20width%3D%2218%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23263238%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.5%22/%3E%3Crect%20x%3D%22-6%22%20y%3D%22-22%22%20width%3D%2212%22%20height%3D%229%22%20rx%3D%222%22%20fill%3D%22%23fbc02d%22%20stroke%3D%22%23263238%22%20stroke-width%3D%221.5%22/%3E%3Cpath%20d%3D%22M0%20-22%20q0%20-14%2014%20-18%22%20fill%3D%22none%22%20stroke%3D%22%23263238%22%20stroke-width%3D%222.5%22/%3E%3C/g%3E%0A%20%20%20%20%3Cg%20transform%3D%22translate%28930%20406%29%20rotate%280%29%22%3E%3Crect%20x%3D%22-9%22%20y%3D%22-14%22%20width%3D%2218%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23263238%22%20stroke%3D%22%23fff%22%20stroke-width%3D%221.5%22/%3E%3Crect%20x%3D%22-6%22%20y%3D%22-22%22%20width%3D%2212%22%20height%3D%229%22%20rx%3D%222%22%20fill%3D%22%23fbc02d%22%20stroke%3D%22%23263238%22%20stroke-width%3D%221.5%22/%3E%3Cpath%20d%3D%22M0%20-22%20q0%20-14%2014%20-18%22%20fill%3D%22none%22%20stroke%3D%22%23263238%22%20stroke-width%3D%222.5%22/%3E%3C/g%3E%0A%20%20%20%20%3C/svg%3E"}, "pins": [{"id": "p1", "x": 25.4, "y": 13.2, "tag": "left", "label": "進氣溫度感知器", "hint": "這張 D 型圖把它裝在節氣門前的進氣管（節氣門前後都可以），量吸進來的空氣有多冷或多熱。", "ax": 33.0, "ay": 25.9}, {"id": "p2", "x": 37.5, "y": 7.4, "tag": "right", "label": "節氣門位置感知器", "hint": "裝在節氣門軸上，告訴電腦油門開多大（怠速、加速、全負荷）。", "ax": 40.2, "ay": 25.0}, {"id": "p3", "x": 60.7, "y": 17.6, "tag": "right", "label": "進氣歧管壓力感知器", "hint": "只用在 D 型；裝在進氣歧管上，用歧管壓力（真空）推算吸進多少空氣。", "ax": 52.7, "ay": 25.9}, {"id": "p4", "x": 33.0, "y": 47.4, "tag": "left", "label": "水溫感知器", "hint": "裝在汽缸蓋水套內，泡在冷卻水裡量水溫；溫度↑電壓↓。", "ax": 45.9, "ay": 43.5}, {"id": "p5", "x": 92.0, "y": 39.0, "tag": "above", "label": "含氧感知器", "hint": "裝在排氣總管（排氣歧管末端、觸媒前），讓電腦「對答案」修正噴油。", "ax": 83.9, "ay": 39.7}, {"id": "p6", "x": 57.1, "y": 93.4, "tag": "left", "label": "爆震感知器", "hint": "裝在汽缸體中下半部，四缸引擎在 2、3 缸之間，偵測引擎震動。", "ax": 60.7, "ay": 68.2}, {"id": "p7", "x": 27.7, "y": 85.3, "tag": "left", "label": "曲軸位置感知器", "hint": "裝在曲軸皮帶盤（或飛輪）旁邊，量引擎轉速和活塞位置；壞了引擎會立刻熄火。", "ax": 38.0, "ay": 71.3}, {"id": "p8", "x": 93.8, "y": 88.2, "tag": "left", "label": "車速感知器", "hint": "裝在變速箱輸出軸（或車輪軸），告訴電腦車子跑多快。", "ax": 93.8, "ay": 69.1}], "distractors": ["空氣流量感知器", "噴油嘴"]}</script>
+
+<script>
+(function(){
+'use strict';
+/* 匯出用：在任何 DOM 變動之前保留原始頁面 */
+const PAGE_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+const $ = id => document.getElementById(id);
+const STORE_KEY = 'labelled-diagram-editor-v1';
+const params = new URLSearchParams(location.search);
+if (params.get('embed') === '1') document.body.classList.add('embed');
+
+/* ---------------- 範例：活塞與連桿（SVG 重畫示意） ---------------- */
+const SAMPLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="650" viewBox="140 50 320 650" font-family="sans-serif">
+<rect x="140" y="50" width="320" height="650" fill="#fbfcfe"/>
+<defs>
+ <linearGradient id="al" x1="0" x2="1"><stop offset="0" stop-color="#b9c2cc"/><stop offset=".5" stop-color="#e9edf1"/><stop offset="1" stop-color="#aab3be"/></linearGradient>
+ <linearGradient id="st" x1="0" x2="1"><stop offset="0" stop-color="#6b7480"/><stop offset=".5" stop-color="#a7afb9"/><stop offset="1" stop-color="#5d6570"/></linearGradient>
+</defs>
+<!-- 活塞本體 -->
+<path d="M170 110 Q170 80 200 78 L400 78 Q430 80 430 110 L430 300 L410 400 L190 400 L170 300 Z" fill="url(#al)" stroke="#4a5563" stroke-width="3"/>
+<!-- 活塞頂 -->
+<path d="M175 100 Q300 70 425 100" fill="none" stroke="#4a5563" stroke-width="2"/>
+<!-- 環槽與活塞環 -->
+<rect x="166" y="122" width="268" height="12" rx="3" fill="#2f3640"/>
+<rect x="166" y="152" width="268" height="12" rx="3" fill="#2f3640"/>
+<rect x="166" y="184" width="268" height="20" rx="3" fill="#2f3640"/>
+<g stroke="#9aa3ad" stroke-width="2">
+ <line x1="176" y1="190" x2="176" y2="198"/><line x1="196" y1="190" x2="196" y2="198"/><line x1="216" y1="190" x2="216" y2="198"/>
+ <line x1="384" y1="190" x2="384" y2="198"/><line x1="404" y1="190" x2="404" y2="198"/><line x1="424" y1="190" x2="424" y2="198"/>
+</g>
+<!-- 活塞銷座與活塞銷 -->
+<circle cx="300" cy="270" r="44" fill="#c9d0d8" stroke="#4a5563" stroke-width="3"/>
+<circle cx="300" cy="270" r="28" fill="url(#st)" stroke="#333" stroke-width="2"/>
+<circle cx="300" cy="270" r="12" fill="#3a414a"/>
+<!-- 連桿 -->
+<path d="M272 300 L262 540 L338 540 L328 300 Z" fill="url(#st)" stroke="#333" stroke-width="3"/>
+<circle cx="300" cy="270" r="40" fill="none" stroke="#333" stroke-width="3"/>
+<!-- 連桿大端與軸承蓋 -->
+<path d="M210 560 Q210 530 250 530 L350 530 Q390 530 390 560 L390 600 L210 600 Z" fill="url(#st)" stroke="#333" stroke-width="3"/>
+<path d="M210 606 L390 606 L390 630 Q390 680 300 680 Q210 680 210 630 Z" fill="url(#st)" stroke="#333" stroke-width="3"/>
+<circle cx="300" cy="603" r="46" fill="#fbfcfe" stroke="#333" stroke-width="3"/>
+<circle cx="300" cy="603" r="38" fill="none" stroke="#c58b2a" stroke-width="7"/>
+<!-- 連桿螺絲 -->
+<rect x="222" y="545" width="14" height="120" fill="#555"/><rect x="364" y="545" width="14" height="120" fill="#555"/>
+<rect x="216" y="660" width="26" height="14" fill="#444"/><rect x="358" y="660" width="26" height="14" fill="#444"/>
+</svg>`;
+
+const SAMPLE = {
+  title:'活塞與連桿總成', instruction:'把名稱拖到正確的圈圈上（也可以先點名稱、再點圈圈）。',
+  feedback:'submit', labelSize:'l',
+  image:{src:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(SAMPLE_SVG)},
+  pins:[
+    {id:'p1',x:50.0,y:5.8,label:'活塞頂',hint:'直接承受燃燒壓力的最上面那一面。'},
+    {id:'p2',x:14.4,y:12.0,label:'壓縮環',hint:'最上面兩道環負責密封氣體，防止漏氣。'},
+    {id:'p3',x:85.6,y:22.2,label:'油環',hint:'有開孔、比較寬的那一道，負責刮掉汽缸壁多餘的機油。'},
+    {id:'p4',x:50.0,y:33.8,label:'活塞銷',hint:'連接活塞與連桿小端的那根銷子。'},
+    {id:'p5',x:25.6,y:44.3,label:'活塞裙',hint:'活塞下半部，負責導引活塞在汽缸內上下運動。'},
+    {id:'p6',x:50.0,y:56.6,label:'連桿',hint:'把活塞的往復運動傳到曲軸。'},
+    {id:'p7',x:35.9,y:85.1,label:'連桿軸承',hint:'大端內圈那一層，夾在連桿與曲軸銷之間。'},
+    {id:'p8',x:71.2,y:94.5,label:'連桿蓋',hint:'大端下半部可以拆下來的那一塊。'}
+  ],
+  distractors:['汽門彈簧','凸輪軸']
+};
+
+/* ---------------- 狀態 ---------------- */
+let data = blankData();
+let locked = false; // 匯出的作答頁 = true
+
+function blankData(){ return {title:'未命名題目',instruction:'把名稱拖到正確的圈圈上（也可以先點名稱、再點圈圈）。',feedback:'submit',labelSize:'l',image:null,pins:[],distractors:[]}; }
+function uid(){ return 'p'+Math.random().toString(36).slice(2,8); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function el(tag,cls,text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+function toast(msg){ const t=el('div','toast',msg); document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+
+function sanitize(d){
+  const out = blankData();
+  if(!d || typeof d!=='object') return out;
+  out.title = String(d.title||out.title).slice(0,100);
+  out.instruction = String(d.instruction||'').slice(0,300);
+  out.feedback = d.feedback==='instant' ? 'instant' : 'submit';
+  out.labelSize = ['m','l','xl'].includes(d.labelSize) ? d.labelSize : 'l';
+  if(d.image && typeof d.image.src==='string' && /^data:image\//.test(d.image.src)) out.image={src:d.image.src};
+  else if(d.image && typeof d.image.src==='string' && /^[\w\-./%]+\.(png|jpe?g|svg|webp|gif)$/i.test(d.image.src)) out.image={src:d.image.src};
+  out.pins = Array.isArray(d.pins) ? d.pins.slice(0,40).map(p=>({
+    id:String(p.id||uid()).replace(/[^\w-]/g,'').slice(0,20)||uid(),
+    x:clamp(+p.x||0,0,100), y:clamp(+p.y||0,0,100),
+    tag:['below','above','left','right'].includes(p.tag)?p.tag:'auto',
+    ax:(p.ax==null||isNaN(+p.ax))?null:clamp(+p.ax,0,100), ay:(p.ay==null||isNaN(+p.ay))?null:clamp(+p.ay,0,100),
+    label:String(p.label||'').slice(0,40), hint:String(p.hint||'').slice(0,200)
+  })) : [];
+  out.distractors = Array.isArray(d.distractors) ? d.distractors.map(s=>String(s).trim().slice(0,40)).filter(Boolean).slice(0,20) : [];
+  return out;
+}
+
+function save(){ if(locked) return; try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){} }
+function loadSaved(){ try{ const s=localStorage.getItem(STORE_KEY); if(s) return sanitize(JSON.parse(s)); }catch(e){} return null; }
+
+/* ---------------- 模式切換 ---------------- */
+function showEdit(){ $('editView').classList.remove('hidden'); $('playView').classList.add('hidden'); $('tabEdit').classList.add('on'); $('tabPlay').classList.remove('on'); renderEdit(); }
+function showPlay(){ $('playView').classList.add('hidden'); $('editView').classList.add('hidden'); $('playView').classList.remove('hidden'); $('tabPlay').classList.add('on'); $('tabEdit').classList.remove('on'); startPlay(); }
+$('tabEdit').onclick = showEdit;
+$('tabPlay').onclick = ()=>{
+  const usable = data.pins.filter(p=>p.label.trim());
+  if(!data.image){ toast('請先載入底圖'); return; }
+  if(usable.length<1){ toast('請至少放一個圈圈並填名稱'); return; }
+  showPlay();
+};
+
+/* ================= 編輯 ================= */
+let hotPin = null;
+
+function renderStage(stage, opts){
+  stage.textContent='';
+  if(!data.image){ stage.appendChild(el('div','empty', opts.emptyText||'尚未載入底圖')); return null; }
+  const cv = el('div','canvas');
+  const img = el('img','base'); img.alt = data.title; img.src = data.image.src; img.draggable=false;
+  cv.appendChild(img); stage.appendChild(cv);
+  return cv;
+}
+
+/* 指引線：圈圈放在空白處，細線指到物件上的小圓點 */
+function drawLeaders(cv, pins, editable){
+  if(!cv) return;
+  cv.querySelectorAll('.leaders,.anchor').forEach(n=>n.remove());
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(NS,'svg'); svg.setAttribute('class','leaders');
+  svg.setAttribute('viewBox','0 0 100 100'); svg.setAttribute('preserveAspectRatio','none');
+  pins.forEach(p=>{
+    if(p.ax==null||p.ay==null) return;
+    [['#fff',6],['#263238',2.5]].forEach(([c,w])=>{
+      const l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',p.x); l.setAttribute('y1',p.y); l.setAttribute('x2',p.ax); l.setAttribute('y2',p.ay);
+      l.setAttribute('stroke',c); l.setAttribute('stroke-width',w); l.setAttribute('stroke-linecap','round');
+      l.setAttribute('vector-effect','non-scaling-stroke'); l.dataset.id=p.id; svg.appendChild(l);
+    });
+    const a=el('div','anchor'); a.style.left=p.ax+'%'; a.style.top=p.ay+'%'; a.dataset.id=p.id;
+    if(editable){ a.title='拖曳：指引線指到的位置'; a.addEventListener('pointerdown',e=>startAnchorDrag(e,p,a)); }
+    cv.appendChild(a);
+  });
+  cv.appendChild(svg);
+}
+function updateLeader(p){
+  document.querySelectorAll(`#editStage .leaders line[data-id="${p.id}"]`).forEach(l=>{
+    l.setAttribute('x1',p.x); l.setAttribute('y1',p.y); l.setAttribute('x2',p.ax); l.setAttribute('y2',p.ay); });
+}
+function startAnchorDrag(e,p,a){
+  e.preventDefault(); e.stopPropagation(); setHot(p.id);
+  const stage=$('editStage'); let moved=false; a.setPointerCapture(e.pointerId);
+  const move=ev=>{ moved=true; const {x,y}=stagePct(stage,ev); p.ax=+x.toFixed(2); p.ay=+y.toFixed(2); a.style.left=p.ax+'%'; a.style.top=p.ay+'%'; updateLeader(p); };
+  const up=()=>{ a.removeEventListener('pointermove',move); a.removeEventListener('pointerup',up); a.removeEventListener('pointercancel',up);
+    if(moved){ save(); suppressClick=true; setTimeout(()=>suppressClick=false,50); } };
+  a.addEventListener('pointermove',move); a.addEventListener('pointerup',up); a.addEventListener('pointercancel',up);
+}
+
+function renderEdit(){
+  $('inTitle').value = data.title;
+  $('inInst').value = data.instruction;
+  $('inFeedback').value = data.feedback;
+  $('inSize').value = data.labelSize;
+  applySize();
+  $('inDistract').value = data.distractors.join('\n');
+  const stage = renderStage($('editStage'),{emptyText:'先在右側載入底圖（SVG 或照片），再點圖面新增圈圈'});
+  data.pins.forEach((p,i)=>{
+    const d = el('div','pin'+(hotPin===p.id?' hot':''), String(i+1));
+    d.style.left=p.x+'%'; d.style.top=p.y+'%'; d.dataset.id=p.id;
+    d.title = p.label || '（未填名稱）';
+    d.addEventListener('pointerdown', e=>startPinDrag(e,p,d));
+    stage.appendChild(d);
+  });
+  drawLeaders(stage, data.pins, true);
+  renderPinList();
+}
+
+function renderPinList(){
+  const list = $('pinList'); list.textContent='';
+  $('pinCount').textContent = data.pins.length ? `（${data.pins.length} 個）` : '';
+  if(!data.pins.length){ list.appendChild(el('p','tip', data.image ? '在左邊圖上點一下，就會新增一個圈圈。' : '載入底圖後就能新增圈圈。')); return; }
+  data.pins.forEach((p,i)=>{
+    const row = el('div','pinrow'+(hotPin===p.id?' hot':''));
+    row.appendChild(el('div','num',String(i+1)));
+    const f = el('div','fields');
+    const a = document.createElement('input'); a.type='text'; a.placeholder='正確名稱（必填）'; a.value=p.label; a.maxLength=40;
+    a.oninput=()=>{ p.label=a.value; save(); const pd=$('editStage').querySelector(`.pin[data-id="${p.id}"]`); if(pd) pd.title=a.value; };
+    a.onfocus=()=>setHot(p.id);
+    const b = document.createElement('input'); b.type='text'; b.placeholder='答錯提示（選填）'; b.value=p.hint; b.maxLength=200;
+    b.oninput=()=>{ p.hint=b.value; save(); };
+    b.onfocus=()=>setHot(p.id);
+    const pos=document.createElement('select'); pos.title='學生放上名稱後，標籤顯示在圈圈的哪一邊';
+    [['auto','標籤位置：自動'],['below','標籤在下'],['above','標籤在上'],['left','標籤在左'],['right','標籤在右']].forEach(([v,t])=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; pos.appendChild(o); });
+    pos.value=p.tag||'auto'; pos.onchange=()=>{ p.tag=pos.value; save(); }; pos.onfocus=()=>setHot(p.id);
+    const lead=el('button',null, p.ax!=null?'移除指引線':'＋指引線');
+    lead.style.cssText='padding:3px 8px;font-size:13px;margin-left:6px';
+    lead.title='把圈圈移到旁邊空白處，用細線指向物件';
+    lead.onclick=()=>{
+      if(p.ax!=null){ p.ax=null; p.ay=null; }
+      else { p.ax=p.x; p.ay=p.y; p.x=clamp(p.x-7,2,98); p.y=clamp(p.y-7,2,98); toast('小圓點留在物件上；把圈圈拖到旁邊的空白處'); }
+      hotPin=p.id; save(); renderEdit();
+    };
+    f.appendChild(a); f.appendChild(b); f.appendChild(pos); f.appendChild(lead); row.appendChild(f);
+    const del = el('button',null,'✕'); del.title='刪除這個圈圈';
+    del.onclick=()=>{ data.pins=data.pins.filter(q=>q.id!==p.id); save(); renderEdit(); };
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+function setHot(id){
+  hotPin=id;
+  document.querySelectorAll('#editStage .pin').forEach(d=>d.classList.toggle('hot',d.dataset.id===id));
+  document.querySelectorAll('#pinList .pinrow').forEach((r,i)=>r.classList.toggle('hot',data.pins[i]&&data.pins[i].id===id));
+}
+
+function stagePct(stage,e){
+  const cv = stage.querySelector('.canvas') || stage; const r = cv.getBoundingClientRect();
+  return { x:clamp((e.clientX-r.left)/r.width*100,0,100), y:clamp((e.clientY-r.top)/r.height*100,0,100) };
+}
+
+$('editStage').addEventListener('click', e=>{
+  if(!data.image || e.target.classList.contains('pin') || e.target.classList.contains('anchor') || !e.target.closest('.canvas')) return;
+  if(suppressClick){ suppressClick=false; return; }
+  const {x,y} = stagePct($('editStage'),e);
+  const p = {id:uid(),x:+x.toFixed(2),y:+y.toFixed(2),tag:'auto',label:'',hint:''};
+  data.pins.push(p); hotPin=p.id; save(); renderEdit();
+  const inputs = $('pinList').querySelectorAll('.pinrow input[type=text]');
+  const idx = data.pins.length-1;
+  if(inputs[idx*2]) inputs[idx*2].focus();
+});
+
+let suppressClick=false;
+function startPinDrag(e,p,d){
+  e.preventDefault(); e.stopPropagation();
+  setHot(p.id);
+  const stage=$('editStage'); let moved=false;
+  d.setPointerCapture(e.pointerId);
+  const move = ev=>{ moved=true; const {x,y}=stagePct(stage,ev); p.x=+x.toFixed(2); p.y=+y.toFixed(2); d.style.left=p.x+'%'; d.style.top=p.y+'%'; if(p.ax!=null) updateLeader(p); };
+  const up = ()=>{ d.removeEventListener('pointermove',move); d.removeEventListener('pointerup',up); d.removeEventListener('pointercancel',up);
+    if(moved){ save(); suppressClick=true; setTimeout(()=>suppressClick=false,50); } };
+  d.addEventListener('pointermove',move); d.addEventListener('pointerup',up); d.addEventListener('pointercancel',up);
+}
+
+$('inTitle').oninput=e=>{ data.title=e.target.value; save(); };
+$('inInst').oninput=e=>{ data.instruction=e.target.value; save(); };
+$('inFeedback').onchange=e=>{ data.feedback=e.target.value; save(); };
+$('inSize').onchange=e=>{ data.labelSize=e.target.value; save(); applySize(); };
+
+/* 文字大小：題目預設 × 學生自己調整的倍率 */
+const SIZE_BASE = { m:{fs:17,pin:34}, l:{fs:21,pin:40}, xl:{fs:26,pin:48} };
+const USER_KEY = 'labelled-diagram-userscale';
+let userStep = 0; try{ userStep = clamp(parseInt(localStorage.getItem(USER_KEY)||'0',10)||0,-2,4); }catch(e){}
+function visibleCanvas(){
+  const v = !$('playView').classList.contains('hidden') ? $('playStage') : $('editStage');
+  return v.querySelector('.canvas');
+}
+function applySize(){
+  const b = SIZE_BASE[data.labelSize]||SIZE_BASE.l;
+  const k = 1 + userStep*0.15;
+  // 圖片顯示得越窄（手機），標籤跟著縮；圖片放大時字也跟著回來
+  const cv = visibleCanvas(); const w = cv ? cv.getBoundingClientRect().width : 0;
+  const f = w>0 ? clamp(w/620, 0.7, 1) : 1;
+  document.documentElement.style.setProperty('--tag-fs', Math.round(b.fs*k*f)+'px');
+  document.documentElement.style.setProperty('--pin-size', Math.round(b.pin*Math.min(k,1.3)*Math.max(f,0.78))+'px');
+  fitTags();
+  if($('btnSmaller')){ $('btnSmaller').disabled = userStep<=-2; $('btnBigger').disabled = userStep>=4; }
+}
+/* 標籤碰到圖面邊緣時往內推，避免被切掉 */
+function fitTags(){
+  const st=$('playStage'); if(!st || $('playView').classList.contains('hidden')) return;
+  const box=st.getBoundingClientRect();
+  st.querySelectorAll('.tag').forEach(t=>{
+    t.style.marginLeft=''; t.style.marginTop='';
+    const r=t.getBoundingClientRect(); let dx=0, dy=0;
+    const cv=st.querySelector('.canvas'); const c=cv?cv.getBoundingClientRect():box;
+    const L=Math.min(box.left,c.left)+3, R=Math.max(box.right,c.right)-3;
+    if(r.left<L) dx=L-r.left; else if(r.right>R) dx=R-r.right;
+    const T=Math.min(box.top,c.top)+3, B=Math.max(box.bottom,c.bottom)-3;
+    if(r.top<T) dy=T-r.top; else if(r.bottom>B) dy=B-r.bottom;
+    if(dx) t.style.marginLeft=dx+'px'; if(dy) t.style.marginTop=dy+'px';
+  });
+}
+window.addEventListener('resize',()=>{ applySize(); });
+function stepSize(d){ userStep=clamp(userStep+d,-2,4); try{ localStorage.setItem(USER_KEY,String(userStep)); }catch(e){} applySize(); }
+$('btnSmaller').onclick=()=>stepSize(-1);
+/* 圖片放大：放大後圖面可捲動／用手指拖動 */
+const ZOOMS=[1,1.5,2,2.5,3]; let zoomIdx=0;
+function applyZoom(){
+  const st=$('playStage'); const img=st.querySelector('img.base'); if(!img) return;
+  const z=ZOOMS[zoomIdx];
+  st.classList.toggle('zoomed', z>1);
+  if(z>1){
+    const base = Math.min(st.clientWidth, (img.naturalWidth||st.clientWidth));
+    img.style.width = Math.round(Math.max(st.clientWidth*0.6, base)*z)+'px';
+  } else img.style.width='';
+  $('btnZoomOut').disabled = zoomIdx===0; $('btnZoomIn').disabled = zoomIdx===ZOOMS.length-1;
+}
+function zoomChanged(){ applySize(); }
+function stepZoom(d){
+  const st=$('playStage'); const sx=st.scrollLeft+st.clientWidth/2, sy=st.scrollTop+st.clientHeight/2;
+  const oldW=st.scrollWidth, oldH=st.scrollHeight;
+  zoomIdx=clamp(zoomIdx+d,0,ZOOMS.length-1); applyZoom();
+  if(st.classList.contains('zoomed')){ st.scrollLeft=sx*st.scrollWidth/oldW-st.clientWidth/2; st.scrollTop=sy*st.scrollHeight/oldH-st.clientHeight/2; }
+  zoomChanged();
+}
+$('btnZoomIn').onclick=()=>stepZoom(1);
+$('btnZoomOut').onclick=()=>stepZoom(-1);
+$('btnBigger').onclick=()=>stepSize(1);
+$('inDistract').oninput=e=>{ data.distractors=e.target.value.split('\n').map(s=>s.trim()).filter(Boolean); save(); };
+
+/* 載入底圖 */
+$('btnLoadImg').onclick=()=>$('fileImg').click();
+$('fileImg').onchange=e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  const isSvg = f.type==='image/svg+xml' || /\.svg$/i.test(f.name);
+  const rd=new FileReader();
+  if(isSvg){
+    rd.onload=()=>setSvg(String(rd.result));
+    rd.readAsText(f);
+  }else{
+    rd.onload=()=>shrinkPhoto(String(rd.result), src=>{ setImage(src); });
+    rd.readAsDataURL(f);
+  }
+};
+function shrinkPhoto(src,cb){
+  const im=new Image();
+  im.onload=()=>{
+    const max=1600; let w=im.naturalWidth,h=im.naturalHeight;
+    if(Math.max(w,h)<=max && src.length<900000){ cb(src); return; }
+    const k=Math.min(1,max/Math.max(w,h)); w=Math.round(w*k); h=Math.round(h*k);
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    c.getContext('2d').drawImage(im,0,0,w,h);
+    cb(c.toDataURL('image/jpeg',0.85));
+  };
+  im.onerror=()=>toast('這張圖片讀不出來，請換一張');
+  im.src=src;
+}
+function setSvg(code){
+  code=code.trim();
+  if(!/<svg[\s>]/i.test(code)){ toast('找不到 <svg> 標籤'); return; }
+  if(!/xmlns=/.test(code)) code=code.replace(/<svg/i,'<svg xmlns="http://www.w3.org/2000/svg"');
+  // 沒寫寬高的 SVG 在 <img> 裡會縮成 0，依 viewBox 補上
+  const open = code.match(/<svg[^>]*>/i)[0];
+  if(!/\swidth=/.test(open) || !/\sheight=/.test(open) || /\swidth="\d*%"/.test(open)){
+    const vb = open.match(/viewBox=["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
+    const w = vb ? vb[1] : 800, h = vb ? vb[2] : 600;
+    const fixed = open.replace(/\s(width|height)=["'][^"']*["']/gi,'').replace(/<svg/i,`<svg width="${w}" height="${h}"`);
+    code = code.replace(open, fixed);
+  }
+  setImage('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(code));
+}
+function setImage(src){
+  const hadPins = data.pins.length>0;
+  data.image={src}; save(); renderEdit();
+  toast(hadPins ? '已換底圖，圈圈位置保留，請確認是否需要調整' : '底圖已載入，點圖面新增圈圈');
+}
+$('btnPasteSvg').onclick=()=>$('svgPasteBox').classList.toggle('hidden');
+$('btnUseSvg').onclick=()=>{ setSvg($('svgCode').value); $('svgPasteBox').classList.add('hidden'); $('svgCode').value=''; };
+$('btnSample').onclick=()=>{
+  if(data.pins.length && !confirm('載入範例會取代目前的題目，確定嗎？')) return;
+  data=sanitize(JSON.parse(JSON.stringify(SAMPLE))); hotPin=null; save(); renderEdit();
+};
+$('btnClear').onclick=()=>{
+  if(!confirm('確定清空目前的題目？（建議先匯出題目檔）')) return;
+  data=blankData(); hotPin=null; save(); renderEdit();
+};
+
+/* 匯出／匯入 */
+function download(name,text,type){
+  const blob=new Blob([text],{type}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
+}
+function safeName(s){ return (s||'標記圖表').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,40); }
+function validateForExport(){
+  if(!data.image){ toast('請先載入底圖'); return false; }
+  const empty = data.pins.findIndex(p=>!p.label.trim());
+  if(!data.pins.length){ toast('請至少放一個圈圈'); return false; }
+  if(empty>=0){ toast(`第 ${empty+1} 個圈圈還沒填名稱`); setHot(data.pins[empty].id); return false; }
+  return true;
+}
+$('btnExportJson').onclick=()=>{
+  if(!validateForExport()) return;
+  download(safeName(data.title)+'.json', JSON.stringify(data,null,2), 'application/json');
+};
+$('btnExportHtml').onclick=()=>{
+  if(!validateForExport()) return;
+  const json = JSON.stringify(Object.assign({__locked:true}, data))
+    .replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
+  const marker = '<script id="presetData" type="application/json">';
+  const i = PAGE_SOURCE.indexOf(marker);
+  if(i<0){ toast('匯出失敗：找不到資料位置'); return; }
+  const j = PAGE_SOURCE.indexOf('<\/script>', i);
+  let html = PAGE_SOURCE.slice(0,i+marker.length) + json + PAGE_SOURCE.slice(j);
+  html = html.replace(/<title>[^<]*<\/title>/, '<title>'+data.title.replace(/[<>&"]/g,'')+'</title>');
+  download(safeName(data.title)+'.html', html, 'text/html');
+};
+$('btnImportJson').onclick=()=>$('fileJson').click();
+$('fileJson').onchange=e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ data=sanitize(JSON.parse(String(rd.result))); hotPin=null; save(); renderEdit(); toast('題目已開啟'); }catch(err){ toast('題目檔格式不對'); } };
+  rd.readAsText(f);
+};
+
+/* ================= 作答 ================= */
+let chips=[], placed={}, lockedPins={}, selectedChip=null, attempts=0, firstScore=null, finished=false;
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function playPins(){ return data.pins.filter(p=>p.label.trim()); }
+
+function startPlay(){
+  const pins = playPins();
+  chips = shuffle(pins.map(p=>({id:'c'+p.id,text:p.label.trim()})).concat(
+    data.distractors.map((t,i)=>({id:'d'+i,text:t}))));
+  placed={}; lockedPins={}; selectedChip=null; attempts=0; firstScore=null; finished=false;
+  for(const k in pinTried) delete pinTried[k];
+  $('playTitle').textContent=data.title;
+  $('playInst').textContent=data.instruction;
+  $('btnCheck').classList.toggle('hidden', data.feedback==='instant');
+  $('feedback').textContent=''; $('doneBox').textContent='';
+  document.title = data.title;
+  applySize();
+  renderPlay();
+}
+
+function chipById(id){ return chips.find(c=>c.id===id); }
+function pinOfChip(cid){ return Object.keys(placed).find(pid=>placed[pid]===cid); }
+
+function renderPlay(marks){
+  marks = marks||{};
+  const stage=renderStage($('playStage'),{});
+  applyZoom();
+  drawLeaders(stage, playPins(), false);
+  playPins().forEach((p,i)=>{
+    let cls='pin';
+    if(lockedPins[p.id]) cls+=' ok'; else if(marks[p.id]==='bad') cls+=' bad'; else if(placed[p.id]) cls+=' filled'; else cls+=' todo';
+    if(selectedChip && !lockedPins[p.id]) cls+=' target';
+    const d=el('div',cls,String(i+1));
+    d.style.left=p.x+'%'; d.style.top=p.y+'%'; d.dataset.pin=p.id;
+    d.setAttribute('role','button'); d.setAttribute('aria-label','第'+(i+1)+'個圈圈');
+    d.onclick=()=>onPinClick(p.id);
+    stage.appendChild(d);
+    const cid=placed[p.id];
+    if(cid){
+      const side = p.tag==='above'?' up':p.tag==='left'?' left':p.tag==='right'?' right':p.tag==='below'?'':(p.y>80?' up':'');
+      const t=el('div','tag'+side+(lockedPins[p.id]?' ok':(marks[p.id]==='bad'?' bad':'')), chipById(cid).text);
+      t.style.left=p.x+'%'; t.style.top=p.y+'%'; t.dataset.pin=p.id;
+      if(!lockedPins[p.id]){ t.title='點一下拿回'; t.onclick=()=>{ if(finished) return; delete placed[p.id]; renderPlay(); }; }
+      stage.appendChild(t);
+    }
+  });
+  const bank=$('bank'); bank.textContent='';
+  chips.filter(c=>!pinOfChip(c.id)).forEach(c=>{
+    const b=el('div','chip'+(selectedChip===c.id?' sel':''),c.text);
+    b.dataset.chip=c.id; b.setAttribute('role','button'); b.tabIndex=0;
+    b.addEventListener('pointerdown',e=>startChipDrag(e,c,b));
+    b.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); selectChip(c.id); } });
+    bank.appendChild(b);
+  });
+  if(!bank.children.length) bank.appendChild(el('span','tip','（名稱都放上去了）'));
+  updateStatus();
+  const im = stage && stage.querySelector('img.base');
+  if(im && !im.complete) im.onload=()=>{ applyZoom(); applySize(); }; else applySize();
+}
+
+function updateStatus(){
+  const pins=playPins(); const n=pins.length;
+  const filled=pins.filter(p=>placed[p.id]).length;
+  const ok=Object.keys(lockedPins).length;
+  let s = `已放 ${filled}／${n}`;
+  if(ok) s += `，已答對 ${ok}`;
+  if(selectedChip && !finished) s += `　→ 選了「${chipById(selectedChip).text}」，請點圈圈`;
+  $('status').textContent=s;
+  $('btnCheck').disabled = finished || filled===0;
+}
+
+function selectChip(id){ if(finished) return; selectedChip = (selectedChip===id?null:id); renderPlay(); }
+
+function onPinClick(pid){
+  if(finished || lockedPins[pid]) return;
+  if(!selectedChip){ if(placed[pid]){ delete placed[pid]; renderPlay(); } return; }
+  placeChip(selectedChip,pid);
+}
+
+function placeChip(cid,pid){
+  if(lockedPins[pid]) return;
+  const prev=pinOfChip(cid); if(prev) delete placed[prev];
+  placed[pid]=cid; selectedChip=null;
+  if(data.feedback==='instant') checkOne(pid); else renderPlay();
+}
+
+/* 拖曳（同時支援點選） */
+function startChipDrag(e,c,node){
+  if(finished) return;
+  e.preventDefault();
+  const sx=e.clientX, sy=e.clientY; let ghost=null, over=null;
+  node.setPointerCapture(e.pointerId);
+  const hit = ev=>{
+    const els=document.elementsFromPoint(ev.clientX,ev.clientY);
+    for(const x of els){ if(x.dataset && x.dataset.pin) return x.dataset.pin; }
+    // 寬鬆判定：離最近圈圈 40px 內也算
+    const stage=$('playStage').querySelector('.canvas').getBoundingClientRect(); let best=null,bd=40;
+    playPins().forEach(p=>{ const px=stage.left+p.x/100*stage.width, py=stage.top+p.y/100*stage.height;
+      const d=Math.hypot(px-ev.clientX,py-ev.clientY); if(d<bd){bd=d;best=p.id;} });
+    return best;
+  };
+  const move=ev=>{
+    if(!ghost && Math.hypot(ev.clientX-sx,ev.clientY-sy)<6) return;
+    if(!ghost){ ghost=el('div','ghost',c.text); document.body.appendChild(ghost); node.style.opacity='.35'; }
+    ghost.style.left=ev.clientX+'px'; ghost.style.top=ev.clientY+'px';
+    const pid=hit(ev);
+    if(pid!==over){
+      document.querySelectorAll('#playStage .pin.hot').forEach(x=>x.classList.remove('hot'));
+      over=pid;
+      if(pid && !lockedPins[pid]){ const pd=document.querySelector(`#playStage .pin[data-pin="${pid}"]`); if(pd) pd.classList.add('hot'); }
+    }
+  };
+  const up=ev=>{
+    node.removeEventListener('pointermove',move); node.removeEventListener('pointerup',up); node.removeEventListener('pointercancel',up);
+    if(ghost){ ghost.remove(); node.style.opacity='';
+      const pid=hit(ev);
+      if(pid && !lockedPins[pid]) placeChip(c.id,pid); else renderPlay();
+    } else { selectChip(c.id); }
+  };
+  node.addEventListener('pointermove',move); node.addEventListener('pointerup',up); node.addEventListener('pointercancel',up);
+}
+
+function isCorrect(pid){ const p=playPins().find(x=>x.id===pid); const c=chipById(placed[pid]); return p&&c&&c.text===p.label.trim(); }
+
+const pinTried = {};
+function checkOne(pid){
+  const marks={}; const fb=$('feedback'); fb.textContent='';
+  const p=playPins().find(x=>x.id===pid); const idx=playPins().indexOf(p)+1;
+  if(isCorrect(pid)){ lockedPins[pid]=true; if(!pinTried[pid]) pinTried[pid]='first'; }
+  else{
+    pinTried[pid]=pinTried[pid]||'retry';
+    marks[pid]='bad';
+    const li=el('li'); li.appendChild(el('b',null,`第 ${idx} 號：「${chipById(placed[pid]).text}」不對。`));
+    if(p.hint) li.appendChild(el('div','hint','提示：'+p.hint));
+    fb.appendChild(li);
+    const cid=placed[pid];
+    renderPlay(marks);
+    setTimeout(()=>{ if(placed[pid]===cid && !lockedPins[pid]){ delete placed[pid]; renderPlay(); } },1100);
+    return;
+  }
+  renderPlay(marks); maybeFinish();
+}
+
+$('btnCheck').onclick=()=>{
+  if(finished) return;
+  attempts++;
+  const pins=playPins(); const marks={}; const fb=$('feedback'); fb.textContent='';
+  let okNow=0; const wrong=[];
+  pins.forEach((p,i)=>{
+    if(lockedPins[p.id]){ okNow++; return; }
+    if(!placed[p.id]){ wrong.push({p,i,empty:true}); return; }
+    if(isCorrect(p.id)){ lockedPins[p.id]=true; okNow++; }
+    else { marks[p.id]='bad'; wrong.push({p,i}); }
+  });
+  if(attempts===1) firstScore={ok:okNow,total:pins.length};
+  wrong.forEach(({p,i,empty})=>{
+    if(empty) return;
+    const li=el('li'); li.appendChild(el('b',null,`第 ${i+1} 號：「${chipById(placed[p.id]).text}」不對。`));
+    if(p.hint) li.appendChild(el('div','hint','提示：'+p.hint));
+    fb.appendChild(li);
+  });
+  const emptyCount=wrong.filter(w=>w.empty).length;
+  if(emptyCount) fb.appendChild(el('li',null,`還有 ${emptyCount} 個圈圈沒有放名稱。`));
+  renderPlay(marks);
+  if(wrong.some(w=>!w.empty)){
+    setTimeout(()=>{ pins.forEach(p=>{ if(marks[p.id]==='bad') delete placed[p.id]; }); renderPlay(); },1300);
+  }
+  maybeFinish();
+};
+
+function maybeFinish(){
+  const pins=playPins();
+  if(Object.keys(lockedPins).length<pins.length) return;
+  finished=true; selectedChip=null;
+  let first, total=pins.length;
+  if(data.feedback==='instant') first=pins.filter(p=>pinTried[p.id]==='first').length;
+  else first=firstScore?firstScore.ok:total;
+  const box=$('doneBox'); box.textContent='';
+  const d=el('div','done');
+  d.appendChild(el('b',null,'🎉 全部完成！'));
+  d.appendChild(el('div',null,`第一次就答對：${first}／${total}`));
+  if(data.feedback==='submit') d.appendChild(el('div',null,`共檢查 ${attempts} 次`));
+  box.appendChild(d);
+  updateStatus();
+  try{ window.parent && window.parent!==window && window.parent.postMessage({type:'labelled-diagram-result',title:data.title,firstCorrect:first,total,attempts},'*'); }catch(e){}
+}
+
+$('btnReset').onclick=()=>{ for(const k in pinTried) delete pinTried[k]; startPlay(); };
+
+/* ================= 啟動 ================= */
+let preset=null;
+try{ const t=$('presetData').textContent.trim(); if(t) preset=JSON.parse(t); }catch(e){}
+if(preset && preset.__locked){
+  locked=true; data=sanitize(preset);
+  $('tabs').classList.add('hidden');
+  $('appTitle').textContent=data.title;
+  $('editView').classList.add('hidden'); $('playView').classList.remove('hidden');
+  startPlay();
+}else{
+  data = loadSaved() || sanitize(JSON.parse(JSON.stringify(SAMPLE)));
+  if(params.get('mode')==='play' && data.image && playPins().length) showPlay(); else renderEdit();
+}
+})();
+</script>
+</body>
+</html>
