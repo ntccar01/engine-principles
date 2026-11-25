@@ -25,6 +25,9 @@ header h1{font-size:18px;margin:0;flex:1;min-width:200px}
 header .tabs{display:flex;gap:6px}
 header .tabs button{background:transparent;color:#cfd8e6;border-color:#3a4a6b}
 header .tabs button.on{background:#fff;color:#14213d;border-color:#fff}
+header .pnav{display:flex;gap:8px;flex-wrap:wrap}
+header .pnav button,header .pnav a{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:6px 14px;border-radius:8px;border:1px solid #5a6d94;background:#24365c;color:#fff;text-decoration:none;font-size:16px;font-weight:600;line-height:1.2}
+header .pnav button:hover,header .pnav a:hover{background:#fff;color:#14213d;border-color:#fff}
 main{padding:14px;max-width:1400px;margin:0 auto}
 .hidden{display:none!important}
 
@@ -122,6 +125,10 @@ body.embed main{padding:8px}
     <button id="tabEdit" class="on">✏️ 編輯題目</button>
     <button id="tabPlay">▶ 作答預覽</button>
   </div>
+  <nav class="pnav hidden" id="pageNav" aria-label="頁面導覽">
+    <button type="button" id="btnBack">← 回上一頁</button>
+    <a id="lnkHome" href="#" class="hidden">🏠 回首頁</a>
+  </nav>
 </header>
 
 <main>
@@ -166,6 +173,10 @@ body.embed main{padding:8px}
             <option value="l">大（建議）</option>
             <option value="xl">特大（投影用）</option>
           </select>
+          <label for="inBack">「回上一頁」找不到上一頁時要去的網址（可留白，例：index.html）</label>
+          <input type="text" id="inBack" placeholder="例：index.html">
+          <label for="inHome">「回首頁」網址（可留白＝不顯示這個按鈕，例：../index.html）</label>
+          <input type="text" id="inHome" placeholder="例：../index.html">
           <label for="inDistract">干擾選項（每行一個，不對應任何圈圈，可留白）</label>
           <textarea id="inDistract"></textarea>
         </div>
@@ -214,7 +225,7 @@ body.embed main{padding:8px}
 </main>
 
 <!-- 匯出作答頁時，題目資料會寫進這裡 -->
-<script id="presetData" type="application/json">{"__locked": true, "title": "第11節 OHV 汽門機構", "instruction": "把名稱拖到正確的圈圈上（也可以先點名稱、再點圈圈）。完成後試著從凸輪一路說到汽門。", "feedback": "submit", "labelSize": "l", "image": {"src": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22560%22%20height%3D%22590%22%20viewBox%3D%2260%20170%20560%20590%22%3E%3Cdefs%3E%0A%3ClinearGradient%20id%3D%22metal%22%20x1%3D%220%22%20x2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%239aa4b0%22/%3E%3Cstop%20offset%3D%22.5%22%20stop-color%3D%22%23dde3ea%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%238f99a5%22/%3E%3C/linearGradient%3E%0A%3ClinearGradient%20id%3D%22dark%22%20x1%3D%220%22%20x2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%235b636e%22/%3E%3Cstop%20offset%3D%22.5%22%20stop-color%3D%22%238d96a1%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23535b66%22/%3E%3C/linearGradient%3E%0A%3Cmarker%20id%3D%22ar%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%228%22%20refY%3D%225%22%20markerWidth%3D%227%22%20markerHeight%3D%227%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M0%200L10%205L0%2010z%22%20fill%3D%22%237a8594%22/%3E%3C/marker%3E%0A%3Cmarker%20id%3D%22arR%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%228%22%20refY%3D%225%22%20markerWidth%3D%226%22%20markerHeight%3D%226%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M0%200L10%205L0%2010z%22%20fill%3D%22%23d84315%22/%3E%3C/marker%3E%0A%3Cmarker%20id%3D%22arB%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%228%22%20refY%3D%225%22%20markerWidth%3D%226%22%20markerHeight%3D%226%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M0%200L10%205L0%2010z%22%20fill%3D%22%231565c0%22/%3E%3C/marker%3E%0A%3C/defs%3E%0A%3Crect%20x%3D%2260%22%20y%3D%22170%22%20width%3D%22560%22%20height%3D%22590%22%20fill%3D%22%23fbfcfe%22/%3E%0A%3C%21--%20%E6%B1%BD%E7%BC%B8%E8%93%8B%EF%BC%88%E5%89%96%E9%9D%A2%EF%BC%89%20--%3E%0A%3Cpath%20d%3D%22M300%20300%20L600%20300%20L600%20540%20L560%20540%20L548%20560%20L360%20560%20L348%20540%20L300%20540%20Z%22%20fill%3D%22%23dfe4ea%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%223%22/%3E%0A%3C%21--%20%E9%80%B2%E6%B0%A3%E9%81%93%20--%3E%0A%3Cpath%20d%3D%22M600%20455%20Q520%20455%20470%20520%20L430%20548%20L370%20548%20L380%20520%20Q430%20430%20600%20410%20Z%22%20fill%3D%22%23fbfcfe%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%222%22/%3E%0A%3C%21--%20%E6%B1%BD%E9%96%80%E5%B0%8E%E7%AE%A1%20--%3E%0A%3Crect%20x%3D%22398%22%20y%3D%22370%22%20width%3D%2224%22%20height%3D%22120%22%20fill%3D%22%23b9a27a%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%222%22/%3E%0A%3C%21--%20%E6%B1%BD%E7%BC%B8%E9%AB%94%E8%88%87%E6%B1%BD%E7%BC%B8%20--%3E%0A%3Cpath%20d%3D%22M90%20560%20L600%20560%20L600%20760%20L90%20760%20Z%22%20fill%3D%22%23dfe4ea%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%223%22/%3E%0A%3Crect%20x%3D%22330%22%20y%3D%22560%22%20width%3D%22240%22%20height%3D%22200%22%20fill%3D%22%23fbfcfe%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%222.5%22/%3E%0A%3Crect%20x%3D%22336%22%20y%3D%22660%22%20width%3D%22228%22%20height%3D%22100%22%20rx%3D%226%22%20fill%3D%22url%28%23metal%29%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%222.5%22/%3E%0A%3C%21--%20%E6%B1%BD%E9%96%80%20--%3E%0A%3Cpath%20d%3D%22M404%20300%20L404%20528%20Q404%20540%20380%20548%20L440%20548%20Q416%20540%20416%20528%20L416%20300%20Z%22%20fill%3D%22url%28%23dark%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222%22/%3E%0A%3C%21--%20%E6%B1%BD%E9%96%80%E5%BD%88%E7%B0%A7%20--%3E%0A%3Cg%20fill%3D%22none%22%20stroke%3D%22%23c0392b%22%20stroke-width%3D%224%22%3E%0A%3Cpath%20d%3D%22M390%20340%20L430%20348%20L390%20356%20L430%20364%20L390%20372%20L430%20380%20L390%20388%20L430%20396%20L390%20404%20L430%20412%20L390%20420%20L430%20428%20L390%20436%22/%3E%3C/g%3E%0A%3Crect%20x%3D%22382%22%20y%3D%22330%22%20width%3D%2256%22%20height%3D%2210%22%20rx%3D%223%22%20fill%3D%22%23555%22/%3E%0A%3C%21--%20%E6%90%96%E8%87%82%E8%BB%B8%20--%3E%0A%3Ccircle%20cx%3D%22290%22%20cy%3D%22235%22%20r%3D%2218%22%20fill%3D%22url%28%23dark%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222%22/%3E%0A%3Ccircle%20cx%3D%22290%22%20cy%3D%22235%22%20r%3D%226%22%20fill%3D%22%23fbfcfe%22/%3E%0A%3C%21--%20%E6%90%96%E8%87%82%20--%3E%0A%3Cpath%20d%3D%22M175%20250%20Q180%20225%20210%20222%20L272%20220%20Q290%20214%20308%20220%20L420%20268%20Q432%20276%20424%20290%20L410%20296%20L300%20250%20L210%20262%20Z%22%20fill%3D%22url%28%23metal%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222.5%22/%3E%0A%3Ccircle%20cx%3D%22290%22%20cy%3D%22235%22%20r%3D%2218%22%20fill%3D%22url%28%23dark%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222%22/%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22235%22%20r%3D%226%22%20fill%3D%22%23fbfcfe%22/%3E%0A%3C%21--%20%E8%AA%BF%E6%95%B4%E8%9E%BA%E7%B5%B2%20--%3E%0A%3Crect%20x%3D%22176%22%20y%3D%22238%22%20width%3D%2212%22%20height%3D%2234%22%20fill%3D%22%23555%22/%3E%0A%3C%21--%20%E6%8E%A8%E6%A1%BF%20--%3E%0A%3Cline%20x1%3D%22182%22%20y1%3D%22272%22%20x2%3D%22158%22%20y2%3D%22548%22%20stroke%3D%22%234a525c%22%20stroke-width%3D%2212%22%20stroke-linecap%3D%22round%22/%3E%0A%3Cline%20x1%3D%22182%22%20y1%3D%22272%22%20x2%3D%22158%22%20y2%3D%22548%22%20stroke%3D%22%23a7afb9%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22/%3E%0A%3C%21--%20%E8%88%89%E6%A1%BF%20--%3E%0A%3Crect%20x%3D%22130%22%20y%3D%22545%22%20width%3D%2252%22%20height%3D%2266%22%20rx%3D%226%22%20fill%3D%22url%28%23metal%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222.5%22/%3E%0A%3Cpath%20d%3D%22M140%20548%20Q156%20538%20172%20548%22%20fill%3D%22%234a525c%22/%3E%0A%3C%21--%20%E5%87%B8%E8%BC%AA%E8%BB%B8%E8%88%87%E5%87%B8%E8%BC%AA%20--%3E%0A%3Cpath%20d%3D%22M156%20612%20Q172%20612%20184%20640%20Q200%20668%20196%20690%20Q190%20730%20156%20732%20Q122%20730%20116%20690%20Q112%20668%20128%20640%20Q140%20612%20156%20612%20Z%22%20fill%3D%22url%28%23dark%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222.5%22/%3E%0A%3Ccircle%20cx%3D%22156%22%20cy%3D%22692%22%20r%3D%2212%22%20fill%3D%22%23fbfcfe%22%20stroke%3D%22%23222%22%20stroke-width%3D%222%22/%3E%0A%3C%21--%20%E5%8B%95%E4%BD%9C%E6%96%B9%E5%90%91%E5%B0%8F%E7%AE%AD%E9%A0%AD%20--%3E%0A%3Cg%20stroke%3D%22%23d84315%22%20stroke-width%3D%223%22%20fill%3D%22none%22%20marker-end%3D%22url%28%23arR%29%22%3E%0A%3Cpath%20d%3D%22M222%20700%20A66%2066%200%200%200%20206%20646%22/%3E%3Cline%20x1%3D%22100%22%20y1%3D%22600%22%20x2%3D%22100%22%20y2%3D%22530%22/%3E%3Cline%20x1%3D%22460%22%20y1%3D%22470%22%20x2%3D%22460%22%20y2%3D%22520%22/%3E%3C/g%3E%0A%3C/svg%3E"}, "pins": [{"id": "p1", "x": 17.1, "y": 89.8, "tag": "right", "label": "凸輪", "hint": "凸輪軸上凸起的部分；凸起轉到上方時把舉桿往上頂。"}, {"id": "p2", "x": 17.1, "y": 69.2, "tag": "right", "label": "舉桿", "hint": "直接坐在凸輪上的那個小圓柱，把凸輪的推力往上傳。"}, {"id": "p3", "x": 19.6, "y": 42.4, "tag": "left", "label": "推桿", "hint": "又細又長的桿子，只有 OHV 才有，從下面一路把力量傳到上面的搖臂。"}, {"id": "p4", "x": 54.5, "y": 12.9, "tag": "right", "label": "搖臂", "hint": "像翹翹板的那支臂，一端被推桿頂起，另一端就把汽門往下壓。"}, {"id": "p5", "x": 41.1, "y": 11.0, "tag": "above", "label": "搖臂軸", "hint": "搖臂中間的支點，搖臂就繞著它擺動；油孔要朝下。"}, {"id": "p6", "x": 62.5, "y": 36.9, "tag": "left", "label": "汽門彈簧", "hint": "套在汽門桿上的彈簧，負責把汽門拉回去關閉。"}, {"id": "p7", "x": 73.2, "y": 75.4, "tag": "right", "label": "汽門", "hint": "香菇形狀的零件，傘部壓在汽門座上就是關閉。", "ax": 62.5, "ay": 63.1}], "distractors": ["正時皮帶", "張力器"]}</script>
+<script id="presetData" type="application/json">{"__locked":true,"title":"第11節 OHV 汽門機構","instruction":"把名稱拖到正確的圈圈上（也可以先點名稱、再點圈圈）。完成後試著從凸輪一路說到汽門。","feedback":"submit","labelSize":"l","image":{"src":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22560%22%20height%3D%22590%22%20viewBox%3D%2260%20170%20560%20590%22%3E%3Cdefs%3E%0A%3ClinearGradient%20id%3D%22metal%22%20x1%3D%220%22%20x2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%239aa4b0%22/%3E%3Cstop%20offset%3D%22.5%22%20stop-color%3D%22%23dde3ea%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%238f99a5%22/%3E%3C/linearGradient%3E%0A%3ClinearGradient%20id%3D%22dark%22%20x1%3D%220%22%20x2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%235b636e%22/%3E%3Cstop%20offset%3D%22.5%22%20stop-color%3D%22%238d96a1%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23535b66%22/%3E%3C/linearGradient%3E%0A%3Cmarker%20id%3D%22ar%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%228%22%20refY%3D%225%22%20markerWidth%3D%227%22%20markerHeight%3D%227%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M0%200L10%205L0%2010z%22%20fill%3D%22%237a8594%22/%3E%3C/marker%3E%0A%3Cmarker%20id%3D%22arR%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%228%22%20refY%3D%225%22%20markerWidth%3D%226%22%20markerHeight%3D%226%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M0%200L10%205L0%2010z%22%20fill%3D%22%23d84315%22/%3E%3C/marker%3E%0A%3Cmarker%20id%3D%22arB%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%228%22%20refY%3D%225%22%20markerWidth%3D%226%22%20markerHeight%3D%226%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M0%200L10%205L0%2010z%22%20fill%3D%22%231565c0%22/%3E%3C/marker%3E%0A%3C/defs%3E%0A%3Crect%20x%3D%2260%22%20y%3D%22170%22%20width%3D%22560%22%20height%3D%22590%22%20fill%3D%22%23fbfcfe%22/%3E%0A%3C%21--%20%E6%B1%BD%E7%BC%B8%E8%93%8B%EF%BC%88%E5%89%96%E9%9D%A2%EF%BC%89%20--%3E%0A%3Cpath%20d%3D%22M300%20300%20L600%20300%20L600%20540%20L560%20540%20L548%20560%20L360%20560%20L348%20540%20L300%20540%20Z%22%20fill%3D%22%23dfe4ea%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%223%22/%3E%0A%3C%21--%20%E9%80%B2%E6%B0%A3%E9%81%93%20--%3E%0A%3Cpath%20d%3D%22M600%20455%20Q520%20455%20470%20520%20L430%20548%20L370%20548%20L380%20520%20Q430%20430%20600%20410%20Z%22%20fill%3D%22%23fbfcfe%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%222%22/%3E%0A%3C%21--%20%E6%B1%BD%E9%96%80%E5%B0%8E%E7%AE%A1%20--%3E%0A%3Crect%20x%3D%22398%22%20y%3D%22370%22%20width%3D%2224%22%20height%3D%22120%22%20fill%3D%22%23b9a27a%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%222%22/%3E%0A%3C%21--%20%E6%B1%BD%E7%BC%B8%E9%AB%94%E8%88%87%E6%B1%BD%E7%BC%B8%20--%3E%0A%3Cpath%20d%3D%22M90%20560%20L600%20560%20L600%20760%20L90%20760%20Z%22%20fill%3D%22%23dfe4ea%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%223%22/%3E%0A%3Crect%20x%3D%22330%22%20y%3D%22560%22%20width%3D%22240%22%20height%3D%22200%22%20fill%3D%22%23fbfcfe%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%222.5%22/%3E%0A%3Crect%20x%3D%22336%22%20y%3D%22660%22%20width%3D%22228%22%20height%3D%22100%22%20rx%3D%226%22%20fill%3D%22url%28%23metal%29%22%20stroke%3D%22%233d4652%22%20stroke-width%3D%222.5%22/%3E%0A%3C%21--%20%E6%B1%BD%E9%96%80%20--%3E%0A%3Cpath%20d%3D%22M404%20300%20L404%20528%20Q404%20540%20380%20548%20L440%20548%20Q416%20540%20416%20528%20L416%20300%20Z%22%20fill%3D%22url%28%23dark%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222%22/%3E%0A%3C%21--%20%E6%B1%BD%E9%96%80%E5%BD%88%E7%B0%A7%20--%3E%0A%3Cg%20fill%3D%22none%22%20stroke%3D%22%23c0392b%22%20stroke-width%3D%224%22%3E%0A%3Cpath%20d%3D%22M390%20340%20L430%20348%20L390%20356%20L430%20364%20L390%20372%20L430%20380%20L390%20388%20L430%20396%20L390%20404%20L430%20412%20L390%20420%20L430%20428%20L390%20436%22/%3E%3C/g%3E%0A%3Crect%20x%3D%22382%22%20y%3D%22330%22%20width%3D%2256%22%20height%3D%2210%22%20rx%3D%223%22%20fill%3D%22%23555%22/%3E%0A%3C%21--%20%E6%90%96%E8%87%82%E8%BB%B8%20--%3E%0A%3Ccircle%20cx%3D%22290%22%20cy%3D%22235%22%20r%3D%2218%22%20fill%3D%22url%28%23dark%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222%22/%3E%0A%3Ccircle%20cx%3D%22290%22%20cy%3D%22235%22%20r%3D%226%22%20fill%3D%22%23fbfcfe%22/%3E%0A%3C%21--%20%E6%90%96%E8%87%82%20--%3E%0A%3Cpath%20d%3D%22M175%20250%20Q180%20225%20210%20222%20L272%20220%20Q290%20214%20308%20220%20L420%20268%20Q432%20276%20424%20290%20L410%20296%20L300%20250%20L210%20262%20Z%22%20fill%3D%22url%28%23metal%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222.5%22/%3E%0A%3Ccircle%20cx%3D%22290%22%20cy%3D%22235%22%20r%3D%2218%22%20fill%3D%22url%28%23dark%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222%22/%3E%3Ccircle%20cx%3D%22290%22%20cy%3D%22235%22%20r%3D%226%22%20fill%3D%22%23fbfcfe%22/%3E%0A%3C%21--%20%E8%AA%BF%E6%95%B4%E8%9E%BA%E7%B5%B2%20--%3E%0A%3Crect%20x%3D%22176%22%20y%3D%22238%22%20width%3D%2212%22%20height%3D%2234%22%20fill%3D%22%23555%22/%3E%0A%3C%21--%20%E6%8E%A8%E6%A1%BF%20--%3E%0A%3Cline%20x1%3D%22182%22%20y1%3D%22272%22%20x2%3D%22158%22%20y2%3D%22548%22%20stroke%3D%22%234a525c%22%20stroke-width%3D%2212%22%20stroke-linecap%3D%22round%22/%3E%0A%3Cline%20x1%3D%22182%22%20y1%3D%22272%22%20x2%3D%22158%22%20y2%3D%22548%22%20stroke%3D%22%23a7afb9%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22/%3E%0A%3C%21--%20%E8%88%89%E6%A1%BF%20--%3E%0A%3Crect%20x%3D%22130%22%20y%3D%22545%22%20width%3D%2252%22%20height%3D%2266%22%20rx%3D%226%22%20fill%3D%22url%28%23metal%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222.5%22/%3E%0A%3Cpath%20d%3D%22M140%20548%20Q156%20538%20172%20548%22%20fill%3D%22%234a525c%22/%3E%0A%3C%21--%20%E5%87%B8%E8%BC%AA%E8%BB%B8%E8%88%87%E5%87%B8%E8%BC%AA%20--%3E%0A%3Cpath%20d%3D%22M156%20612%20Q172%20612%20184%20640%20Q200%20668%20196%20690%20Q190%20730%20156%20732%20Q122%20730%20116%20690%20Q112%20668%20128%20640%20Q140%20612%20156%20612%20Z%22%20fill%3D%22url%28%23dark%29%22%20stroke%3D%22%23222%22%20stroke-width%3D%222.5%22/%3E%0A%3Ccircle%20cx%3D%22156%22%20cy%3D%22692%22%20r%3D%2212%22%20fill%3D%22%23fbfcfe%22%20stroke%3D%22%23222%22%20stroke-width%3D%222%22/%3E%0A%3C%21--%20%E5%8B%95%E4%BD%9C%E6%96%B9%E5%90%91%E5%B0%8F%E7%AE%AD%E9%A0%AD%20--%3E%0A%3Cg%20stroke%3D%22%23d84315%22%20stroke-width%3D%223%22%20fill%3D%22none%22%20marker-end%3D%22url%28%23arR%29%22%3E%0A%3Cpath%20d%3D%22M222%20700%20A66%2066%200%200%200%20206%20646%22/%3E%3Cline%20x1%3D%22100%22%20y1%3D%22600%22%20x2%3D%22100%22%20y2%3D%22530%22/%3E%3Cline%20x1%3D%22460%22%20y1%3D%22470%22%20x2%3D%22460%22%20y2%3D%22520%22/%3E%3C/g%3E%0A%3C/svg%3E"},"pins":[{"id":"p1","x":17.1,"y":89.8,"tag":"right","label":"凸輪","hint":"凸輪軸上凸起的部分；凸起轉到上方時把舉桿往上頂。"},{"id":"p2","x":17.1,"y":69.2,"tag":"right","label":"舉桿","hint":"直接坐在凸輪上的那個小圓柱，把凸輪的推力往上傳。"},{"id":"p3","x":19.6,"y":42.4,"tag":"left","label":"推桿","hint":"又細又長的桿子，只有 OHV 才有，從下面一路把力量傳到上面的搖臂。"},{"id":"p4","x":54.5,"y":12.9,"tag":"right","label":"搖臂","hint":"像翹翹板的那支臂，一端被推桿頂起，另一端就把汽門往下壓。"},{"id":"p5","x":41.1,"y":11.0,"tag":"above","label":"搖臂軸","hint":"搖臂中間的支點，搖臂就繞著它擺動；油孔要朝下。"},{"id":"p6","x":62.5,"y":36.9,"tag":"left","label":"汽門彈簧","hint":"套在汽門桿上的彈簧，負責把汽門拉回去關閉。"},{"id":"p7","x":73.2,"y":75.4,"tag":"right","label":"汽門","hint":"香菇形狀的零件，傘部壓在汽門座上就是關閉。","ax":62.5,"ay":63.1}],"distractors":["正時皮帶","張力器"],"nav":{"back":"ch2.html","home":"index.html"}}</script>
 
 <script>
 (function(){
@@ -284,7 +295,7 @@ const SAMPLE = {
 let data = blankData();
 let locked = false; // 匯出的作答頁 = true
 
-function blankData(){ return {title:'未命名題目',instruction:'把名稱拖到正確的圈圈上（也可以先點名稱、再點圈圈）。',feedback:'submit',labelSize:'l',image:null,pins:[],distractors:[]}; }
+function blankData(){ return {title:'未命名題目',instruction:'把名稱拖到正確的圈圈上（也可以先點名稱、再點圈圈）。',feedback:'submit',labelSize:'l',image:null,pins:[],distractors:[],nav:{back:'',home:''}}; }
 function uid(){ return 'p'+Math.random().toString(36).slice(2,8); }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function el(tag,cls,text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
@@ -306,6 +317,8 @@ function sanitize(d){
     ax:(p.ax==null||isNaN(+p.ax))?null:clamp(+p.ax,0,100), ay:(p.ay==null||isNaN(+p.ay))?null:clamp(+p.ay,0,100),
     label:String(p.label||'').slice(0,40), hint:String(p.hint||'').slice(0,200)
   })) : [];
+  const okUrl=u=>{ u=String(u||'').trim().slice(0,300); if(!u) return ''; if(/^https?:\/\//i.test(u)) return u; return /^[a-z][\w+.-]*:/i.test(u) ? '' : u; };
+  out.nav = {back:okUrl(d.nav&&d.nav.back), home:okUrl(d.nav&&d.nav.home)};
   out.distractors = Array.isArray(d.distractors) ? d.distractors.map(s=>String(s).trim().slice(0,40)).filter(Boolean).slice(0,20) : [];
   return out;
 }
@@ -377,6 +390,7 @@ function renderEdit(){
   $('inSize').value = data.labelSize;
   applySize();
   $('inDistract').value = data.distractors.join('\n');
+  $('inBack').value = data.nav.back; $('inHome').value = data.nav.home;
   const stage = renderStage($('editStage'),{emptyText:'先在右側載入底圖（SVG 或照片），再點圖面新增圈圈'});
   data.pins.forEach((p,i)=>{
     const d = el('div','pin'+(hotPin===p.id?' hot':''), String(i+1));
@@ -456,6 +470,8 @@ function startPinDrag(e,p,d){
 }
 
 $('inTitle').oninput=e=>{ data.title=e.target.value; save(); };
+$('inBack').oninput=e=>{ data.nav.back=e.target.value.trim(); save(); };
+$('inHome').oninput=e=>{ data.nav.home=e.target.value.trim(); save(); };
 $('inInst').oninput=e=>{ data.instruction=e.target.value; save(); };
 $('inFeedback').onchange=e=>{ data.feedback=e.target.value; save(); };
 $('inSize').onchange=e=>{ data.labelSize=e.target.value; save(); applySize(); };
@@ -807,6 +823,20 @@ function maybeFinish(){
 
 $('btnReset').onclick=()=>{ for(const k in pinTried) delete pinTried[k]; startPlay(); };
 
+/* ================= 頁面導覽（回上一頁／回首頁） ================= */
+function setupNav(){
+  if(window.parent!==window) return;            // 嵌在簡報 iframe 裡就不顯示
+  $('pageNav').classList.remove('hidden');
+  const fallback = data.nav.back || data.nav.home;
+  if(data.nav.home){ const a=$('lnkHome'); a.href=data.nav.home; a.classList.remove('hidden'); }
+  $('btnBack').onclick=()=>{
+    let fromSite=false; try{ fromSite = !!document.referrer && new URL(document.referrer).origin===location.origin && location.origin!=='null'; }catch(e){}
+    if(history.length>1 && fromSite){ history.back(); return; }   // 同一分頁從課程網頁點進來：回上一頁
+    try{ window.close(); }catch(e){}                  // 新分頁開的：關掉這頁＝回到原本的簡報或補課包
+    setTimeout(()=>{ if(fallback) location.href=fallback; else toast('請直接關閉這個分頁回到上一頁'); },300);
+  };
+}
+
 /* ================= 啟動 ================= */
 let preset=null;
 try{ const t=$('presetData').textContent.trim(); if(t) preset=JSON.parse(t); }catch(e){}
@@ -815,6 +845,7 @@ if(preset && preset.__locked){
   $('tabs').classList.add('hidden');
   $('appTitle').textContent=data.title;
   $('editView').classList.add('hidden'); $('playView').classList.remove('hidden');
+  setupNav();
   startPlay();
 }else{
   data = loadSaved() || sanitize(JSON.parse(JSON.stringify(SAMPLE)));
