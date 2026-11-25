@@ -1,0 +1,1036 @@
+/* 網頁式動畫影片播放框架（共用） */
+const W = 960, HGT = 540;
+/* 旁白文字：去除標籤、把化學式下標與符號改成好念的文字（預錄 MP3 與瀏覽器語音共用） */
+const sayText = s => String(s).replace(/<[^>]+>/g, '')
+  .replace(/[₀-₉]/g, d => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(d)]).replace(/ₙ/g, 'n').replace(/₊/g, '加').replace(/₋/g, '減')
+  .replace(/～/g, '到').replace(/([A-Za-z0-9度])\s*→\s*([A-Za-z0-9])/g, '$1 到 $2').replace(/→/g, '，').replace(/＝/g, '等於').replace(/——/g, '，')
+  .replace(/[①②③④⑤⑥⑦⑧⑨]/g, d => '第' + '一二三四五六七八九'['①②③④⑤⑥⑦⑧⑨'.indexOf(d)] + '，').replace(/℃/g, '度C').replace(/°/g, '度').replace(/÷/g, '除以').replace(/[＞>]/g, '大於').replace(/[＜<]/g, '小於').replace(/[－−]/g, '減').replace(/[＋+]/g, '加').replace(/×/g, '乘以').replace(/(\d)x\b/g, '$1倍').replace(/([A-Za-z])\/([A-Za-z])/g, '$1 比 $2').replace(/\s+/g, ' ').trim();
+/* 旁白音檔名：FNV-1a 雜湊（建置時與瀏覽器端算法相同） */
+const ttsHash = s => { let h = 0x811c9dc5; for (const ch of s) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); };
+const C = { bg:'#0a1120', ink:'#e8eef9', mut:'#9fb0cf', acc:'#ffb020', acc2:'#38c6ff', ok:'#3ddc84', bad:'#ff5d5d',
+  metal:'#8ea3bf', metalD:'#5c6f8a', metalL:'#c3d1e4', wall:'#3a4a66', mix:'#4fd1a5', air:'#7cc7ff', fire:'#ff7a1a', exh:'#8a8f99', oil:'#d8a31a', water:'#2f8fff' };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = k => k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k);
+const rad = d => d * Math.PI / 180;
+const mod = (a, n) => ((a % n) + n) % n;
+/* 0..1 進度 */
+const prog = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+
+const H = {
+  text(ctx, s, x, y, o = {}) {
+    ctx.save(); ctx.font = `${o.bold ? '700 ' : ''}${o.size || 20}px "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif`;
+    ctx.fillStyle = o.color || C.ink; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'middle';
+    ctx.globalAlpha = o.alpha ?? 1;
+    String(s).split('\n').forEach((ln, i) => ctx.fillText(ln, x, y + i * (o.size || 20) * 1.35)); ctx.restore();
+  },
+  rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); },
+  box(ctx, x, y, w, h, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; H.rr(ctx, x, y, w, h, o.r ?? 10);
+    ctx.fillStyle = o.fill || '#16223a'; ctx.fill(); ctx.lineWidth = o.lw || 2; ctx.strokeStyle = o.stroke || '#2c3f63'; ctx.stroke(); ctx.restore();
+  },
+  arrow(ctx, x1, y1, x2, y2, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = ctx.fillStyle = o.color || C.acc; ctx.lineWidth = o.lw || 4;
+    if (o.dash) { ctx.setLineDash(o.dash); ctx.lineDashOffset = o.offset || 0; }
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    const a = Math.atan2(y2 - y1, x2 - x1), s = o.head || 14;
+    ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - s * Math.cos(a - .45), y2 - s * Math.sin(a - .45));
+    ctx.lineTo(x2 - s * Math.cos(a + .45), y2 - s * Math.sin(a + .45)); ctx.closePath(); ctx.fill(); ctx.restore();
+  },
+  label(ctx, px, py, tx, ty, s, o = {}) {
+    ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = o.color || C.acc; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.fillStyle = o.color || C.acc; ctx.beginPath(); ctx.arc(px, py, 4, 0, 7); ctx.fill();
+    ctx.font = `700 ${o.size || 17}px "Microsoft JhengHei",sans-serif`; const w = ctx.measureText(s).width + 14;
+    const left = o.align === 'right' ? tx - w : o.align === 'center' ? tx - w / 2 : tx;
+    H.rr(ctx, left, ty - 14, w, 28, 6); ctx.fillStyle = 'rgba(10,17,32,.9)'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.ink; ctx.textBaseline = 'middle'; ctx.fillText(s, left + 7, ty + 1); ctx.restore();
+  },
+  particles(ctx, n, x, y, w, h, color, t, o = {}) {
+    ctx.save(); ctx.fillStyle = color; ctx.globalAlpha = o.alpha ?? .85;
+    for (let i = 0; i < n; i++) {
+      const sx = (Math.sin(i * 12.9898) * 43758.5453) % 1, sy = (Math.sin(i * 78.233) * 12543.21) % 1;
+      const px = x + Math.abs(sx) * w + Math.sin(t * 3 + i) * (o.jit ?? 4), py = y + Math.abs(sy) * h + Math.cos(t * 2.6 + i * 1.7) * (o.jit ?? 4);
+      if (px < x || px > x + w || py < y || py > y + h) continue;
+      ctx.beginPath(); ctx.arc(px, py, o.r || 3.2, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  },
+  spark(ctx, x, y, k) {
+    if (k <= 0) return; ctx.save(); ctx.globalAlpha = k; ctx.strokeStyle = '#fff6a0'; ctx.lineWidth = 3;
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + k; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * 18 * k, y + Math.sin(a) * 18 * k); ctx.stroke(); }
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, 5 * k, 0, 7); ctx.fill(); ctx.restore();
+  },
+  flame(ctx, x, y, s, t) {
+    ctx.save(); for (let i = 0; i < 3; i++) {
+      const f = 1 - i * .28; ctx.fillStyle = ['#ff5a1a', '#ff9a1a', '#ffe060'][i]; ctx.beginPath();
+      const w = 22 * s * f, h = (46 + Math.sin(t * 10 + i) * 6) * s * f;
+      ctx.moveTo(x - w, y); ctx.quadraticCurveTo(x - w, y - h * .6, x, y - h); ctx.quadraticCurveTo(x + w, y - h * .6, x + w, y); ctx.closePath(); ctx.fill();
+    } ctx.restore();
+  },
+  /* 曲柄滑塊：回傳活塞銷距曲軸中心之距離 */
+  pinDist(r, l, th) { return r * Math.cos(th) + Math.sqrt(l * l - (r * Math.sin(th)) ** 2); },
+  /* 四行程引擎剖面：phi = 0..720（0 = 進氣行程開始之上死點） */
+  engine4(ctx, cx, top, phi, o = {}) {
+    const s = o.scale || 1, bore = 150 * s, r = 52 * s, l = 170 * s, headH = 70 * s, clr = 24 * s, crownToPin = 34 * s, pistonH = 70 * s;
+    const headBot = top + headH, cy = headBot + clr + crownToPin + r + l, cylBot = headBot + clr + 2 * r + pistonH * .8;
+    const th = rad(phi), pinY = cy - H.pinDist(r, l, th), pTop = pinY - crownToPin;
+    const IO = o.IO ?? 8, IC = o.IC ?? 40, EO = o.EO ?? 50, EC = o.EC ?? 12;
+    const lift = (a, b) => { let p = mod(phi - a, 720), span = mod(b - a, 720); return p <= span ? Math.sin(Math.PI * p / span) : 0; };
+    const iL = o.iLift ?? lift(-IO, 180 + IC), eL = o.eLift ?? lift(540 - EO, 720 + EC);
+    const x0 = cx - bore / 2, x1 = cx + bore / 2;
+    // 汽缸壁與水套
+    ctx.save();
+    ctx.fillStyle = C.wall; ctx.fillRect(x0 - 34 * s, headBot, 34 * s, cylBot - headBot); ctx.fillRect(x1, headBot, 34 * s, cylBot - headBot);
+    if (o.water) { ctx.fillStyle = 'rgba(47,143,255,.55)'; ctx.fillRect(x0 - 26 * s, headBot + 8 * s, 14 * s, (cylBot - headBot) * .6); ctx.fillRect(x1 + 12 * s, headBot + 8 * s, 14 * s, (cylBot - headBot) * .6); }
+    // 汽缸內氣體
+    const gas = o.gas || 'none';
+    const gcol = { mix: 'rgba(79,209,165,.30)', air: 'rgba(124,199,255,.25)', comp: 'rgba(79,209,165,.55)', fire: 'rgba(255,122,26,.75)', exh: 'rgba(138,143,153,.45)', none: 'rgba(0,0,0,0)' }[gas] || gas;
+    ctx.fillStyle = gcol; ctx.fillRect(x0, headBot - 8 * s, bore, pTop - headBot + 8 * s);
+    if (o.particles) H.particles(ctx, o.particles, x0 + 4, headBot, bore - 8, pTop - headBot - 4, o.pColor || C.mix, o.t || 0, { r: 3 * s });
+    // 汽缸蓋
+    ctx.fillStyle = '#4a5d7d'; H.rr(ctx, x0 - 34 * s, top, bore + 68 * s, headH, 8 * s); ctx.fill();
+    // 燃燒室凹槽
+    ctx.fillStyle = gcol === 'rgba(0,0,0,0)' ? C.bg : C.bg; ctx.beginPath(); ctx.moveTo(x0, headBot); ctx.quadraticCurveTo(cx, headBot - 34 * s, x1, headBot); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = gcol; ctx.fill();
+    // 進排氣道
+    const port = (side, L, col) => {
+      const sx = side < 0 ? x0 + 26 * s : x1 - 26 * s, d = side;
+      ctx.fillStyle = C.bg; ctx.beginPath(); ctx.moveTo(sx - 16 * s, headBot - 12 * s); ctx.lineTo(sx + 16 * s, headBot - 12 * s);
+      ctx.lineTo(sx + 16 * s + d * 50 * s, top - 2); ctx.lineTo(sx - 16 * s + d * 50 * s, top - 2); ctx.closePath(); ctx.fill();
+      if (L > .05) { ctx.fillStyle = col; ctx.fill(); }
+      // 汽門
+      const vy = headBot - 12 * s + L * 16 * s; ctx.fillStyle = C.metalL;
+      ctx.fillRect(sx - 3 * s, top - 30 * s + L * 16 * s, 6 * s, vy - top + 30 * s - L * 16 * s);
+      ctx.beginPath(); ctx.moveTo(sx - 20 * s, vy + 4 * s); ctx.lineTo(sx + 20 * s, vy + 4 * s); ctx.lineTo(sx + 6 * s, vy - 4 * s); ctx.lineTo(sx - 6 * s, vy - 4 * s); ctx.closePath(); ctx.fill();
+      return { x: sx, y: vy };
+    };
+    const vi = port(-1, iL, o.inCol || 'rgba(79,209,165,.6)'), ve = port(1, eL, 'rgba(138,143,153,.6)');
+    if (o.flow) {
+      const off = -(o.t || 0) * 40;
+      if (iL > .15) H.arrow(ctx, vi.x - 70 * s, top - 10 * s, vi.x - 6 * s, headBot + 6 * s, { color: C.mix, lw: 3, dash: [8, 6], offset: off, alpha: iL });
+      if (eL > .15) H.arrow(ctx, ve.x + 6 * s, headBot + 6 * s, ve.x + 70 * s, top - 10 * s, { color: '#b5bac4', lw: 3, dash: [8, 6], offset: off, alpha: eL });
+    }
+    // 火星塞
+    if (o.plug !== false) { ctx.fillStyle = '#d9dee8'; ctx.fillRect(cx - 5 * s, top - 26 * s, 10 * s, headH - 4 * s); ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 9 * s, top - 34 * s, 18 * s, 12 * s); }
+    if (o.spark) H.spark(ctx, cx, headBot - 12 * s, o.spark);
+    // 活塞
+    const g = ctx.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, C.metalD); g.addColorStop(.5, C.metalL); g.addColorStop(1, C.metalD);
+    ctx.fillStyle = g; H.rr(ctx, x0 + 3, pTop, bore - 6, pistonH, 4 * s); ctx.fill();
+    ctx.fillStyle = '#44536b'; for (let i = 0; i < 3; i++) ctx.fillRect(x0 + 3, pTop + (8 + i * 10) * s, bore - 6, 3 * s);
+    // 連桿與曲軸（曲軸臂＋平衡配重會跟著旋轉）
+    const cpx = cx + r * Math.sin(th), cpy = cy - r * Math.cos(th);
+    H.crank(ctx, cx, cy, r, th, s, o.t || 0);
+    ctx.strokeStyle = '#aab8cc'; ctx.lineWidth = 16 * s; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx, pinY); ctx.lineTo(cpx, cpy); ctx.stroke();
+    ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, pinY, 7 * s, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(cpx, cpy, 9 * s, 0, 7); ctx.fill(); ctx.strokeStyle = '#7a5a00'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    return { cx, top, headBot, cy, r, l, bore, pTop, pinY, x0, x1, cylBot, crankPin: [cpx, cpy], vi, ve, tdcY: headBot + clr, bdcY: headBot + clr + 2 * r };
+  },
+  /* 曲軸：曲柄圓（虛線）、曲軸臂、平衡配重、主軸頸記號、旋轉方向箭頭 */
+  crank(ctx, cx, cy, r, th, s = 1, t = 0) {
+    ctx.save();
+    ctx.setLineDash([6, 6]); ctx.strokeStyle = 'rgba(255,209,102,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.translate(cx, cy); ctx.rotate(th);
+    // 平衡配重（在曲柄銷的反方向）
+    const g = ctx.createLinearGradient(0, 0, 0, r + 26 * s); g.addColorStop(0, '#7f93b2'); g.addColorStop(1, '#55678a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-14 * s, 0); ctx.arc(0, 0, r + 22 * s, rad(35), rad(145)); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#9fb2cf'; ctx.lineWidth = 2; ctx.stroke();
+    // 曲軸臂（主軸頸 → 曲柄銷）
+    ctx.fillStyle = '#8ea3c2'; ctx.beginPath(); ctx.moveTo(-20 * s, 4 * s); ctx.lineTo(-14 * s, -r); ctx.arc(0, -r, 14 * s, Math.PI, 0); ctx.lineTo(20 * s, 4 * s); ctx.arc(0, 4 * s, 20 * s, 0, Math.PI); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#c3d1e4'; ctx.stroke();
+    // 主軸頸與旋轉記號
+    ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(0, 0, 11 * s, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 10 * s); ctx.stroke();
+    ctx.restore();
+    // 旋轉方向（順時針）
+    ctx.save(); ctx.strokeStyle = 'rgba(56,198,255,.8)'; ctx.fillStyle = 'rgba(56,198,255,.8)'; ctx.lineWidth = 3;
+    const R = r + 34 * s, a0 = rad(-60), a1 = rad(10); ctx.beginPath(); ctx.arc(cx, cy, R, a0, a1); ctx.stroke();
+    const ex = cx + R * Math.cos(a1), ey = cy + R * Math.sin(a1); ctx.beginPath(); ctx.moveTo(ex + 7, ey - 6); ctx.lineTo(ex - 8, ey - 3); ctx.lineTo(ex + 1, ey + 9); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  },
+  strokeName(phi) { phi = mod(phi, 720); return phi < 180 ? '進氣行程' : phi < 360 ? '壓縮行程' : phi < 540 ? '動力行程' : '排氣行程'; },
+  dial(ctx, x, y, R, ang, label) {
+    ctx.save(); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.strokeStyle = '#2c3f63'; ctx.stroke();
+    ctx.strokeStyle = C.acc; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + R * Math.sin(rad(ang)), y - R * Math.cos(rad(ang))); ctx.stroke();
+    H.text(ctx, label, x, y + R + 18, { size: 15, align: 'center', color: C.mut }); ctx.restore();
+  },
+};
+
+function Player(cfg) {
+  const $ = s => document.querySelector(s);
+  document.title = cfg.code + ' ' + cfg.title;
+  document.body.innerHTML = `<div class="wrap">
+  <header><a class="home" href="index.html" title="回到本章首頁">🏠 回本章首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
+  <div class="main"><div>
+    <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
+      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="index.html">🏠 回本章首頁選下一支動畫</a></div></div>
+    </div>
+    <div class="bar" id="bar"></div>
+    <div class="seek" id="seekrow" title="拖曳到想講解的畫面（拖動時自動暫停）"><input type="range" id="seek" min="0" max="1000" step="1" value="0"><div class="ticks" id="ticks"></div></div>
+    <div class="controls">
+      <button id="prev" title="上一段">⏮</button><button class="main-btn" id="play">▶ 播放</button><button id="step" title="逐格（暫停時）">逐格 ▸</button><button id="next" title="下一段">⏭</button>
+      <select id="spd"><option value=".25">0.25x</option><option value=".5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+      <label><input type="checkbox" id="tts">🔊 語音旁白</label><span class="time" id="tm"></span>
+    </div>
+    <div class="caption" id="cap"></div>
+    <div class="panel" id="panel"></div>
+  </div>
+  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>下方拉桿可直接拖到想講的畫面（刻度＝每句字幕開頭），↑ ↓ 跳上一句／下一句。<br>每段結束有小問題，答對才會繼續。</div></aside></div></div>`;
+  const cv = $('#cv'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = W * dpr; cv.height = HGT * dpr; ctx.scale(dpr, dpr);
+  const chs = cfg.chapters, S = Object.assign({}, cfg.state || {}), passed = chs.map(() => false), firstOk = chs.map(() => null);
+  let muteCap = false, dragging = false;
+  { const st = document.createElement('style'); st.textContent = '.seek{position:relative;margin:8px 0 0;padding-bottom:10px}.seek input{width:100%;margin:0;height:22px;accent-color:#ffb020;cursor:pointer}.seek .ticks{position:absolute;left:0;right:0;bottom:0;height:10px;pointer-events:none}.seek .ticks i{position:absolute;bottom:0;width:2px;height:9px;background:#9fb0cf;opacity:.75;transform:translateX(-1px)}.seek.off{opacity:.35}.seek.off input{cursor:not-allowed}'; document.head.append(st); }
+  let ci = 0, t = 0, playing = false, speed = 1, lastCap = '', last = performance.now(), ended = false;
+  const durOf = c => c.loop ? (c.nominal || 20) : c.dur;
+  // 章節清單與進度條
+  $('#list').innerHTML = chs.map((c, i) => `<li data-i="${i}"><span class="n">${i + 1}</span>${c.title}</li>`).join('');
+  const tot = chs.reduce((a, c) => a + durOf(c), 0);
+  $('#bar').innerHTML = chs.map(c => `<div style="flex:${durOf(c) / tot}"><i></i></div>`).join('');
+  $('#list').onclick = e => { const li = e.target.closest('li'); if (li) go(+li.dataset.i, true); };
+  $('#bar').onclick = e => { const d = e.target.closest('#bar > div'); const i = [...$('#bar').children].indexOf(d); if (i < 0) return; const r = d.getBoundingClientRect(), f = clamp((e.clientX - r.left) / r.width, 0, 1);
+    go(i, true); if (!chs[i].loop && f > .03) seekTo(f * chs[i].dur, true); };
+  const setPlay = p => { playing = p; $('#play').textContent = p ? '⏸ 暫停' : '▶ 播放'; if (!p && window.speechSynthesis) speechSynthesis.pause(); else if (window.speechSynthesis) speechSynthesis.resume(); if (curAudio) { if (p) curAudio.play().catch(() => { }); else curAudio.pause(); } };
+  $('#play').onclick = () => { if (ended) { restart(); return; } if ($('#quiz').classList.contains('show')) return; if (!playing && muteCap) { muteCap = false; lastCap = ''; } setPlay(!playing); };
+  $('#prev').onclick = () => go(Math.max(0, ci - 1), true);
+  $('#next').onclick = () => { if (ci < chs.length - 1) go(ci + 1, true); };
+  $('#step').onclick = () => { setPlay(false); t = Math.min(t + 1 / 15, chs[ci].loop ? 1e9 : chs[ci].dur); };
+  $('#spd').onchange = e => { speed = +e.target.value; if (curAudio) curAudio.playbackRate = Math.min(2, Math.max(.5, speed)); };
+  $('#tts').onchange = e => { if (!e.target.checked && window.speechSynthesis) { stopTTS(); } else { lastCap = ''; } };
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' && e.target.id !== 'seek') return; if (e.target.id === 'seek' && /Arrow/.test(e.code)) e.preventDefault();
+    if (e.code === 'Space') { e.preventDefault(); $('#play').click(); }
+    if (e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); jump(e.code === 'ArrowDown' ? 1 : -1); }
+    if (e.code === 'ArrowRight') $('#next').click(); if (e.code === 'ArrowLeft') $('#prev').click(); if (e.key === 'r' || e.key === 'R') restart();
+  });
+  cv.addEventListener('click', e => {
+    const c = chs[ci]; if (!c.onClick) return; const b = cv.getBoundingClientRect();
+    c.onClick((e.clientX - b.left) * W / b.width, (e.clientY - b.top) * HGT / b.height, S);
+  });
+  cv.addEventListener('mousemove', e => {
+    const c = chs[ci]; if (!c.onClick) { cv.style.cursor = 'default'; return; } cv.style.cursor = 'pointer';
+  });
+  function restart() { passed.fill(false); firstOk.fill(null); $('#end').classList.remove('show'); ended = false; go(0, false); setPlay(true); }
+  function go(i, keepPlay) {
+    ci = i; t = 0; lastCap = ''; ended = false; $('#end').classList.remove('show'); $('#quiz').classList.remove('show');
+    stopTTS();
+    const p = $('#panel'); p.innerHTML = ''; p.style.display = ''; if (chs[i].panel) chs[i].panel(p, S); document.body.classList.toggle('haspanel', !!chs[i].panel);
+    if (chs[i].enter) chs[i].enter(S);
+    [...$('#list').children].forEach((li, k) => { li.classList.toggle('on', k === i); li.classList.toggle('ok', passed[k]); });
+    $('#cht').textContent = `第 ${i + 1} 段｜${chs[i].title}`; $('#cht').classList.remove('hide'); clearTimeout(window.__ht); window.__ht = setTimeout(() => $('#cht').classList.add('hide'), 2500);
+    if (!keepPlay) setPlay(false);
+    setTicks();
+  }
+  /* 本段時間拉桿：拖到哪停到哪；字幕起點有刻度，靠近時自動吸附 */
+  const marksOf = c => [0, ...(c.captions || []).map(x => x[0]).filter(a => a > 0 && a < c.dur)].sort((a, b) => a - b);
+  function setTicks() { const c = chs[ci], row = $('#seekrow'), sk = $('#seek'); if (!row) return; row.classList.toggle('off', !!c.loop); sk.disabled = !!c.loop; sk.value = 0;
+    $('#ticks').innerHTML = c.loop ? '' : marksOf(c).map(a => `<i style="left:calc(8px + (100% - 16px) * ${(a / c.dur).toFixed(4)})"></i>`).join(''); }
+  function seekTo(tt, quiet) { const c = chs[ci]; if (c.loop || $('#quiz').classList.contains('show')) return; stopTTS(); t = clamp(tt, 0, c.dur - .01); muteCap = !playing; if (playing) lastCap = ''; }
+  function jump(dir) { const c = chs[ci]; if (c.loop) return; const m = marksOf(c); let tt;
+    if (dir > 0) { tt = m.find(a => a > t + .05); if (tt == null) return; } else { const p = m.filter(a => a < t - .4); tt = p.length ? p[p.length - 1] : 0; }
+    setPlay(false); seekTo(tt); }
+  { const sk = $('#seek');
+    sk.addEventListener('input', () => { const c = chs[ci]; if (c.loop) return; dragging = true; if (playing) setPlay(false); let tt = sk.value / 1000 * c.dur;
+      const near = marksOf(c).reduce((b, a) => Math.abs(a - tt) < Math.abs(b - tt) ? a : b, 0); if (Math.abs(near - tt) < c.dur * .03) tt = near; seekTo(tt); });
+    sk.addEventListener('change', () => { dragging = false; sk.blur(); }); sk.addEventListener('pointerup', () => { dragging = false; }); }
+  function score() { const n = firstOk.filter(x => x === true).length, q = chs.filter(c => c.quiz).length; $('#score').textContent = `首次答對 ${n} / ${q}`; return n; }
+  function showQuiz() {
+    if (document.body.classList.contains('embed')) $('#panel').style.display = 'none';  /* 嵌入時讓出空間給小問題 */
+    const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
+    $('#qq').textContent = q.q; $('#qe').textContent = ''; $('#qgo').style.display = 'none';
+    $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
+    $('#qo').onclick = e => {
+      const b = e.target.closest('.opt'); if (!b || passed[ci]) return; const k = +b.dataset.k;
+      if (firstOk[ci] === null) firstOk[ci] = (k === q.ans);
+      if (k === q.ans) { b.classList.add('right'); passed[ci] = true; $('#qe').textContent = '✔ 答對了！' + (q.ex || ''); $('#qgo').style.display = 'inline-block'; score(); }
+      else { b.classList.add('wrong'); $('#qe').textContent = '✘ 再想想看。' + (q.hint || '可以按「上一段」或點章節重看。'); }
+    };
+  }
+  $('#qgo').onclick = () => { $('#quiz').classList.remove('show'); nextOrEnd(); };
+  function nextOrEnd() {
+    if (ci < chs.length - 1) { go(ci + 1, true); setPlay(true); }
+    else { ended = true; setPlay(false); $('#endsc').textContent = `${score()} / ${chs.filter(c => c.quiz).length}`; $('#end').classList.add('show'); [...$('#list').children].forEach((li, k) => li.classList.toggle('ok', passed[k])); }
+  }
+  /* 語音旁白：優先播放預錄 MP3（audio/雜湊.mp3，由「產生旁白」工具以 edge-tts 製作）；
+     沒有音檔時改用瀏覽器語音（切短句逐句念）。旁白未念完時，動畫停在下一句字幕或段末前等待。 */
+  let ttsId = 0, speaking = false, spoken = 0, spokenMax = 0, curAudio = null;
+  const AUDIO_DIR = cfg.audioDir || 'audio/';
+  function stopTTS() { ttsId++; speaking = false; if (curAudio) { curAudio.pause(); curAudio = null; } if (window.speechSynthesis) speechSynthesis.cancel(); }
+  function speak(s, say) {
+    if (!$('#tts').checked) return; stopTTS();
+    const txt = sayText(say || s), id = ttsId; if (!txt) return;
+    speaking = true; spoken = 0; spokenMax = txt.length * .45 / Math.max(.5, speed) + 6;
+    const a = new Audio(AUDIO_DIR + ttsHash(txt) + '.mp3'); curAudio = a;
+    a.playbackRate = Math.min(2, Math.max(.5, speed));
+    a.onended = () => { if (id === ttsId) { speaking = false; curAudio = null; } };
+    a.onerror = () => { if (id === ttsId && curAudio === a) { curAudio = null; browserSpeak(txt, id); } };
+    a.play().catch(err => { if (id === ttsId && curAudio === a && err && err.name !== 'AbortError') { curAudio = null; browserSpeak(txt, id); } });
+  }
+  function browserSpeak(txt, id) {
+    if (!window.speechSynthesis) { speaking = false; return; }
+    const rate = Math.min(1.3, .95 * Math.max(.8, speed));
+    const parts = txt.split(/(?<=[。！？；])/).map(x => x.trim()).filter(Boolean);
+    const v = speechSynthesis.getVoices().find(v => /zh[-_]TW/i.test(v.lang));
+    parts.forEach((ptxt, i) => {
+      const u = new SpeechSynthesisUtterance(ptxt); u.lang = 'zh-TW'; u.rate = rate; if (v) u.voice = v;
+      if (i === parts.length - 1) u.onend = u.onerror = () => { if (id === ttsId) speaking = false; };
+      speechSynthesis.speak(u);
+    });
+  }
+  /* 目前字幕之後的下一個時間點（下一句字幕開始或本段結束） */
+  function nextMark(c, tt) { let m = c.dur; (c.captions || []).forEach(([at]) => { if (at > tt + 1e-6 && at < m) m = at; }); return m; }
+  function frame(now) {
+    const dt = Math.min(.1, (now - last) / 1000); last = now; const c = chs[ci];
+    if (playing) { let nt = t + dt * speed;
+      if (speaking && !c.loop && $('#tts').checked) { spoken += dt; const m = nextMark(c, t); if (nt >= m - .02 && spoken < spokenMax) nt = Math.max(t, m - .02); }
+      t = nt; if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } } }
+    // 字幕
+    let cap = '', say = ''; (c.captions || []).forEach(([at, s, sy]) => { if (t >= at) { cap = s; say = sy; } });
+    if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap && !muteCap) { try { speak(cap, say); } catch (e) { speaking = false; } } }
+    ctx.clearRect(0, 0, W, HGT); ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, HGT);
+    try { c.draw(ctx, t, S); } catch (err) { console.error(err); }
+    const d = durOf(c), shown = c.loop ? (t % d) : t;
+    $('#tm').textContent = c.loop ? '互動模式' : `${shown.toFixed(1)} / ${d.toFixed(0)} 秒`;
+    [...$('#bar').children].forEach((b, k) => { b.firstChild.style.width = (k < ci ? 100 : k === ci ? (c.loop ? 100 : 100 * t / d) : 0) + '%'; b.classList.toggle('done', passed[k]); });
+    if (!dragging && !c.loop) $('#seek').value = Math.round(1000 * Math.min(t, c.dur) / c.dur);
+    requestAnimationFrame(frame);
+  }
+  // 互動章節：「完成本段」按鈕
+  window.finishLoop = () => { if (chs[ci].quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } };
+  window.__seek = (i, tt) => { go(i, false); t = tt; };
+  if (cfg.activity) {
+    const wrap = document.createElement('section'); wrap.id = 'actwrap'; document.querySelector('.wrap').append(wrap);
+    let act = null; const open = () => { setPlay(false); document.querySelector('.main').style.display = 'none'; wrap.style.display = 'block'; if (!act) act = Activity(wrap, Object.assign({ code: cfg.code, back: close }, cfg.activity)); window.scrollTo(0, 0); };
+    const close = () => { wrap.style.display = 'none'; document.querySelector('.main').style.display = ''; };
+    $('#actbtn').onclick = () => wrap.style.display === 'block' ? close() : open(); const ae = $('#actend'); if (ae) ae.onclick = open;
+    if (new URLSearchParams(location.search).has('act')) setTimeout(open, 0);
+  }
+  go(0, false); score(); requestAnimationFrame(frame);
+  if (window.speechSynthesis) speechSynthesis.getVoices();
+  if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('embed');
+  /* 嵌入簡報時：自動縮放畫面，讓說明、操作面板與「完成本段」按鈕都不必捲動就看得到 */
+  if (document.body.classList.contains('embed')) {
+    const wrapEl = document.querySelector('.wrap'); let busy = false;
+    const fitEmbed = () => { if (busy) return; busy = true; requestAnimationFrame(() => { busy = false;
+      const over = wrapEl.getBoundingClientRect().bottom - innerHeight, ch = cv.getBoundingClientRect().height, full = cv.parentElement.clientWidth * HGT / W;
+      if (!ch || (over <= 2 && (over > -14 || !cv.style.height))) return;
+      const nh = Math.max(100, ch - over - 4);
+      if (nh >= full - 1) { cv.style.height = ''; cv.style.width = ''; } else { cv.style.height = nh + 'px'; cv.style.width = 'auto'; cv.style.display = 'block'; cv.style.margin = '0 auto'; } }); };
+    new ResizeObserver(fitEmbed).observe(wrapEl); addEventListener('resize', fitEmbed); fitEmbed();
+  }
+  return { S, go };
+}
+
+/* 互學挑戰模組（共用）：classify 分類、match 配對、order 排序、choice 情境選擇
+   cfg = { code, title, rounds:[...], back() }
+   classify: {type:'classify', title, bins:[...], items:[[文字, 正確籃號], ...]}
+   match:    {type:'match', title, pairs:[[左, 右], ...]}
+   order:    {type:'order', title, items:[依正確順序...]}
+   choice:   {type:'choice', title, qs:[[題目, [正確, 錯1, 錯2...], 解析], ...]}
+   計分：每個項目「第一次檢查」就對才得分；答錯的要改到對才能過關（學習用）。 */
+function Activity(root, cfg) {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
+  const CLS = (window.CLASS_LIST && window.CLASS_LIST.length) ? window.CLASS_LIST : ['汽車一甲', '汽車一乙'];
+  const curCls = () => { const sel = body.querySelector('#aclsSel'); if (!sel) return ''; return sel.value === '__manual' ? body.querySelector('#acls').value.trim() : sel.value; };
+  const COLORS = ['#38c6ff', '#ffd166', '#3ddc84', '#ff8a3d', '#c79bff', '#5ee0d0', '#ff6b9a', '#a3e635'];
+  const R = cfg.rounds, total = R.reduce((a, r) => a + (r.type === 'choice' ? r.qs.length : r.type === 'match' ? r.pairs.length : r.items.length), 0);
+  let who = { cls: store.get('act_cls'), grp: store.get('act_grp') }, ri = 0, got = 0, t0 = 0, tick = null, detail = [];
+  root.innerHTML = `<div class="act"><div class="acthead"><button class="aback">${esc(cfg.backText || '◀ 回動畫')}</button><span class="tag">互學挑戰</span><h2>${esc(cfg.title)}</h2><span class="ainfo"></span></div><div class="abody"></div></div>`;
+  const body = root.querySelector('.abody'), info = root.querySelector('.ainfo');
+  root.querySelector('.aback').onclick = () => { cfg.back && cfg.back(); };
+  const setInfo = () => { info.innerHTML = t0 ? `${esc(who.cls)} 第 ${esc(who.grp)} 組｜第 ${Math.min(ri + 1, R.length)} / ${R.length} 關｜得分 <b>${got}</b> / ${total}｜⏱ <b>${fmt((Date.now() - t0) / 1000)}</b>` : ''; };
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+  /* ---- 開始畫面 ---- */
+  function start() {
+    body.innerHTML = `<div class="astart"><p>共 <b>${R.length}</b> 關、<b>${total}</b> 分。<br>每關「第一次檢查」就答對才得分；答錯的要改對才能過關。<br>小組 3 人輪流操作平板，答案要<b>先討論、取得共識</b>再按！</p>
+      <div class="arow"><label>班級 <select id="aclsSel">${CLS.map(c => `<option ${c === who.cls ? 'selected' : ''}>${esc(c)}</option>`).join('')}<option value="__manual" ${who.cls && !CLS.includes(who.cls) ? 'selected' : ''}>✏️ 手動輸入班級</option></select>
+        <input id="acls" maxlength="20" placeholder="輸入班級名稱" value="${CLS.includes(who.cls) ? '' : esc(who.cls)}" style="display:none"></label>
+      <label>組別 <select id="agrp">${Array.from({ length: 12 }, (_, i) => `<option ${String(i + 1) === who.grp ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label></div>
+      <ol class="alist">${R.map(r => `<li>${esc(r.title)} <small>${{ classify: '分類', match: '配對', order: '排序', choice: '情境判斷' }[r.type]}</small></li>`).join('')}</ol>
+      <p class="alive" id="alive"></p><button class="apri" id="ago">開始挑戰 ▶</button></div>`;
+    const sel = body.querySelector('#aclsSel'), man = body.querySelector('#acls');
+    const tog = () => { man.style.display = sel.value === '__manual' ? '' : 'none'; if (sel.value === '__manual') man.focus(); if (live) onLive(live); };
+    sel.onchange = tog; man.oninput = () => { if (live) onLive(live); }; man.style.display = sel.value === '__manual' ? '' : 'none';
+    body.querySelector('#ago').onclick = () => {
+      who.cls = curCls() || '未填班級'; who.grp = body.querySelector('#agrp').value;
+      store.set('act_cls', who.cls); store.set('act_grp', who.grp);
+      ri = 0; got = 0; detail = []; t0 = Date.now(); clearInterval(tick); tick = setInterval(setInfo, 1000); round();
+    };
+    setInfo();
+  }
+
+  /* ---- 關卡外框 ---- */
+  function frame(r, html) {
+    body.innerHTML = `<div class="around"><h3>第 ${ri + 1} 關｜${esc(r.title)}</h3><p class="ahint">${esc(r.hint || { classify: '先點一張卡片，再點它要放的類別；點類別裡的卡片可以拿回來。', match: '先點左邊一項，再點右邊對應的說明；點已配好的可以取消。', order: '依正確順序依序點選卡片；點上方已排好的可以取消。', choice: '小組討論後再作答，第一次就答對才得分。' }[r.type])}</p>${html}
+      <div class="afoot"><span class="amsg"></span><button class="apri" id="achk" disabled>檢查答案</button></div></div>`;
+    setInfo();
+  }
+  const msg = (s, ok) => { const m = body.querySelector('.amsg'); m.innerHTML = s; m.className = 'amsg ' + (ok === true ? 'ok' : ok === false ? 'bad' : ''); };
+  function pass(pts, n) {
+    got += pts; detail.push({ round: R[ri].title, got: pts, of: n }); setInfo();
+    const b = body.querySelector('#achk'); b.disabled = false; b.textContent = ri < R.length - 1 ? '下一關 ▶' : '看結果 ▶';
+    b.onclick = () => { ri++; ri < R.length ? round() : finish(); };
+  }
+  function round() { const r = R[ri]; ({ classify, match, order, choice })[r.type](r); }
+
+  /* ---- 分類 ---- */
+  function classify(r) {
+    const items = shuf(r.items.map((it, i) => ({ i, t: it[0], ans: it[1], at: -1, bad: false })));
+    let sel = null, first = true, firstOk = 0;
+    frame(r, `<div class="apool"></div><div class="abins" style="grid-template-columns:repeat(${r.bins.length},1fr)">${r.bins.map((b, k) => `<div class="abin" data-k="${k}"><h4>${esc(b)}</h4><div class="adrop"></div></div>`).join('')}</div>`);
+    const pool = body.querySelector('.apool'), chk = body.querySelector('#achk');
+    const chip = it => `<button class="achip ${sel === it ? 'sel' : ''} ${it.bad ? 'bad' : ''} ${it.ok ? 'ok' : ''}" data-i="${it.i}">${esc(it.t)}</button>`;
+    function draw() {
+      pool.innerHTML = items.filter(x => x.at < 0).map(chip).join('') || '<span class="amut">全部放好了，按「檢查答案」</span>';
+      body.querySelectorAll('.abin').forEach(b => b.querySelector('.adrop').innerHTML = items.filter(x => x.at === +b.dataset.k).map(chip).join(''));
+      chk.disabled = items.some(x => x.at < 0) || items.every(x => x.ok);
+    }
+    body.querySelector('.around').onclick = e => {
+      const c = e.target.closest('.achip'), b = e.target.closest('.abin');
+      if (c) { const it = items[items.findIndex(x => x.i === +c.dataset.i)]; if (it.ok) return; if (it.at >= 0 && !sel) { it.at = -1; it.bad = false; } else sel = sel === it ? null : it; draw(); return; }
+      if (b && sel) { sel.at = +b.dataset.k; sel.bad = false; sel = null; draw(); }
+    };
+    chk.onclick = () => {
+      let bad = 0; items.forEach(x => { if (x.at === x.ans) x.ok = true; else { x.bad = true; x.at = -1; bad++; } });
+      if (first) { firstOk = items.filter(x => x.ok).length; first = false; }
+      draw();
+      if (bad) msg(`✘ 有 ${bad} 張放錯了（已退回上方，紅框），小組再討論一次！`, false);
+      else { msg(`✔ 全部正確！本關得分 ${firstOk} / ${items.length}`, true); pass(firstOk, items.length); }
+    };
+    draw();
+  }
+
+  /* ---- 配對 ---- */
+  function match(r) {
+    const L = r.pairs.map((p, i) => ({ i, t: p[0] })), Rr = shuf(r.pairs.map((p, i) => ({ i, t: p[1] })));
+    const link = {}; let sel = null, first = true, firstOk = 0, locked = {};
+    frame(r, `<div class="amatch"><div class="acolL"></div><div class="acolR"></div></div>`);
+    const chk = body.querySelector('#achk');
+    function draw() {
+      const used = Object.values(link);
+      body.querySelector('.acolL').innerHTML = L.map(x => { const k = link[x.i]; const n = k != null ? Object.keys(link).indexOf(String(x.i)) : -1;
+        return `<button class="aitem L ${sel === x.i ? 'sel' : ''} ${locked[x.i] ? 'ok' : ''}" data-i="${x.i}" ${k != null ? `style="border-color:${COLORS[n % 8]}"` : ''}>${k != null ? `<i style="background:${COLORS[n % 8]}">${n + 1}</i>` : ''}${esc(x.t)}</button>`; }).join('');
+      body.querySelector('.acolR').innerHTML = Rr.map(y => { const li = Object.keys(link).find(k => link[k] === y.i); const n = li != null ? Object.keys(link).indexOf(li) : -1;
+        return `<button class="aitem R ${li != null && locked[li] ? 'ok' : ''}" data-r="${y.i}" ${n >= 0 ? `style="border-color:${COLORS[n % 8]}"` : ''}>${n >= 0 ? `<i style="background:${COLORS[n % 8]}">${n + 1}</i>` : ''}${esc(y.t)}</button>`; }).join('');
+      chk.disabled = Object.keys(link).length < L.length || Object.keys(locked).length === L.length;
+    }
+    body.querySelector('.amatch').onclick = e => {
+      const l = e.target.closest('.L'), rr = e.target.closest('.R');
+      if (l) { const i = +l.dataset.i; if (locked[i]) return; if (link[i] != null) { delete link[i]; sel = null; } else sel = sel === i ? null : i; draw(); return; }
+      if (rr) { const j = +rr.dataset.r; const owner = Object.keys(link).find(k => link[k] === j);
+        if (owner != null) { if (locked[owner]) return; delete link[owner]; draw(); return; }
+        if (sel != null) { link[sel] = j; sel = null; draw(); } }
+    };
+    chk.onclick = () => {
+      let bad = 0; Object.keys(link).forEach(k => { if (+k === link[k]) locked[k] = true; else { delete link[k]; bad++; } });
+      if (first) { firstOk = Object.keys(locked).length; first = false; }
+      draw();
+      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(`✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}`, true); pass(firstOk, L.length); }
+    };
+    draw();
+  }
+
+  /* ---- 排序 ---- */
+  function order(r) {
+    const items = shuf(r.items.map((t, i) => ({ i, t }))); let seq = [], first = true, firstOk = 0, done = false;
+    frame(r, `<div class="aseq"></div><div class="apool"></div>`);
+    const chk = body.querySelector('#achk');
+    function draw() {
+      body.querySelector('.aseq').innerHTML = r.items.map((_, k) => { const it = seq[k]; return `<div class="aslot ${it && it.ok ? 'ok' : ''} ${it && it.bad ? 'bad' : ''}"><i>${k + 1}</i>${it ? `<button class="achip" data-s="${k}">${esc(it.t)}</button>` : ''}</div>`; }).join('<span class="aarr">→</span>');
+      body.querySelector('.apool').innerHTML = items.filter(x => !seq.includes(x)).map(x => `<button class="achip" data-i="${x.i}">${esc(x.t)}</button>`).join('') || '<span class="amut">排好了，按「檢查答案」</span>';
+      chk.disabled = done || seq.length < r.items.length;
+    }
+    body.querySelector('.around').onclick = e => {
+      const c = e.target.closest('.achip'); if (!c || done) return;
+      if (c.dataset.s != null) { const k = +c.dataset.s; if (seq[k].ok) return; seq = seq.slice(0, k).concat(seq.slice(k + 1)); seq.forEach(x => x.bad = false); }
+      else seq.push(items.find(x => x.i === +c.dataset.i));
+      draw();
+    };
+    chk.onclick = () => {
+      let bad = 0; seq.forEach((x, k) => { if (x.i === k) { x.ok = true; x.bad = false; } else { x.bad = true; bad++; } });
+      if (first) { firstOk = r.items.length - bad; first = false; }
+      if (bad) { const keep = []; for (const x of seq) { if (x.ok && keep.length === x.i) keep.push(x); else break; } seq.forEach(x => { if (!keep.includes(x)) { x.ok = false; } }); draw(); seq = keep; setTimeout(() => { items.forEach(x => x.bad = false); draw(); }, 900); msg(`✘ 有 ${bad} 個位置不對，正確的前段已保留，繼續排！`, false); }
+      else { done = true; draw(); msg(`✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}`, true); pass(firstOk, r.items.length); }
+    };
+    draw();
+  }
+
+  /* ---- 情境選擇 ---- */
+  function choice(r) {
+    let qi = 0, pts = 0;
+    frame(r, `<div class="aq"></div>`);
+    const chk = body.querySelector('#achk'); chk.style.display = 'none';
+    function q() {
+      const [qq, opts, ex] = r.qs[qi], o = shuf(opts.map((t, k) => ({ t, ok: k === 0 }))); let tried = false;
+      body.querySelector('.aq').innerHTML = `<p class="aqq"><span>${qi + 1} / ${r.qs.length}</span>${esc(qq)}</p>${o.map((x, k) => `<button class="aopt" data-k="${k}">${'ABCD'[k]}. ${esc(x.t)}</button>`).join('')}<p class="aex"></p>`;
+      body.querySelector('.aq').onclick = e => {
+        const b = e.target.closest('.aopt'); if (!b || b.disabled) return; const x = o[+b.dataset.k];
+        if (x.ok) { if (!tried) pts++; body.querySelectorAll('.aopt').forEach(z => z.disabled = true); b.classList.add('ok');
+          body.querySelector('.aex').innerHTML = `${tried ? '✔ 改對了（不計分）' : '✔ 答對了！'}${ex ? '　' + esc(ex) : ''}`; setInfo();
+          if (qi < r.qs.length - 1) { chk.style.display = ''; chk.disabled = false; chk.textContent = '下一題 ▶'; chk.onclick = () => { qi++; chk.style.display = 'none'; q(); }; }
+          else { chk.style.display = ''; msg(`本關得分 ${pts} / ${r.qs.length}`, true); pass(pts, r.qs.length); } }
+        else { tried = true; b.classList.add('bad'); b.disabled = true; body.querySelector('.aex').textContent = '✘ 不對喔，小組再討論看看。'; }
+      };
+    }
+    q();
+  }
+
+  /* ---- 結果 ---- */
+  function finish() {
+    clearInterval(tick); const sec = Math.round((Date.now() - t0) / 1000), pct = Math.round(got / total * 100);
+    const star = pct >= 90 ? '⭐⭐⭐' : pct >= 70 ? '⭐⭐' : pct >= 50 ? '⭐' : '💪';
+    const rec = { lesson: cfg.code, title: cfg.title, cls: who.cls, grp: +who.grp, score: got, total, pct, sec, detail, at: new Date().toISOString() };
+    body.innerHTML = `<div class="aend"><div class="astar">${star}</div><h3>${esc(who.cls)} 第 ${esc(who.grp)} 組　挑戰完成！</h3>
+      <p class="abig">得分 <b>${got}</b> / ${total}（${pct}%）　用時 <b>${fmt(sec)}</b></p>
+      <table class="atab">${detail.map(d => `<tr><td>${esc(d.round)}</td><td>${d.got} / ${d.of}</td></tr>`).join('')}</table>
+      <p class="asend">成績上傳中…</p>
+      <p class="amut">請舉手讓老師確認此畫面。${pct < 70 ? '建議回動畫重看答錯的段落，再挑戰一次！' : ''}</p>
+      <button class="apri" id="aagain">再挑戰一次</button> <button class="asec" id="aback2">${esc(cfg.backText || '◀ 回動畫')}</button></div>`;
+    info.innerHTML = '';
+    body.querySelector('#aagain').onclick = start; body.querySelector('#aback2').onclick = () => cfg.back && cfg.back();
+    const s = body.querySelector('.asend');
+    (window.Score ? Score.submit(rec) : Promise.resolve({ ok: false, local: true })).then(r => {
+      s.textContent = r && r.ok ? '✔ 成績已上傳到班級排行榜' : '（離線模式：成績未上傳，請讓老師看此畫面）'; s.className = 'asend ' + (r && r.ok ? 'ok' : '');
+    }).catch(() => { s.textContent = '（成績上傳失敗，請讓老師看此畫面）'; });
+  }
+  /* 全班同步挑戰：老師按「準備」→ 顯示等待；按「開始」→ 停在開始畫面的組別自動開始（10 分鐘內有效） */
+  let live = null;
+  function onLive(d) {
+    live = d; const el = body.querySelector('#alive'); if (!el) return;
+    const mine = d && (!d.cls || d.cls === (curCls() || who.cls));
+    if (mine && d.state === 'ready') { el.className = 'alive on'; el.textContent = '🔔 老師準備開始全班挑戰！填好班級、組別後等待，老師按開始會自動進入。'; }
+    else if (mine && d.state === 'go' && Date.now() - (d.goAt || 0) < 600000) { el.className = 'alive go'; el.textContent = '🚀 全班挑戰開始！'; body.querySelector('#ago').click(); }
+    else { el.className = 'alive'; el.textContent = ''; }
+  }
+  if (window.Score && Score.watchLive) Score.watchLive(cfg.code, d => onLive(d));
+  const _start = start; start = function () { _start(); if (live) onLive(Object.assign({}, live, live.state === 'go' ? { state: 'done' } : {})); };
+  start();
+  return { start };
+}
+/* （共用小工具：T／LB／pill／VIEW／glow／fadeIn／mech／flyFront 等） */
+const FS = 18;
+const FONT = '"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif';
+const STROKES = ['進氣', '壓縮', '動力', '排氣'];
+const SCOL = { 進氣: '#4fd1a5', 壓縮: '#38c6ff', 動力: '#ff7a1a', 排氣: '#9aa3b2' };
+const strokeOf = phi => STROKES[Math.floor(mod(phi, 720) / 180)];
+
+/* 文字小工具（一律 ≥18px） */
+function T(ctx, s, x, y, o = {}) { H.text(ctx, s, x, y, Object.assign({ size: 20 }, o, { size: Math.max(FS, o.size || 20) })); }
+function LB(ctx, px, py, tx, ty, s, o = {}) { H.label(ctx, px, py, tx, ty, s, Object.assign({ size: 19 }, o, { size: Math.max(FS, o.size || 19) })); }
+function pill(ctx, s, x, y, o = {}) {
+  ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.font = `700 ${Math.max(FS, o.size || 18)}px ${FONT}`;
+  const w = ctx.measureText(s).width + 20, h = Math.max(FS, o.size || 18) + 12;
+  const left = o.align === 'right' ? x - w : o.align === 'center' ? x - w / 2 : x;
+  H.rr(ctx, left, y - h / 2, w, h, h / 2); ctx.fillStyle = o.fill || 'rgba(22,34,58,.92)'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = o.stroke || C.acc2; ctx.stroke();
+  ctx.fillStyle = o.color || C.ink; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(s, left + 10, y + 1); ctx.restore();
+  return w;
+}
+const VIEW = (ctx, s = '從引擎前端看') => pill(ctx, '👁 ' + s, 944, 26, { align: 'right', stroke: C.acc2 });
+function glow(ctx, draw, o = {}) { ctx.save(); ctx.shadowColor = o.color || C.acc; ctx.shadowBlur = 18; ctx.strokeStyle = o.color || C.acc; ctx.lineWidth = o.lw || 4; ctx.globalAlpha = o.alpha ?? 1; draw(); ctx.stroke(); ctx.restore(); }
+const fadeIn = (t, a, d = .6) => ease(prog(t, a, a + d));
+
+/* 單缸曲柄連桿機構（從引擎前端看）。沿用 H.pinDist／H.crank 的幾何：th＝曲軸轉角（0＝上死點，順時鐘為正）。
+   o.s 縮放；o.hl 高亮集合；o.head 畫汽缸蓋；o.gas 汽缸內氣體；o.iL/o.eL 汽門升程；o.capOff 大端軸承蓋拆開距離 */
+function mech(ctx, cx, cy, th, o = {}) {
+  const s = o.s || 1, r = 52 * s, l = 170 * s, bore = 150 * s, pistonH = 70 * s, c2p = 34 * s;
+  const pinY = cy - H.pinDist(r, l, th), pTop = pinY - c2p, x0 = cx - bore / 2, x1 = cx + bore / 2;
+  const tdcTop = cy - (r + l) - c2p, bdcTop = cy - (l - r) - c2p, headBot = tdcTop - 18 * s;
+  const cylTop = o.head ? headBot : tdcTop - 26 * s, cylBot = bdcTop + pistonH + 8 * s, hl = o.hl || {};
+  ctx.save();
+  // 汽缸壁
+  ctx.fillStyle = C.wall; ctx.fillRect(x0 - 26 * s, cylTop, 26 * s, cylBot - cylTop); ctx.fillRect(x1, cylTop, 26 * s, cylBot - cylTop);
+  // 汽缸內氣體（只在汽缸蓋與活塞之間）
+  if (o.head && o.gas) {
+    const gc = { mix: 'rgba(79,209,165,.32)', comp: 'rgba(79,209,165,.55)', fire: 'rgba(255,122,26,.72)', exh: 'rgba(154,163,178,.45)' }[o.gas];
+    if (gc) { ctx.fillStyle = gc; ctx.fillRect(x0, headBot, bore, pTop - headBot); }
+    if (o.gas === 'fire') { ctx.save(); ctx.beginPath(); ctx.rect(x0, headBot, bore, pTop - headBot); ctx.clip(); for (let i = -1; i <= 1; i++) H.flame(ctx, cx + i * 42 * s, pTop, .7 * s, (o.t || 0) + i); ctx.restore(); }
+  }
+  // 汽缸蓋（簡化）：兩個汽門＋火星塞
+  if (o.head) {
+    ctx.fillStyle = '#4a5d7d'; H.rr(ctx, x0 - 26 * s, headBot - 62 * s, bore + 52 * s, 62 * s, 8 * s); ctx.fill();
+    const valve = (vx, L) => { const vy = headBot + L * 12 * s; ctx.fillStyle = C.metalL; ctx.fillRect(vx - 3 * s, headBot - 70 * s + L * 12 * s, 6 * s, 66 * s);
+      ctx.beginPath(); ctx.moveTo(vx - 18 * s, vy); ctx.lineTo(vx + 18 * s, vy); ctx.lineTo(vx + 6 * s, vy - 8 * s); ctx.lineTo(vx - 6 * s, vy - 8 * s); ctx.closePath(); ctx.fill(); };
+    valve(cx - 42 * s, o.iL || 0); valve(cx + 42 * s, o.eL || 0);
+    ctx.fillStyle = '#d9dee8'; ctx.fillRect(cx - 5 * s, headBot - 76 * s, 10 * s, 70 * s); ctx.fillStyle = '#fff'; ctx.fillRect(cx - 9 * s, headBot - 84 * s, 18 * s, 12 * s);
+    if (o.spark) H.spark(ctx, cx, headBot - 4 * s, o.spark);
+  }
+  // 曲軸（臂＋平衡配重＋主軸頸，H.crank 內含順時鐘箭頭）
+  H.crank(ctx, cx, cy, r, th, s, o.t || 0);
+  // 活塞
+  const g = ctx.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, C.metalD); g.addColorStop(.5, C.metalL); g.addColorStop(1, C.metalD);
+  ctx.fillStyle = g; H.rr(ctx, x0 + 3, pTop, bore - 6, pistonH, 4 * s); ctx.fill();
+  ctx.fillStyle = '#44536b'; for (let i = 0; i < 3; i++) ctx.fillRect(x0 + 3, pTop + (8 + i * 9) * s, bore - 6, 3 * s);
+  // 連桿：小端（套活塞銷）→桿身→大端（夾曲軸銷，可拆軸承蓋）
+  const cpx = cx + r * Math.sin(th), cpy = cy - r * Math.cos(th), ang = Math.atan2(cpy - pinY, cpx - cx), L = Math.hypot(cpx - cx, cpy - pinY);
+  ctx.save(); ctx.translate(cx, pinY); ctx.rotate(ang);
+  const rodC = '#aab8cc', capOff = (o.capOff || 0) * s;
+  ctx.fillStyle = rodC; ctx.beginPath(); ctx.moveTo(10 * s, -9 * s); ctx.lineTo(L - 22 * s, -14 * s); ctx.lineTo(L - 22 * s, 14 * s); ctx.lineTo(10 * s, 9 * s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#8796ad'; ctx.fillRect(16 * s, -3 * s, L - 44 * s, 6 * s);           // I 形斷面的中槽
+  ctx.fillStyle = rodC; ctx.beginPath(); ctx.arc(0, 0, 17 * s, 0, 7); ctx.fill();           // 小端
+  ctx.beginPath(); ctx.arc(L, 0, 27 * s, Math.PI / 2, Math.PI * 1.5); ctx.closePath(); ctx.fill(); // 大端（連桿側半圓）
+  ctx.fillStyle = '#c3cfdf'; ctx.beginPath(); ctx.arc(L + capOff, 0, 27 * s, -Math.PI / 2, Math.PI / 2); ctx.closePath(); ctx.fill(); // 軸承蓋
+  ctx.strokeStyle = '#2b3850'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(L + capOff, -27 * s); ctx.lineTo(L + capOff, 27 * s); ctx.stroke();
+  ctx.fillStyle = '#5c6f8a'; ctx.fillRect(L - 4 * s + capOff, -27 * s, 8 * s, 6 * s); ctx.fillRect(L - 4 * s + capOff, 21 * s, 8 * s, 6 * s); // 螺栓
+  if (hl.rod) glow(ctx, () => { ctx.beginPath(); ctx.moveTo(10 * s, -11 * s); ctx.lineTo(L - 22 * s, -16 * s); ctx.lineTo(L - 22 * s, 16 * s); ctx.lineTo(10 * s, 11 * s); ctx.closePath(); });
+  if (hl.small) glow(ctx, () => { ctx.beginPath(); ctx.arc(0, 0, 20 * s, 0, 7); });
+  if (hl.big) glow(ctx, () => { ctx.beginPath(); ctx.arc(L, 0, 31 * s, 0, 7); });
+  if (hl.cap) glow(ctx, () => { ctx.beginPath(); ctx.arc(L + capOff, 0, 30 * s, -Math.PI / 2, Math.PI / 2); ctx.closePath(); }, { color: C.acc2 });
+  ctx.restore();
+  // 活塞銷與曲軸銷
+  ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, pinY, 9 * s, 0, 7); ctx.fill(); ctx.strokeStyle = '#c3d1e4'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(cpx, cpy, 10 * s, 0, 7); ctx.fill(); ctx.strokeStyle = '#7a5a00'; ctx.stroke();
+  if (hl.piston) glow(ctx, () => H.rr(ctx, x0 + 1, pTop - 2, bore - 2, pistonH + 4, 6 * s));
+  if (hl.ppin) glow(ctx, () => { ctx.beginPath(); ctx.arc(cx, pinY, 13 * s, 0, 7); }, { color: C.acc2 });
+  if (hl.cpin) glow(ctx, () => { ctx.beginPath(); ctx.arc(cpx, cpy, 14 * s, 0, 7); }, { color: C.acc2 });
+  if (hl.journal) glow(ctx, () => { ctx.beginPath(); ctx.arc(cx, cy, 15 * s, 0, 7); }, { color: C.ok });
+  if (hl.crank) glow(ctx, () => { ctx.beginPath(); ctx.arc(cx, cy, r + 24 * s, 0, 7); }, { color: C.ok, alpha: .8 });
+  if (hl.arm) glow(ctx, () => { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cpx, cpy); }, { color: C.acc, lw: 6 });
+  if (hl.cw) { const a = th + Math.PI; glow(ctx, () => { ctx.beginPath(); ctx.arc(cx + Math.sin(a) * (r * .62), cy - Math.cos(a) * (r * .62), 30 * s, 0, 7); }, { color: '#c79bff' }); }
+  ctx.restore();
+  return { cx, cy, r, l, s, pinY, pTop, x0, x1, cpx, cpy, tdcTop, bdcTop, headBot, cylTop, cylBot, ang, L };
+}
+
+/* 前視飛輪（在曲軸後端；畫在機構後方，與曲軸同軸同向轉） */
+function flyFront(ctx, cx, cy, R, th, o = {}) {
+  ctx.save(); ctx.globalAlpha = o.alpha ?? 1;
+  ctx.fillStyle = '#1c2942'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = '#5c6f8a'; ctx.stroke();
+  // 齒環
+  ctx.translate(cx, cy); ctx.rotate(th); ctx.fillStyle = '#7f93b2';
+  for (let i = 0; i < 60; i++) { ctx.save(); ctx.rotate(i * Math.PI / 30); ctx.fillRect(-3, -R - 7, 6, 8); ctx.restore(); }
+  // 盤面記號（隨曲軸順時鐘轉）
+  ctx.fillStyle = '#2c3f63'; for (let i = 0; i < 6; i++) { ctx.save(); ctx.rotate(i * Math.PI / 3); ctx.beginPath(); ctx.arc(0, -R * .7, 9, 0, 7); ctx.fill(); ctx.restore(); }
+  ctx.fillStyle = C.acc; ctx.beginPath(); ctx.arc(0, -R * .86, 7, 0, 7); ctx.fill();
+  ctx.restore();
+  if (o.hl) glow(ctx, () => { ctx.beginPath(); ctx.arc(cx, cy, R + 8, 0, 7); }, { color: o.hlc || C.acc });
+}
+
+/* 四缸簡化圖（每格都是從引擎前端看該缸）：活塞＋連桿＋曲軸銷 */
+function mini(ctx, cx, top, th, o = {}) {
+  const r = 30, l = 96, bore = 74, c2p = 18, pistonH = 34;
+  const cy = top + 20 + c2p + r + l, pinY = cy - H.pinDist(r, l, th), pTop = pinY - c2p;
+  const x0 = cx - bore / 2, headBot = top + 20, cylBot = cy - (l - r) - c2p + pistonH + 6;
+  ctx.save();
+  ctx.fillStyle = C.wall; ctx.fillRect(x0 - 14, headBot, 14, cylBot - headBot); ctx.fillRect(x0 + bore, headBot, 14, cylBot - headBot);
+  ctx.fillStyle = '#4a5d7d'; ctx.fillRect(x0 - 14, top, bore + 28, 20);
+  if (o.stroke) {
+    const gc = { 進氣: 'rgba(79,209,165,.3)', 壓縮: 'rgba(79,209,165,.55)', 動力: 'rgba(255,122,26,.7)', 排氣: 'rgba(154,163,178,.45)' }[o.stroke];
+    ctx.fillStyle = gc; ctx.fillRect(x0, headBot, bore, pTop - headBot);
+    if (o.stroke === '動力') { ctx.save(); ctx.beginPath(); ctx.rect(x0, headBot, bore, pTop - headBot); ctx.clip(); H.flame(ctx, cx, pTop, .55, o.t || 0); ctx.restore(); }
+  }
+  ctx.fillStyle = C.metalL; H.rr(ctx, x0 + 2, pTop, bore - 4, pistonH, 4); ctx.fill();
+  const cpx = cx + r * Math.sin(th), cpy = cy - r * Math.cos(th);
+  ctx.setLineDash([5, 5]); ctx.strokeStyle = 'rgba(255,209,102,.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = '#8ea3c2'; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cpx, cpy); ctx.stroke();
+  ctx.strokeStyle = '#aab8cc'; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(cx, pinY); ctx.lineTo(cpx, cpy); ctx.stroke();
+  ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, cy, 7, 0, 7); ctx.fill();
+  ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(cpx, cpy, 7, 0, 7); ctx.fill();
+  ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, pinY, 5, 0, 7); ctx.fill();
+  ctx.restore();
+  return { cy, cylBot, headBot, x0, bore };
+}
+
+/* 四缸相位：第1缸基準曲軸角 phi（0＝第1缸進氣上死點）；點火順序 1-3-4-2 → 各缸循環相位差 */
+const PH = { 1: 0, 2: 180, 3: 540, 4: 360 };
+const cylPhi = (k, phi) => mod(phi + PH[k], 720);
+
+/* 側視曲軸（縱向，左＝前端、右＝後端）：th＝第1缸曲軸角 */
+function sideCrank(ctx, th, o = {}) {
+  const ay = 320, r = 40, js = [260, 380, 500, 620, 740], ps = [320, 440, 560, 680], hl = o.hl || {};
+  const off = [0, Math.PI, Math.PI, 0];
+  ctx.save();
+  // 主軸線
+  ctx.setLineDash([10, 8]); ctx.strokeStyle = 'rgba(159,176,207,.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(130, ay); ctx.lineTo(850, ay); ctx.stroke(); ctx.setLineDash([]);
+  // 前端軸頭與後端凸緣
+  ctx.fillStyle = '#7f93b2'; ctx.fillRect(196, ay - 11, 64, 22); ctx.fillRect(740, ay - 13, 34, 26);
+  ps.forEach((px, k) => {
+    const a = th + off[k], dy = -r * Math.cos(a), near = Math.sin(a) >= 0;
+    // 平衡配重（銷的反方向）
+    ctx.fillStyle = '#55678a'; ctx.fillRect(px - 34, ay, 14, -dy * 1.25); ctx.fillRect(px + 20, ay, 14, -dy * 1.25);
+    // 曲軸臂
+    ctx.fillStyle = '#8ea3c2'; ctx.fillRect(px - 34, Math.min(ay, ay + dy) - 10, 14, Math.abs(dy) + 20); ctx.fillRect(px + 20, Math.min(ay, ay + dy) - 10, 14, Math.abs(dy) + 20);
+    // 曲軸銷
+    ctx.fillStyle = near ? '#ffd166' : '#b8963a'; ctx.fillRect(px - 20, ay + dy - 10, 40, 20);
+    T(ctx, String(k + 1), px, ay + 92, { size: 18, align: 'center', color: C.mut });
+  });
+  // 曲軸頸（主軸線上）
+  js.forEach(x => { ctx.fillStyle = '#9fb2cf'; ctx.fillRect(x - 26, ay - 12, 52, 24); });
+  if (hl.journal) js.forEach(x => glow(ctx, () => ctx.rect(x - 26, ay - 12, 52, 24), { color: C.ok, lw: 3 }));
+  T(ctx, '缸號', 236, ay + 92, { size: 18, align: 'center', color: C.mut });
+  // 前端：皮帶盤（內含減震器）
+  const disk = (x, w, R, col, marks) => {
+    ctx.fillStyle = col; H.rr(ctx, x, ay - R, w, 2 * R, 6); ctx.fill(); ctx.strokeStyle = '#2c3f63'; ctx.lineWidth = 2; ctx.stroke();
+    for (let i = 0; i < marks; i++) { const a = th + i * 2 * Math.PI / marks, y = ay - R * Math.cos(a), near = Math.sin(a) >= 0;
+      if (Math.abs(y - ay) < R - 4) { ctx.fillStyle = near ? C.acc : 'rgba(255,176,32,.25)'; ctx.fillRect(x + 3, y - 3, w - 6, 6); } }
+  };
+  disk(150, 46, 72, '#3a4d6e', 3);
+  ctx.fillStyle = '#1a2438'; ctx.fillRect(160, ay - 72, 6, 144); ctx.fillRect(180, ay - 72, 6, 144);   // 皮帶槽
+  if (o.damper) { ctx.fillStyle = 'rgba(199,155,255,.55)'; ctx.fillRect(154, ay - 44, 38, 14); ctx.fillRect(154, ay + 30, 38, 14); }
+  // 後端：飛輪＋齒環
+  disk(774, 44, 122, '#33415e', 4);
+  ctx.fillStyle = '#7f93b2'; for (let i = 0; i < 14; i++) { const y = ay - 122 + i * 17.4 + mod(th * 30, 17.4); if (y < ay + 120) { ctx.fillRect(818, y, 8, 9); } }
+  if (o.pilot) { ctx.fillStyle = C.ok; ctx.beginPath(); ctx.arc(796, ay, 8, 0, 7); ctx.fill(); }
+  if (hl.pulley) glow(ctx, () => H.rr(ctx, 146, ay - 76, 54, 152, 8));
+  if (hl.fly) glow(ctx, () => H.rr(ctx, 770, ay - 126, 60, 252, 8));
+  ctx.restore();
+  return { ay };
+}
+
+/* V-6 前端小視窗：與主圖同一根曲軸、同一個曲軸角 */
+function frontWin(ctx, th, x = 580, y = 128) {
+  H.box(ctx, x - 112, y - 66, 224, 160, { fill: 'rgba(16,26,46,.95)', stroke: C.acc2 });
+  const cx = x - 48, cy = y + 22, R = 38;
+  ctx.save(); ctx.strokeStyle = '#5c6f8a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.stroke();
+  const px = cx + R * Math.sin(th), py = cy - R * Math.cos(th);
+  ctx.strokeStyle = '#8ea3c2'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke();
+  ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(px, py, 7, 0, 7); ctx.fill();
+  ctx.strokeStyle = C.acc2; ctx.fillStyle = C.acc2; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, R + 12, rad(-70), rad(10)); ctx.stroke();
+  const ex = cx + (R + 12) * Math.cos(rad(10)), ey = cy + (R + 12) * Math.sin(rad(10)); ctx.beginPath(); ctx.moveTo(ex + 7, ey - 6); ctx.lineTo(ex - 8, ey - 3); ctx.lineTo(ex + 1, ey + 9); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  T(ctx, '從前端看', x + 46, y - 36, { size: 18, bold: true, align: 'center', color: C.acc2 });
+  T(ctx, '順時鐘', x + 46, y + 22, { size: 20, bold: true, align: 'center', color: C.acc2 });
+}
+
+const ext = (summary, html) => `<details class="ext"><summary>📂 ${summary}（延伸，不列本堂必答）</summary><div>${html}</div></details>`;
+
+/* ===== 單元五共用繪圖（第 4 章潤滑系統、第 5 章冷卻系統） =====
+   流體一律沿管路折線（polyline）流動，粒子不穿越實體；文字一律 ≥18px（T／LB 已保證）。 */
+(function () { const st = document.createElement('style'); st.textContent = '.panel button.on{background:#3a2f10;border-color:var(--acc);color:var(--acc);font-weight:700}.panel .row b{color:var(--acc)}.panel .hint{color:var(--mut);font-size:15px}'; document.head.append(st); })();
+const OIL = '#d8a31a', OILD = '#8a6410', OILDK = '#3b2a10', HOT = '#ff5d3d', COLD = '#2f8fff', AIRC = '#bfe3ff', STEEL = '#4a5d7d';
+/* 折線長度與取點 */
+function plen(P) { let L = 0; for (let i = 1; i < P.length; i++) L += Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]); return L; }
+function pat(P, d) {
+  for (let i = 1; i < P.length; i++) { const l = Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]);
+    if (d <= l || i === P.length - 1) { const k = l ? clamp(d / l, 0, 1) : 0; return { x: lerp(P[i - 1][0], P[i][0], k), y: lerp(P[i - 1][1], P[i][1], k), a: Math.atan2(P[i][1] - P[i - 1][1], P[i][0] - P[i - 1][0]) }; }
+    d -= l; }
+  return { x: P[0][0], y: P[0][1], a: 0 };
+}
+/* 管子：外壁＋內腔 */
+function pipe(ctx, P, w, o = {}) {
+  ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = o.cap || 'round'; ctx.globalAlpha = o.alpha ?? 1;
+  ctx.strokeStyle = o.wall || '#5c6f8a'; ctx.lineWidth = w + 6; ctx.beginPath(); P.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+  ctx.strokeStyle = o.fill || '#0d1830'; ctx.lineWidth = w; ctx.stroke(); ctx.restore();
+}
+/* 沿管流動的粒子：speed 像素／秒；col 可為函式(k: 0..1 位置比例) */
+function flow(ctx, P, t, o = {}) {
+  const L = plen(P), gap = o.gap || 22, sp = o.speed ?? 70, r = o.r || 4; if (o.amt === 0) return;
+  ctx.save(); ctx.globalAlpha = o.alpha ?? .95;
+  const off = mod(t * sp, gap);
+  for (let d = off; d < L; d += gap) { if (o.amt != null && ((d / gap) % 1 + Math.floor(d / gap) * .618) % 1 > o.amt) continue;
+    const p = pat(P, d), k = d / L; ctx.fillStyle = typeof o.col === 'function' ? o.col(k) : (o.col || OIL);
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+/* 溫度色：0 冷（藍）→ 1 熱（紅） */
+const tcol = k => { k = clamp(k, 0, 1); const a = [47, 143, 255], b = [255, 93, 61]; return `rgb(${a.map((v, i) => Math.round(lerp(v, b[i], k))).join(',')})`; };
+/* 指針錶 */
+function gauge(ctx, x, y, R, v, lo, hi, o = {}) {
+  ctx.save(); ctx.fillStyle = '#0f1a2e'; ctx.strokeStyle = o.stroke || '#2c3f63'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.fill(); ctx.stroke();
+  const a0 = rad(135), a1 = rad(405), ang = v0 => lerp(a0, a1, clamp((v0 - lo) / (hi - lo), 0, 1));
+  (o.bands || []).forEach(([b0, b1, c]) => { ctx.strokeStyle = c; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(x, y, R - 8, ang(b0), ang(b1)); ctx.stroke(); });
+  ctx.strokeStyle = '#9fb0cf'; ctx.lineWidth = 2; (o.ticks || []).forEach(tv => { const a = ang(tv); ctx.beginPath(); ctx.moveTo(x + (R - 14) * Math.cos(a), y + (R - 14) * Math.sin(a)); ctx.lineTo(x + (R - 3) * Math.cos(a), y + (R - 3) * Math.sin(a)); ctx.stroke(); });
+  const a = ang(v); ctx.strokeStyle = o.needle || C.acc; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (R - 12) * Math.cos(a), y + (R - 12) * Math.sin(a)); ctx.stroke();
+  ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fill(); ctx.restore();
+  if (o.label) T(ctx, o.label, x, y + R + 18, { size: 18, align: 'center', color: C.mut });
+  if (o.text) T(ctx, o.text, x, y + R * .45, { size: 18, bold: true, align: 'center', color: o.tcol || C.ink });
+}
+/* 直立溫度計 */
+function thermo(ctx, x, y, h, v, lo, hi, o = {}) {
+  const k = clamp((v - lo) / (hi - lo), 0, 1);
+  ctx.save(); ctx.fillStyle = '#0f1a2e'; ctx.strokeStyle = '#2c3f63'; ctx.lineWidth = 2; H.rr(ctx, x - 9, y, 18, h, 9); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y + h + 10, 15, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = tcol(k); ctx.fillRect(x - 4, y + h * (1 - k), 8, h * k + 6); ctx.beginPath(); ctx.arc(x, y + h + 10, 10, 0, 7); ctx.fill(); ctx.restore();
+  (o.marks || []).forEach(([mv, s, c]) => { const yy = y + h * (1 - clamp((mv - lo) / (hi - lo), 0, 1)); ctx.save(); ctx.strokeStyle = c || C.mut; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 11, yy); ctx.lineTo(x + 22, yy); ctx.stroke(); ctx.restore(); T(ctx, s, x + 26, yy, { size: 18, color: c || C.mut }); });
+}
+/* 彈簧（垂直或水平）：從 (x1,y1) 到 (x2,y2) */
+function coil(ctx, x1, y1, x2, y2, o = {}) {
+  const n = o.n || 7, w = o.w || 12, L = Math.hypot(x2 - x1, y2 - y1), a = Math.atan2(y2 - y1, x2 - x1);
+  ctx.save(); ctx.translate(x1, y1); ctx.rotate(a); ctx.strokeStyle = o.col || '#c3d1e4'; ctx.lineWidth = o.lw || 3; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(0, 0);
+  for (let i = 0; i <= n * 2; i++) ctx.lineTo(L * (i + .5) / (n * 2 + 1), (i % 2 ? -w : w)); ctx.lineTo(L, 0); ctx.stroke(); ctx.restore();
+}
+/* 齒輪（一般外齒） */
+function gearX(ctx, x, y, R, n, ang, o = {}) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rad(ang)); ctx.fillStyle = o.col || '#8ea3c2'; ctx.globalAlpha = o.alpha ?? 1; ctx.beginPath();
+  const td = o.td || 8; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, s = Math.PI / n * .55;
+    ctx.lineTo((R - td) * Math.cos(a - s * 1.3), (R - td) * Math.sin(a - s * 1.3)); ctx.lineTo(R * Math.cos(a - s * .6), R * Math.sin(a - s * .6)); ctx.lineTo(R * Math.cos(a + s * .6), R * Math.sin(a + s * .6)); ctx.lineTo((R - td) * Math.cos(a + s * 1.3), (R - td) * Math.sin(a + s * 1.3)); }
+  ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#c3d1e4'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(0, 0, o.hub || 8, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R * .55, 0); ctx.stroke(); ctx.restore();
+}
+/* 旋轉方向小箭頭（cw=true 順時鐘） */
+function rotArrow(ctx, x, y, R, cw, o = {}) {
+  ctx.save(); ctx.strokeStyle = ctx.fillStyle = o.col || 'rgba(56,198,255,.9)'; ctx.lineWidth = 3;
+  const a0 = rad(o.a0 ?? -150), a1 = rad(o.a1 ?? -60); ctx.beginPath(); ctx.arc(x, y, R, a0, a1); ctx.stroke();
+  const ae = cw ? a1 : a0, d = cw ? 1 : -1, ex = x + R * Math.cos(ae), ey = y + R * Math.sin(ae), ta = ae + d * Math.PI / 2;
+  ctx.beginPath(); ctx.moveTo(ex + 10 * Math.cos(ta), ey + 10 * Math.sin(ta)); ctx.lineTo(ex + 6 * Math.cos(ta + 2.2), ey + 6 * Math.sin(ta + 2.2)); ctx.lineTo(ex + 6 * Math.cos(ta - 2.2), ey + 6 * Math.sin(ta - 2.2)); ctx.closePath(); ctx.fill(); ctx.restore();
+}
+/* 卡片 */
+function card(ctx, x, y, w, h, title, body, o = {}) {
+  H.box(ctx, x, y, w, h, { stroke: o.stroke || '#2c3f63', fill: o.fill, alpha: o.alpha ?? 1, lw: o.lw });
+  if (title) T(ctx, title, x + (o.center ? w / 2 : 14), y + 24, { size: o.ts || 20, bold: true, color: o.tc || C.acc, align: o.center ? 'center' : 'left', alpha: o.alpha ?? 1 });
+  if (body) T(ctx, body, x + (o.center ? w / 2 : 14), y + (title ? 56 : 26), { size: o.bs || 18, color: o.bc || C.ink, align: o.center ? 'center' : 'left', alpha: o.alpha ?? 1 });
+}
+/* 面板按鈕列：items=[[值, 文字], ...] */
+function btnRow(el, label, items, cur, cb, id = '') {
+  const d = document.createElement('div'); d.className = 'row';
+  d.innerHTML = (label ? `<span>${label}</span>` : '') + items.map(([v, s]) => `<button data-v="${v}" class="${String(v) === String(cur) ? 'on' : ''}">${s}</button>`).join('') + (id ? `<span class="fb" id="${id}"></span>` : '');
+  d.querySelectorAll('button[data-v]').forEach(b => b.onclick = () => { d.querySelectorAll('button[data-v]').forEach(x => x.classList.toggle('on', x === b)); cb(b.dataset.v, b); });
+  return d;
+}
+function sliderRow(label, min, max, step, val, unit, cb) {
+  const d = document.createElement('div'); d.className = 'row';
+  d.innerHTML = `<span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${val}"><b>${val}${unit}</b>`;
+  const r = d.querySelector('input'), b = d.querySelector('b'); r.oninput = () => { b.textContent = r.value + unit; cb(+r.value); };
+  return d;
+}
+function boxEl(el, ...rows) { const b = document.createElement('div'); b.className = 'box'; rows.forEach(r => r && b.append(typeof r === 'string' ? Object.assign(document.createElement('div'), { innerHTML: r }) : r)); el.innerHTML = ''; el.append(b); return b; }
+/* 依時間自動示範，使用者點過就改用手動值 */
+const pick = (S, key, auto) => (S[key] != null ? S[key] : auto);
+const byT = (t, list) => { let v = list[0][1]; list.forEach(([at, x]) => { if (t >= at) v = x; }); return v; };
+/* 引擎外形（側視，簡化）：給系統總圖用 */
+function engineBlock(ctx, x, y, w, h, o = {}) {
+  ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.fillStyle = o.fill || '#33445f'; H.rr(ctx, x, y, w, h, 10); ctx.fill(); ctx.strokeStyle = '#5c6f8a'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+}
+
+/* ---------- 轉子式機油泵：以外轉子 5 個圓弧凸角（銷）包絡算出內轉子 4 凸角輪廓，保證不互相穿越 ---------- */
+const GR = (() => {
+  const N = 5, Rp = 44, rp = 11, e = 6, M = 360, prof = new Array(M).fill(1e9);
+  for (let s = 0; s < 500; s++) { const al = s / 500 * Math.PI * 2 * 5, be = al * 4 / 5;
+    for (let k = 0; k < N; k++) { const a = be + k * 2 * Math.PI / N; let px = Rp * Math.cos(a) - e, py = Rp * Math.sin(a);
+      const c = Math.cos(-al), sn = Math.sin(-al), x = px * c - py * sn, y = px * sn + py * c;
+      for (let i = 0; i < M; i++) { const u = i / M * Math.PI * 2, ux = Math.cos(u), uy = Math.sin(u), p = x * ux + y * uy, d2 = x * x + y * y - p * p;
+        if (d2 < rp * rp && p > 0) { const r = p - Math.sqrt(rp * rp - d2); if (r < prof[i]) prof[i] = r; } } } }
+  return { N, Rp, rp, e, prof };
+})();
+function rotorPump(ctx, x, y, al, o = {}) {
+  const k = o.k || 1, be = al * 4 / 5;
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+  // 泵體與進出油口（腎形口在轉子背後）
+  ctx.fillStyle = '#26354f'; ctx.beginPath(); ctx.arc(0, 0, 74, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(47,143,255,.55)'; ctx.beginPath(); ctx.arc(0, 0, 50, rad(20), rad(160)); ctx.arc(0, 0, 30, rad(160), rad(20), true); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,93,61,.55)'; ctx.beginPath(); ctx.arc(0, 0, 50, rad(200), rad(340)); ctx.arc(0, 0, 30, rad(340), rad(200), true); ctx.closePath(); ctx.fill();
+  // 外轉子（被動，5 凹角）：環＋5 個圓弧凸角
+  ctx.save(); ctx.rotate(be); ctx.fillStyle = '#7f93b2'; ctx.beginPath(); ctx.arc(0, 0, 66, 0, 7); ctx.arc(0, 0, GR.Rp + 4, 0, 7, true); ctx.fill('evenodd');
+  for (let i = 0; i < 5; i++) { const a = i * 2 * Math.PI / 5; ctx.beginPath(); ctx.arc(GR.Rp * Math.cos(a), GR.Rp * Math.sin(a), GR.rp, 0, 7); ctx.fill(); ctx.fillRect(GR.Rp * Math.cos(a) - 0, 0, 0, 0); }
+  ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(58, 0, 4, 0, 7); ctx.fill(); ctx.restore();
+  // 內轉子（主動，4 凸角）
+  ctx.save(); ctx.translate(GR.e, 0); ctx.rotate(al); ctx.fillStyle = '#c3d1e4'; ctx.beginPath();
+  GR.prof.forEach((r, i) => { const u = i / GR.prof.length * Math.PI * 2; i ? ctx.lineTo(r * Math.cos(u), r * Math.sin(u)) : ctx.moveTo(r * Math.cos(u), r * Math.sin(u)); });
+  ctx.closePath(); ctx.fill(); ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(0, 0, 8, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(22, 0); ctx.stroke(); ctx.restore();
+  ctx.restore();
+}
+
+/* ---------- 冷卻系統（第 5 章）共用：側視水箱、風扇、引擎水套 ----------
+   約定：車頭在左；水箱在最前方，冷卻風扇裝在水箱「後方」（右側），把空氣由水箱往引擎方向吹。 */
+function radSide(ctx, x, top, h, o = {}) { // 側視水箱：上水箱、芯子、下水箱（厚 44）
+  const w = 44; ctx.save(); ctx.globalAlpha = o.alpha ?? 1;
+  ctx.fillStyle = '#5c6f8a'; H.rr(ctx, x - 6, top, w + 12, 34, 6); ctx.fill(); H.rr(ctx, x - 6, top + h - 34, w + 12, 34, 6); ctx.fill();
+  ctx.fillStyle = '#26354f'; ctx.fillRect(x, top + 34, w, h - 68);
+  ctx.strokeStyle = '#8ea3bf'; ctx.lineWidth = 1; for (let y = top + 38; y < top + h - 36; y += 6) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke(); }
+  ctx.restore(); return { x, w, top, h, core: [top + 34, top + h - 34] };
+}
+function fanSide(ctx, x, cy, R, ang, o = {}) { // 側視風扇：葉片旋轉時投影長度變化
+  ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.fillStyle = '#2b3850'; ctx.fillRect(x - 6, cy - 8, 30, 16);
+  for (let i = 0; i < 4; i++) { const a = ang + i * Math.PI / 2, ly = R * Math.sin(a); ctx.fillStyle = Math.cos(a) > 0 ? '#9fb2cf' : '#6f829f'; ctx.beginPath(); ctx.ellipse(x, cy + ly / 2, 7, Math.abs(ly / 2) + 2, 0, 0, 7); ctx.fill(); }
+  ctx.fillStyle = '#c3d1e4'; ctx.beginPath(); ctx.arc(x, cy, 9, 0, 7); ctx.fill();
+  if (o.shroud) { ctx.strokeStyle = '#7f93b2'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(o.shroud, cy - R - 26); ctx.lineTo(x - 10, cy - R - 6); ctx.moveTo(o.shroud, cy + R + 26); ctx.lineTo(x - 10, cy + R + 6); ctx.stroke(); }
+  ctx.restore();
+}
+function airThrough(ctx, x0, x1, ys, t, o = {}) { // 空氣只走散熱片縫隙（水平），速度 sp
+  const sp = o.speed ?? 120; if (!sp) return; ctx.save(); ctx.globalAlpha = o.alpha ?? .9;
+  ys.forEach((y, i) => { const L = x1 - x0; for (let k = 0; k < 3; k++) { const d = mod(t * sp + i * 37 + k * L / 3, L); ctx.strokeStyle = o.col || AIRC; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x0 + d, y); ctx.lineTo(x0 + d + 14, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x0 + d + 14, y); ctx.lineTo(x0 + d + 8, y - 4); ctx.moveTo(x0 + d + 14, y); ctx.lineTo(x0 + d + 8, y + 4); ctx.stroke(); } });
+  ctx.restore();
+}
+/* 水冷系統側視總圖：回傳各站座標與管路，供 V 各段共用 */
+function coolSys(ctx, o = {}) {
+  const R = radSide(ctx, 120, 120, 300), X = R.x + R.w / 2, RR = R.x + R.w + 6;
+  const EX = 470, EY = 190; // 引擎（汽缸蓋在上、汽缸體在下）
+  ctx.save(); ctx.fillStyle = '#3a4e70'; H.rr(ctx, EX, EY, 300, 80, 10); ctx.fill(); ctx.fillStyle = '#2c3d5a'; H.rr(ctx, EX, EY + 84, 300, 150, 10); ctx.fill(); ctx.restore();
+  T(ctx, '汽缸蓋', EX + 150, EY + 22, { size: 18, align: 'center', color: C.mut }); T(ctx, '汽缸體', EX + 150, EY + 214, { size: 18, align: 'center', color: C.mut });
+  const pump = [EX - 22, EY + 196], th = [EX + 12, EY + 34];
+  const P = {
+    lower: [[RR, 404], [EX - 70, 404], [EX - 70, pump[1]], [pump[0] - 16, pump[1]]],
+    block: [[pump[0] + 16, pump[1]], [EX + 270, pump[1]], [EX + 270, EY + 112], [EX + 40, EY + 112]],
+    head: [[EX + 40, EY + 112], [EX + 40, EY + 58], [EX + 270, EY + 58], [EX + 270, th[1]], [th[0] + 14, th[1]]],
+    upper: [[th[0] - 14, th[1]], [EX - 70, th[1]], [EX - 70, 137], [RR, 137]],
+    core: [[X - 10, 150], [X - 10, 392]], core2: [[X + 10, 150], [X + 10, 392]],
+    bypass: [[th[0], th[1] + 16], [th[0], pump[1] - 40], [pump[0], pump[1] - 40], [pump[0], pump[1] - 14]],
+  };
+  return { R, X, RR, EX, EY, pump, th, P };
+}
+function pumpIcon(ctx, x, y, ang) { ctx.save(); ctx.fillStyle = '#4a5d7d'; ctx.beginPath(); ctx.arc(x, y, 18, 0, 7); ctx.fill(); ctx.translate(x, y); ctx.rotate(ang); ctx.strokeStyle = '#c3d1e4'; ctx.lineWidth = 3;
+  for (let i = 0; i < 6; i++) { ctx.rotate(Math.PI / 3); ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(10, 4, 14, 0); ctx.stroke(); } ctx.restore(); }
+function thermoIcon(ctx, x, y, open) { ctx.save(); ctx.fillStyle = '#33445f'; H.rr(ctx, x - 16, y - 16, 32, 32, 6); ctx.fill(); ctx.strokeStyle = open ? C.ok : C.bad; ctx.lineWidth = 4;
+  ctx.beginPath(); if (open) { ctx.moveTo(x - 10, y - 10); ctx.lineTo(x + 10, y + 10); } else { ctx.moveTo(x - 10, y); ctx.lineTo(x + 10, y); } ctx.stroke(); ctx.restore(); }
+/* 水箱芯子俯視放大：水在黃銅水管內（往下流 ⊗），空氣在散熱片縫隙間（往後吹），兩者不混合 */
+function coreZoom(ctx, cx, cy, r, t, o = {}) {
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.clip(); ctx.fillStyle = '#0b1324'; ctx.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+  for (let i = -3; i <= 3; i++) { const y = cy + i * 30; ctx.fillStyle = '#b08a3a'; H.rr(ctx, cx - 28, y - 8, 56, 16, 8); ctx.fill(); ctx.fillStyle = tcol(o.hot ?? .6); H.rr(ctx, cx - 24, y - 5, 48, 10, 5); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, y, 4, 0, 7); ctx.moveTo(cx - 3, y - 3); ctx.lineTo(cx + 3, y + 3); ctx.moveTo(cx + 3, y - 3); ctx.lineTo(cx - 3, y + 3); ctx.stroke(); }
+  ctx.strokeStyle = '#9fb2cf'; ctx.lineWidth = 1.5; for (let i = -4; i <= 3; i++) { const y0 = cy + i * 30 + 8, y1 = y0 + 14; ctx.beginPath(); for (let x = cx - 28, k = 0; x <= cx + 28; x += 7, k++) ctx.lineTo(x, k % 2 ? y0 : y1); ctx.stroke(); }
+  airThrough(ctx, cx - r, cx + r, [-4, -3, -2, -1, 0, 1, 2, 3].map(i => cy + i * 30 + 15), t, { speed: o.air ?? 90 });
+  ctx.restore(); ctx.save(); ctx.strokeStyle = '#7f93b2'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); ctx.restore();
+}
+
+
+/* ===== 單元六共用繪圖（第 6 章點火系統） =====
+   顏色約定：低壓電路＝細藍線（LV）、高壓電路＝粗紅線（HV）。
+   物理約定：①一次電流一律依 RL 電路指數漸升 i＝Imax(1－e^(－t/τ))（自感延遲），不可畫成垂直方波；
+   ②感應放電式在「一次電流切斷瞬間」跳火；CDI 在「主電容器放電進入低壓線圈瞬間」跳火；
+   ③分電盤一律從上方看、順時鐘旋轉；離心提前＝凸輪順分火頭方向轉、真空提前＝底板逆分火頭方向轉；
+   ④磁波線圈＝類比交流（振幅與頻率隨轉速升、凸角對正瞬間電壓 0）；霍爾／光電＝數位方波（只有頻率變、高度不變）。 */
+const LV = '#38c6ff', HV = '#ff5d5d', SPK = '#fff6a0', CU = '#d9a066';
+function wire(ctx, P, o = {}) {
+  ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = o.col || LV; ctx.lineWidth = o.w || 3;
+  if (o.glow) { ctx.shadowColor = o.col || LV; ctx.shadowBlur = 12; }
+  if (o.dash) ctx.setLineDash(o.dash); ctx.beginPath(); P.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); ctx.restore();
+}
+/* 沿導線移動的電流點 */
+function cur(ctx, P, t, o = {}) { flow(ctx, P, t, Object.assign({ col: '#d8f3ff', gap: 22, speed: 90, r: 3.4 }, o)); }
+/* 跳火：鋸齒狀電弧 */
+function zap(ctx, x1, y1, x2, y2, t, o = {}) {
+  ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = o.col || SPK; ctx.lineWidth = o.w || 3; ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 14; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x1, y1); const n = o.n || 6, nx = -(y2 - y1), ny = x2 - x1, L = Math.hypot(nx, ny) || 1;
+  for (let i = 1; i < n; i++) { const k = i / n, j = Math.sin(t * 57 + i * 7.3) * (o.j || 5); ctx.lineTo(lerp(x1, x2, k) + nx / L * j, lerp(y1, y2, k) + ny / L * j); }
+  ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore();
+}
+function gnd(ctx, x, y, o = {}) { ctx.save(); ctx.strokeStyle = o.col || C.mut; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x, y); ctx.stroke();
+  [[16, 0], [10, 6], [4, 12]].forEach(([w, d]) => { ctx.beginPath(); ctx.moveTo(x - w, y + d); ctx.lineTo(x + w, y + d); ctx.stroke(); }); ctx.restore(); }
+/* 電瓶：正極樁頭較粗（+／pos）、負極較細（－／neg）。回傳兩樁頭座標 */
+function batt(ctx, x, y, o = {}) {
+  const w = o.w || 110, h = o.h || 62; ctx.save(); ctx.globalAlpha = o.alpha ?? 1;
+  ctx.fillStyle = '#26354f'; H.rr(ctx, x - w / 2, y - h / 2, w, h, 8); ctx.fill(); ctx.strokeStyle = '#5c6f8a'; ctx.lineWidth = 2; ctx.stroke();
+  const pX = x - w / 2 + 24, nX = x + w / 2 - 24; ctx.fillStyle = '#c9a24a'; ctx.fillRect(pX - 10, y - h / 2 - 12, 20, 12); ctx.fillStyle = '#9aa3b2'; ctx.fillRect(nX - 6, y - h / 2 - 10, 12, 10);
+  ctx.restore();
+  T(ctx, '+', pX, y - 6, { size: 22, bold: true, align: 'center', color: '#ffd166', alpha: o.alpha ?? 1 }); T(ctx, '－', nX, y - 6, { size: 22, bold: true, align: 'center', color: C.mut, alpha: o.alpha ?? 1 });
+  if (o.label !== false) T(ctx, o.label || '電瓶 12V', x, y + h / 2 + 16, { size: 18, align: 'center', color: C.mut, alpha: o.alpha ?? 1 });
+  return { p: [pX, y - h / 2 - 12], n: [nX, y - h / 2 - 10] };
+}
+/* 點火線圈（示意盒）：左側低壓接頭（＋、－）、上方中央高壓輸出 */
+function igCoil(ctx, x, y, o = {}) {
+  const w = o.w || 92, h = o.h || 120; ctx.save(); ctx.globalAlpha = o.alpha ?? 1;
+  ctx.fillStyle = '#33445f'; H.rr(ctx, x - w / 2, y - h / 2, w, h, 12); ctx.fill(); ctx.lineWidth = o.on ? 4 : 2; ctx.strokeStyle = o.on ? C.acc : '#5c6f8a'; ctx.stroke();
+  // 內部：鐵芯＋兩組繞線
+  ctx.fillStyle = '#7b8aa6'; ctx.fillRect(x - 7, y - h / 2 + 18, 14, h - 36);
+  const sw = Math.min(15, w * .17), pw = Math.min(27, w * .3);
+  for (let i = 0; i < 8; i++) { ctx.strokeStyle = HV; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y - h / 2 + 20 + i * (h - 40) / 7, sw, 4, 0, 0, 7); ctx.stroke(); }
+  for (let i = 0; i < 5; i++) { ctx.strokeStyle = LV; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(x, y - h / 2 + 24 + i * (h - 48) / 4, pw, 6, 0, 0, 7); ctx.stroke(); }
+  ctx.fillStyle = '#e8eef9'; ctx.fillRect(x - 8, y - h / 2 - 14, 16, 14);
+  if (o.mag) { ctx.globalAlpha = (o.alpha ?? 1) * clamp(o.mag, 0, 1); ctx.strokeStyle = '#b48cff'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+    for (let k = 1; k <= 3; k++) { ctx.beginPath(); ctx.ellipse(x, y, 30 + k * 12, h / 2 - 6 + k * 6, 0, 0, 7); ctx.stroke(); } ctx.setLineDash([]); }
+  ctx.restore();
+  if (o.label !== false) T(ctx, o.label || '點火線圈', x, y + h / 2 + 18, { size: 18, align: 'center', color: C.mut, alpha: o.alpha ?? 1 });
+  return { hv: [x, y - h / 2 - 14], p: [x - w / 2, y - h / 2 + 24], n: [x - w / 2, y + h / 2 - 24], r: [x + w / 2, y + h / 2 - 24] };
+}
+/* 火星塞（直立、側視）：回傳頂端接頭與中央電極、邊電極位置 */
+function plugV(ctx, x, y, s = 1, o = {}) {
+  ctx.save(); ctx.globalAlpha = o.alpha ?? 1;
+  ctx.fillStyle = '#d0d6e2'; ctx.fillRect(x - 6 * s, y, 12 * s, 14 * s);                         // 接頭
+  ctx.fillStyle = '#f4f2ea'; H.rr(ctx, x - 13 * s, y + 14 * s, 26 * s, 56 * s, 6 * s); ctx.fill(); // 絕緣瓷體
+  ctx.strokeStyle = '#c9c2b0'; ctx.lineWidth = 2; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x - 13 * s, y + (22 + i * 11) * s); ctx.lineTo(x + 13 * s, y + (22 + i * 11) * s); ctx.stroke(); }
+  ctx.fillStyle = '#9aa7bd'; ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx.lineTo(x + 22 * s * Math.cos(a), y + 80 * s + 12 * s * Math.sin(a) * .6); } ctx.fill(); // 六角
+  ctx.fillRect(x - 22 * s, y + 70 * s, 44 * s, 18 * s);
+  const th = o.reach || 34; ctx.fillStyle = '#7b8aa6'; ctx.fillRect(x - 15 * s, y + 88 * s, 30 * s, th * s);       // 螺牙
+  ctx.strokeStyle = '#5c6f8a'; ctx.lineWidth = 2; for (let yy = 0; yy < th; yy += 5) { ctx.beginPath(); ctx.moveTo(x - 15 * s, y + (90 + yy) * s); ctx.lineTo(x + 15 * s, y + (93 + yy) * s); ctx.stroke(); }
+  const tip = y + (88 + th) * s; ctx.fillStyle = '#e8eef9'; ctx.fillRect(x - 3 * s, tip, 6 * s, 9 * s);           // 中央電極
+  ctx.fillStyle = '#c3d1e4'; ctx.fillRect(x + 11 * s, tip - 2 * s, 4 * s, 20 * s); ctx.fillRect(x - 3 * s, tip + 16 * s, 18 * s, 4 * s); // 邊電極
+  ctx.restore();
+  return { top: [x, y], c: [x, tip + 9 * s], g: [x, tip + 16 * s], tip };
+}
+/* 示波器：f(u) 在 u∈[u0,u1] 的曲線，值域 [v0,v1] */
+function scope(ctx, x, y, w, h, f, u0, u1, v0, v1, o = {}) {
+  ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.fillStyle = '#07101f'; H.rr(ctx, x, y, w, h, 8); ctx.fill(); ctx.strokeStyle = o.frame || '#2c3f63'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.strokeStyle = 'rgba(80,110,150,.25)'; ctx.lineWidth = 1; for (let i = 1; i < 8; i++) { ctx.beginPath(); ctx.moveTo(x + w * i / 8, y); ctx.lineTo(x + w * i / 8, y + h); ctx.stroke(); }
+  for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x, y + h * i / 4); ctx.lineTo(x + w, y + h * i / 4); ctx.stroke(); }
+  const Y = v => y + h - (v - v0) / (v1 - v0) * h; if (v0 < 0 && v1 > 0) { ctx.strokeStyle = 'rgba(159,176,207,.6)'; ctx.beginPath(); ctx.moveTo(x, Y(0)); ctx.lineTo(x + w, Y(0)); ctx.stroke(); }
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.strokeStyle = o.col || C.ok; ctx.lineWidth = o.lw || 3; ctx.beginPath(); const N = o.n || 400;
+  for (let i = 0; i <= N; i++) { const u = lerp(u0, u1, i / N), v = f(u); const px = x + w * i / N, py = Y(clamp(v, v0 - (v1 - v0), v1 + (v1 - v0))); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+  ctx.stroke();
+  if (o.cursor != null) { const cx = x + w * (o.cursor - u0) / (u1 - u0); ctx.strokeStyle = 'rgba(255,176,32,.9)'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(cx, y + h); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.restore();
+  if (o.title) T(ctx, o.title, x + 10, y + 18, { size: 18, bold: true, color: o.tcol || C.ink, alpha: o.alpha ?? 1 });
+  return Y;
+}
+/* 一次電流（單位化）：閉合 tc 秒後之值，τ 為時間常數 */
+const iPri = (tc, tau = .9) => tc <= 0 ? 0 : 1 - Math.exp(-tc / tau);
+/* 簡化開關符號 */
+function swSym(ctx, x1, y1, x2, y2, closed, o = {}) {
+  ctx.save(); ctx.strokeStyle = o.col || LV; ctx.lineWidth = 3; ctx.fillStyle = o.col || LV;
+  ctx.beginPath(); ctx.arc(x1, y1, 4, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(x2, y2, 4, 0, 7); ctx.fill();
+  const a = Math.atan2(y2 - y1, x2 - x1) - (closed ? 0 : .5), L = Math.hypot(x2 - x1, y2 - y1); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + L * Math.cos(a), y1 + L * Math.sin(a)); ctx.stroke(); ctx.restore();
+}
+/* 電容符號（兩平行板，連線方向為垂直 vert=true） */
+function capSym(ctx, x, y, o = {}) {
+  ctx.save(); ctx.strokeStyle = o.col || LV; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x - 16, y - 5); ctx.lineTo(x + 16, y - 5); ctx.moveTo(x - 16, y + 5); ctx.lineTo(x + 16, y + 5); ctx.stroke();
+  ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x, y - 20); ctx.moveTo(x, y + 5); ctx.lineTo(x, y + 20); ctx.stroke(); ctx.restore();
+  return { a: [x, y - 20], b: [x, y + 20] };
+}
+function resSym(ctx, x1, y1, x2, y2, o = {}) { coil(ctx, x1, y1, x2, y2, { n: o.n || 5, w: 8, col: o.col || LV, lw: 3 }); }
+/* 分電盤上視：cap 蓋＋中央碳棒＋n 個邊電極＋分火頭（ang：分火頭角度，0＝向上、順時鐘為正） */
+function distTop(ctx, cx, cy, R, ang, o = {}) {
+  const n = o.n || 4; ctx.save(); ctx.globalAlpha = o.alpha ?? 1;
+  ctx.fillStyle = '#3a2a22'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill(); ctx.strokeStyle = '#6b4f40'; ctx.lineWidth = 3; ctx.stroke();
+  for (let i = 0; i < n; i++) { const a = rad(i * 360 / n) - Math.PI / 2; ctx.fillStyle = (o.fire === i) ? C.acc : '#c3d1e4'; ctx.fillRect(cx + (R - 16) * Math.cos(a) - 6, cy + (R - 16) * Math.sin(a) - 6, 12, 12); }
+  ctx.fillStyle = '#1b1b1b'; ctx.beginPath(); ctx.arc(cx, cy, 8, 0, 7); ctx.fill();
+  ctx.translate(cx, cy); ctx.rotate(rad(ang)); ctx.fillStyle = '#5a3d2e'; H.rr(ctx, -14, -R + 30, 28, R - 18, 8); ctx.fill(); ctx.fillStyle = CU; ctx.fillRect(-4, -R + 22, 8, R - 22);
+  ctx.restore();
+  T(ctx, '中央碳棒', cx, cy + 26, { size: 18, align: 'center', color: C.mut, alpha: o.labels ? o.alpha ?? 1 : 0 });
+}
+/* 白金凸輪與白金組（上視）：camAng＝凸輪角度（順時鐘為正，0＝第一凸角朝上）、plateAng＝底板角度（＋順時鐘、－逆時鐘）。
+   凸輪外形固定（凸角寬 W），白金間隙設定只改變「從動塊開始被頂開的門檻」：o.openHalf＝每凸角白金打開的半角
+   （四缸標準：開 36°、閉 54° → openHalf＝18）。間隙大 → 門檻低 → 打開角度大（閉角小）、打得早。回傳 { open, d } */
+function camPoints(ctx, cx, cy, camAng, plateAng, o = {}) {
+  const n = o.n || 4, R = o.R || 46, lobe = o.lobe || 12, W = 30, base = (o.base ?? 90) + plateAng, half = o.openHalf ?? 18;
+  const pr = dd => lobe * Math.cos(clamp(dd / W, -1, 1) * Math.PI / 2) ** 2, thr = pr(half);
+  const near = a => { let d = 999; for (let i = 0; i < n; i++) { const dd = mod(a - camAng - i * 360 / n + 180, 360) - 180; if (Math.abs(dd) < Math.abs(d)) d = dd; } return d; };
+  const prof = a => R + pr(near(a));
+  ctx.save(); ctx.globalAlpha = o.alpha ?? 1;
+  if (o.plate !== false) { ctx.fillStyle = 'rgba(60,80,110,.55)'; ctx.beginPath(); ctx.arc(cx, cy, R + 74, 0, 7); ctx.fill(); ctx.strokeStyle = o.plateHL ? C.acc : '#4a5d7d'; ctx.lineWidth = o.plateHL ? 4 : 2; ctx.stroke();
+    for (const k of [0, 120, 240]) { const a = rad(plateAng + k - 90); ctx.fillStyle = o.plateHL ? C.acc : '#8ea3bf'; ctx.beginPath(); ctx.arc(cx + (R + 64) * Math.cos(a), cy + (R + 64) * Math.sin(a), 5, 0, 7); ctx.fill(); } }
+  ctx.fillStyle = o.camHL ? '#ffcf66' : '#9fb0cf'; ctx.beginPath(); for (let a = 0; a <= 360; a += 2) { const r = prof(a), aa = rad(a - 90); ctx.lineTo(cx + r * Math.cos(aa), cy + r * Math.sin(aa)); } ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#5c6f8a'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 26 * Math.cos(rad(camAng - 90)), cy + 26 * Math.sin(rad(camAng - 90))); ctx.stroke();
+  // 從動塊與白金臂（臂沿切線方向；接點在臂末端，固定接點在外側）
+  const d = near(base), lift = pr(d), open = Math.abs(d) < half, gap = open ? (lift - thr) * 1.1 : 0;
+  const ba = rad(base - 90), kx = Math.cos(ba), ky = Math.sin(ba), tx = -ky, ty = kx, rr = R + Math.max(lift, thr);
+  const AR = o.arm || 1, fx = cx + rr * kx, fy = cy + rr * ky, px = fx + 10 * kx, py = fy + 10 * ky, ax = px + tx * 50 * AR, ay = py + ty * 50 * AR;
+  ctx.strokeStyle = '#c3d1e4'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(px - tx * 40 * AR, py - ty * 40 * AR); ctx.lineTo(ax, ay); ctx.stroke();
+  ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(px - tx * 40 * AR, py - ty * 40 * AR, 6, 0, 7); ctx.fill();
+  ctx.fillStyle = '#e0e6f0'; ctx.save(); ctx.translate(cx + (R + Math.max(lift, thr) + 4) * kx, cy + (R + Math.max(lift, thr) + 4) * ky); ctx.rotate(ba); ctx.fillRect(-6, -7, 12, 14); ctx.restore();
+  const mx = ax + kx * 4, my = ay + ky * 4, fxx = cx + (R + thr + 3) * kx + tx * 50 * AR, fyy = cy + (R + thr + 3) * ky + ty * 50 * AR;
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(mx, my, 5, 0, 7); ctx.fill(); ctx.fillStyle = '#d8d8d8'; ctx.beginPath(); ctx.arc(fxx, fyy, 6, 0, 7); ctx.fill(); ctx.strokeStyle = '#8ea3bf'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(fxx, fyy); ctx.lineTo(fxx + tx * 30, fyy + ty * 30); ctx.stroke(); ctx.fillStyle = '#5c6f8a'; ctx.beginPath(); ctx.arc(fxx + tx * 30, fyy + ty * 30, 6, 0, 7); ctx.fill();
+  ctx.restore();
+  if (o.spark && open && (o.sparkK ?? 1) > 0) zap(ctx, mx - kx * 4, my - ky * 4, fxx + kx * 5, fyy + ky * 5, o.t || 0, { j: 3, w: 2, alpha: o.sparkK ?? 1 });
+  return { open, d, contact: [mx, my] };
+}
+/* 正時轉子（磁阻輪）：n 齒、ang 順時鐘；回傳最接近 pickAng 的齒角距（度） */
+function reluctor(ctx, cx, cy, R, n, ang, o = {}) {
+  ctx.save(); ctx.globalAlpha = o.alpha ?? 1; ctx.fillStyle = o.col || '#9fb0cf'; ctx.beginPath();
+  for (let a = 0; a <= 360; a += 1) { let m = 0; for (let i = 0; i < n; i++) { const dd = Math.abs(mod(a - ang - i * 360 / n + 180, 360) - 180); m = Math.max(m, dd < 9 ? 1 : dd < 14 ? (14 - dd) / 5 : 0); }
+    const r = R + 16 * m, aa = rad(a - 90); ctx.lineTo(cx + r * Math.cos(aa), cy + r * Math.sin(aa)); }
+  ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#5c6f8a'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = '#2b3850'; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 7); ctx.fill(); ctx.restore();
+  const pa = o.pickAng ?? 90; let d = 999; for (let i = 0; i < n; i++) { const dd = mod(pa - ang - i * 360 / n + 180, 360) - 180; if (Math.abs(dd) < Math.abs(d)) d = dd; } return d; // d>0：齒還在接近（尚未到達）
+}
+/* 磁波線圈感應電壓（單位化）：d＝齒與磁極角距（度，>0 接近中、<0 離開中）、w＝轉速倍率。
+   磁通 Φ(d)＝高斯形；e＝－dΦ/dt＝dΦ/dd × w（齒靠近時 d 由正變小）→ 接近正、對正 0、離開負，振幅∝轉速 */
+const fluxD = d => Math.exp(-((d / 9) ** 2));
+const emfD = (d, w = 1) => w * (2 * d / 81) * Math.exp(-((d / 9) ** 2)) * 4.3;
+/* 小型鑰匙開關（OFF／IG／ST） */
+function keySw(ctx, x, y, pos, o = {}) {
+  ctx.save(); ctx.fillStyle = '#26354f'; ctx.beginPath(); ctx.arc(x, y, 40, 0, 7); ctx.fill(); ctx.strokeStyle = '#5c6f8a'; ctx.lineWidth = 2; ctx.stroke();
+  const A = { OFF: -90, IG: -40, ST: 10 }; ctx.restore();
+  Object.entries(A).forEach(([k, a]) => T(ctx, k, x + 58 * Math.sin(rad(a)), y - 58 * Math.cos(rad(a)), { size: 18, bold: k === pos, align: 'center', color: k === pos ? C.acc : C.mut }));
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rad(A[pos] ?? 0)); ctx.fillStyle = '#c3d1e4'; H.rr(ctx, -7, -32, 14, 64, 5); ctx.fill(); ctx.restore();
+}
+/* 段末小問題：把正確選項放到指定位置 put（0～3），其餘保持原順序 */
+function qz(q, opts, ex, put) { const c = opts[0], rest = opts.slice(1); rest.splice(put, 0, c); return { q, opts: rest, ans: put, ex }; }
+
