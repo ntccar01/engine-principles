@@ -129,4 +129,4 @@ table.xt{border-collapse:collapse;margin:6px 0;font-size:15px}table.xt th,table.
 #rot{display:none;position:sticky;top:0;z-index:50;background:var(--acc);color:#1a1200;font-weight:700;text-align:center;padding:8px 10px;font-size:16px}
 @media (orientation:portrait) and (max-width:760px){#rot{display:block}}
 
-.ch7controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:0 15px}.ch7links{font-size:16px;line-height:2}.embed .ch7links{display:none}
+.ch7controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:0 15px}.ch7links{font-size:16px;line-height:2}.ch7links a{color:var(--acc2)}.embed .ch7links{display:none}.embed .chtitle{font-size:12px;top:3px;padding:1px 6px}

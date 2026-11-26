@@ -8,14 +8,13 @@ const CH7Math = Object.freeze({
   torque:n=>21-0.000001*(n-3500)**2,
   fhp:n=>n*.003,
   sfc:n=>220+0.000014*(n-3900)**2,
-  pie:[[25,36,33,6],[35,31,28+2,4+0]] // overridden below by valid range tuple
 });
 const CH7Heat=[[25,36,33,6],[32,32,30,6]]; // each sums to 100; every value inside p.208 ranges
 window.CH7Math=CH7Math;window.CH7Heat=CH7Heat;
 const tx=(c,s,x,y,color=C.ink,size=22)=>T(c,s,x,y,{color,size});
 function rect7(c,x,y,w,h,color=C.panel){c.fillStyle=color;H.rr(c,x,y,w,h,12);c.fill();}
 function line7(c,x,y,a,b,col=C.acc2,lw=3){c.strokeStyle=col;c.lineWidth=lw;c.beginPath();c.moveTo(x,y);c.lineTo(a,b);c.stroke();}
-function wrap7(c,s,x,y,w,col=C.ink,size=21){let row='',yy=y;for(const ch of String(s)){c.font=`${size}px ${FONT}`;if(c.measureText(row+ch).width>w){tx(c,row,x,yy,col,size);yy+=size*1.55;row='';}row+=ch;}if(row)tx(c,row,x,yy,col,size);return yy+size*1.55;}
+function wrap7(c,s,x,y,w,col=C.ink,size=21){let row='',yy=y;for(const ch of String(s)){c.font=`${size}px ${FONT}`;if(ch==='\n'){tx(c,row,x,yy,col,size);yy+=size*1.55;row='';continue;}if(c.measureText(row+ch).width>w){tx(c,row,x,yy,col,size);yy+=size*1.55;row='';}row+=ch;}if(row)tx(c,row,x,yy,col,size);return yy+size*1.55;}
 function card7(c,title,body,x,y,w=410,h=150){rect7(c,x,y,w,h,'#16223a');tx(c,title,x+20,y+30,C.acc,23);wrap7(c,body,x+20,y+70,w-40);}
 function base7(c,title,sub='課本教學模型｜換算與公式採教材近似值'){c.fillStyle=C.bg;c.fillRect(0,0,960,540);tx(c,title,35,60,C.acc,28);tx(c,sub,35,510,C.mut,18);}
 function bars7(c,items,x=65,y=155,width=800,max=100){items.forEach(([label,v,col],i)=>{const yy=y+i*76;tx(c,label,x,yy-23,C.ink,20);rect7(c,x,yy,width,26,'#253855');rect7(c,x,yy,Math.max(3,width*v/max),26,col||C.acc2);tx(c,String(Math.round(v*100)/100),x+width+12,yy+14,C.acc,22);});}
@@ -32,24 +31,28 @@ function graph7(c,kind,n){
   const x=85,y=420,w=735,h=260,xp=r=>x+(r-1000)/5500*w;
   const curves=kind==='sfc'?[['SFC g/(ps·h)',CH7Math.sfc,400,C.acc],['扭力 kg-m（×10）',r=>CH7Math.torque(r)*10,400,C.ok],['BHP ps（×2）',r=>CH7Math.bhp(CH7Math.torque(r),r)*2,400,C.acc2]]:kind==='torque'?[['扭力 kg-m',CH7Math.torque,25,C.ok],['VE %',r=>CH7Math.torque(r)*4,100,C.acc2]]:[['IHP ps',r=>CH7Math.bhp(CH7Math.torque(r),r)+CH7Math.fhp(r),180,C.acc],['BHP ps',r=>CH7Math.bhp(CH7Math.torque(r),r),180,C.acc2],['FHP ps',CH7Math.fhp,180,C.bad]];
   line7(c,x,y,x+w,y,C.mut,2);line7(c,x,y,x,y-h,C.mut,2);
+  const axisMax=kind==='sfc'?400:kind==='torque'?25:180;
+  for(let k=0;k<=4;k++)tx(c,`${axisMax*k/4}`,30,y-k*h/4,C.mut,18);
   for(let r=1000;r<=6000;r+=1000){const xx=xp(r);line7(c,xx,y,xx,y-h,'#263850',1);tx(c,r,xx-23,y+24,C.mut,18);}
   tx(c,'rpm',840,y+24,C.mut,18);
-  curves.forEach(([lab,fn,max,col],k)=>{c.beginPath();for(let r=1000;r<=6500;r+=25){const xx=xp(r),yy=y-fn(r)/max*h;if(r===1000)c.moveTo(xx,yy);else c.lineTo(xx,yy);}c.strokeStyle=col;c.lineWidth=4;c.stroke();tx(c,lab,85+k*275,115,col,19);const v=fn(n);tx(c,`${lab.split(' ')[0]} ${v.toFixed(1)}`,85+k*275,475,col,20);c.beginPath();c.arc(xp(n),y-v/max*h,6,0,Math.PI*2);c.fillStyle=col;c.fill();});
+  curves.forEach(([lab,fn,max,col],k)=>{c.beginPath();for(let r=1000;r<=6500;r+=25){const xx=xp(r),yy=y-fn(r)/max*h;if(r===1000)c.moveTo(xx,yy);else c.lineTo(xx,yy);}c.strokeStyle=col;c.lineWidth=4;c.stroke();tx(c,lab,85+k*275,115,col,19);const v=fn(n),actual=kind==='sfc'?v/[1,10,2][k]:v;tx(c,`${lab.split(' ')[0]} ${actual.toFixed(1)}`,85+k*275,475,col,20);c.beginPath();c.arc(xp(n),y-v/max*h,6,0,Math.PI*2);c.fillStyle=col;c.fill();});
+  if(kind==='torque'){[0,25,50,75,100].forEach((v,k)=>tx(c,v+'%',840,y-k*h/4,C.acc2,18));}
   line7(c,xp(n),145,xp(n),y,'#e8eef9',2);
   if(kind==='sfc'){line7(c,xp(3900),y-h,xp(3900),y,C.acc,1);tx(c,'經濟轉速 3900（示意）',xp(3900)-120,155,C.acc,18);}
   if(kind==='torque')tx(c,'兩條線使用各自刻度；峰值同步',250,155,C.mut,19);
 }
 function piston7(c,t,S,mode){
   const r=S.r??45,n=S.n??3000,theta=t*n/60*Math.PI*2/30; // display slowed 30 times
-  const rr=55,ll=145,cx=240,cy=405;
+  const rr=mode===0?r*1.1:(S.s??90)*.55,ll=145,cx=240,cy=405;
   const crank={x:cx+rr*Math.sin(theta),y:cy-rr*Math.cos(theta)};
   const pinY=cy-rr*Math.cos(theta)-Math.sqrt(ll*ll-rr*rr*Math.sin(theta)**2);
   const top=cy-rr-ll-24,btm=cy+rr-ll-24,pt=pinY-24;
-  rect7(c,155,top-35,170,btm-top+120,'#324760');
-  c.fillStyle='#ff9860';c.fillRect(170,top-24,140,24);
-  c.fillStyle='#174b6e';c.fillRect(170,top,140,btm-top);
-  c.fillStyle='#55c8ff55';c.fillRect(170,top,140,Math.max(0,pt-top));
-  c.fillStyle='#b5c9df';c.fillRect(170,pt,140,35);
+  const bore=mode===1?(S.d??80)*1.75:140,x0=cx-bore/2;
+  rect7(c,x0-15,top-35,bore+30,btm-top+120,'#324760');
+  c.fillStyle='#ff9860';c.fillRect(x0,top-24,bore,24);
+  c.fillStyle='#174b6e';c.fillRect(x0,top,bore,btm-top);
+  c.fillStyle='#55c8ff55';c.fillRect(x0,top,bore,Math.max(0,pt-top));
+  c.fillStyle='#b5c9df';c.fillRect(x0,pt,bore,35);
   line7(c,cx,pinY,crank.x,crank.y,'#cbd8e8',13);line7(c,cx,cy,crank.x,crank.y,C.acc,12);
   c.strokeStyle=C.metal;c.lineWidth=3;c.beginPath();c.arc(cx,cy,rr,0,Math.PI*2);c.stroke();
   tx(c,'CCV',75,top-10,C.fire,20);tx(c,'PDV',75,(top+btm)/2,C.acc2,20);
@@ -67,7 +70,7 @@ const CALC=[
   {panel:(e,S)=>controls7(e,S,[['kg','扭力 kg-m',1,50,1,10,' kg-m'],['bar','壓力 bar',.5,5,.1,2,' bar']]),draw:(c,t,S)=>{const kg=S.kg??10,b=S.bar??2;card7(c,'扭力：力 × 垂直力臂',`${kg} kg-m ≈ ${(kg*9.8).toFixed(1)} N-m\n≈ ${(kg*7.2).toFixed(1)} lb-ft`,45,120,410,220);card7(c,'壓力：力 ÷ 面積',`${b} bar = ${(b*100).toFixed(0)} kPa\n≈ ${(b*14.5).toFixed(1)} psi\n≈ ${(b*1.02).toFixed(2)} kg/cm²`,505,120,410,220);tx(c,'1 atm ≈ 101.3 kPa；1 bar = 100 kPa',80,420,C.acc2,25);}},
   {panel:(e,S)=>controls7(e,S,[['vac','真空度 mm-Hg',0,760,10,380,' mm-Hg']]),draw:(c,t,S)=>{const v=S.vac??380,abs=760-v;rect7(c,90,130,155,320,'#234866');c.fillStyle=C.acc2;c.fillRect(90,450-abs/760*320,155,abs/760*320);tx(c,'大氣壓 760',65,100,C.ink,22);tx(c,'完全真空 0',65,475,C.ink,22);line7(c,250,450-abs/760*320,420,450-abs/760*320,C.acc,3);card7(c,'真空度：從大氣壓往下扣',`${v} mm-Hg ≈ ${(v/25.4).toFixed(2)} in-Hg`,465,110,450,110);card7(c,'絕對壓力：從零往上算',`${abs} mm-Hg\n≈ ${(101.3*abs/760).toFixed(2)} kPa\n≈ ${(1.03*abs/760).toFixed(3)} kg/cm²；${(14.7*abs/760).toFixed(2)} psi`,465,245,450,210);}},
   {panel:(e,S)=>controls7(e,S,[['kw','功率',1,150,1,100,' kW'],['kcal','能量',1,20,1,10,' kcal']]),draw:(c,t,S)=>{const k=S.kw??100,e=S.kcal??10;card7(c,'功率＝作功的快慢',`${k} kW ≈ ${(k*1.36).toFixed(2)} ps\n≈ ${(k*1.34).toFixed(2)} hp\n1 ps ≈ 735 W；1 hp ≈ 746 W`,45,130,410,255);card7(c,'能量＝總共作了多少功',`${e} kcal ≈ ${(e*4.2).toFixed(1)} kJ\n≈ ${(e*3.968).toFixed(2)} BTU\n能量 = 功率 × 時間`,505,130,410,255);}},
-  {draw:(c)=>{['長度 in ↔ mm','面積 in² ↔ cm²','溫度 ℃ ↔ ℉','扭力 kg-m ↔ N-m','壓力 bar ↔ kPa','真空 mm-Hg ↔ in-Hg','功率 kW ↔ ps／hp','能量 kcal ↔ kJ／BTU'].forEach((s,i)=>card7(c,s,'先辨物理量，再選換算常數',40+(i%2)*460,105+Math.floor(i/2)*90,420,78));}}
+  {draw:(c)=>{['長度 in ↔ mm','面積 in² ↔ cm²','溫度 ℃ ↔ ℉','扭力 kg-m ↔ N-m','壓力 bar ↔ kPa','真空 mm-Hg ↔ in-Hg','功率 kW ↔ ps／hp','能量 kcal ↔ kJ／BTU'].forEach((s,i)=>{const x=40+(i%2)*460,y=105+Math.floor(i/2)*90;rect7(c,x,y,420,72,'#16223a');tx(c,s,x+20,y+35,C.acc2,24);});}}
  ],
  [ // lesson 2
   {panel:(e,S)=>controls7(e,S,[['r','曲柄長 r',20,60,1,45,' mm'],['n','轉速 N',1000,6000,100,3000,' rpm']]),draw:(c,t,S)=>piston7(c,t,S,0)},
@@ -92,18 +95,57 @@ const CALC=[
   {draw:(c)=>{card7(c,'ME：動力損耗','BHP / IHP；全負荷約 75～85%',45,115);card7(c,'VE：進氣充填','汽油約 65～85%；柴油約 80～90%',505,115);card7(c,'TE：熱能轉換','有效功 / 燃料總熱能',45,310);card7(c,'油耗比較要看單位','SFC、L/100km 愈小佳；km/L 愈大佳',505,310);}}
  ],
  [ // lesson 5
-  {panel:(e,S)=>choose7(e,S,'part','選擇熱能去向',['有效功率','排氣＋輻射','冷卻損失','機械摩擦']),draw:(c,t,S)=>{heat7(c,S);const a=['有效功：汽油圖示 25～30%；柴油 30～40%','排氣＋輻射：汽油 35～40%；柴油 30～35%','冷卻：汽油 32～35%；柴油 30～32%','摩擦：汽柴油皆 5～8%，良好潤滑減少損耗'];tx(c,a[S.part??0],55,60,C.acc,23);}},
+  {panel:(e,S)=>choose7(e,S,'part','選擇熱能去向',['有效功率','排氣＋輻射','冷卻損失','機械摩擦']),draw:(c,t,S)=>{heat7(c,S);const a=['有效功：汽油圖示 25～30%；柴油 30～40%','排氣＋輻射：汽油 35～40%；柴油 30～35%','冷卻：汽油 32～35%；柴油 30～32%','摩擦：汽柴油皆 5～8%，良好潤滑減少損耗'];tx(c,a[S.part??0],55,84,C.acc,18);}},
   {panel:(e,S)=>choose7(e,S,'metric','比較標準',['ps/cc','kg/ps','BMEP','SFC']),draw:(c,t,S)=>{const labels=['單位排氣量馬力','單位馬力重量','制動平均有效壓力','燃料消耗率'];labels.forEach((s,i)=>card7(c,s,(i===0||i===2?'愈大愈佳':'愈小愈佳')+'｜'+['ps/cc','kg/ps','kg/cm² 或 bar','g/(ps·h)'][i],45+(i%2)*460,115+Math.floor(i/2)*180,410,145));}},
   {panel:(e,S)=>choose7(e,S,'car','課本2018年資料',['純電動車','Hybrid','純內燃機']),draw:(c,t,S)=>{['① 純電動車：換算超過 50 km/L','② Hybrid：混合動力','③ 純內燃機汽車'].forEach((s,i)=>card7(c,s,['以電能消耗量換算，不是實際使用汽油','同時使用引擎與電動機','燃料能量有排氣、冷卻與摩擦等損失'][i],70,110+i*122,820,100));}},
   {panel:(e,S)=>choose7(e,S,'node','公式節點',['容積','馬力','效率','油耗']),draw:(c,t,S)=>{const rows=[['2000 cc 四行程，Pi = 15，3000 rpm','IHP = 15 × 2000 × 1500 / 450000 = 100 ps'],['已知 FHP = 20 ps','BHP = 100 − 20 = 80 ps'],['ME = BHP / IHP','80 / 100 = 80%'],['每小時耗油 20 kg，H = 10000 kcal/kg','SFC = 250 g/(ps·h)；TE = 25.28%']];rows.forEach(([a,b],i)=>card7(c,a,b,45,100+i*95,870,83));}},
   {draw:(c)=>{['PDV 活塞位移容積','CCV 燃燒室容積','TCV 汽缸總容積','CR 壓縮比','IHP 指示馬力','IMEP 指示平均有效壓力','BHP 制動馬力','BMEP 制動平均有效壓力','gross 總馬力／net 淨馬力','FHP 摩擦馬力','torque 扭力','engine efficiency 引擎效率','ME 機械效率','VE 容積效率','TE 熱效率','指示熱效率','制動熱效率','SFC 燃料消耗率'].forEach((s,i)=>tx(c,s,40+(i%3)*310,115+Math.floor(i/3)*62,C.ink,18));}}
  ]
 ];
+// Make selected comparison cards observable, rather than changing a button alone.
+for(const [lesson,scene,key,cols,rows] of [[4,1,'metric',2,2],[4,2,'car',1,3],[4,3,'node',1,4]]){
+  const old=CALC[lesson][scene].draw;
+  CALC[lesson][scene].draw=(c,t,S)=>{old(c,t,S);const k=S[key]??0;
+    const dims=scene===1?[45+(k%2)*460,115+Math.floor(k/2)*180,410,145]:scene===2?[70,110+k*122,820,100]:[45,100+k*95,870,83];
+    c.strokeStyle=C.acc;c.lineWidth=4;H.rr(c,...dims,12);c.stroke();
+  };
+}
+CALC[2][0].draw=(c,t,S)=>{
+  const n=S.rpm??3000,cy=S.cycle??4,p=S.pi??15,N=cy===4?n/2:n,ihp=p*2000*N/450000;
+  const x=70,y=335,w=380,h=175;
+  tx(c,'壓力—曲軸角度（四行程示意）',55,112,C.acc2,21);
+  line7(c,x,y,x+w,y,C.mut,2);line7(c,x,y,x,y-h,C.mut,2);
+  c.beginPath();for(let a=0;a<=720;a+=3){const pressure=a<180?1:a<360?1+9*((a-180)/180)**3:a<540?1+34*Math.exp(-(a-360)/75):1.3;const xx=x+a/720*w,yy=y-pressure/40*h;if(!a)c.moveTo(xx,yy);else c.lineTo(xx,yy);}c.strokeStyle=C.fire;c.lineWidth=3;c.stroke();
+  ['進氣','壓縮','動力','排氣'].forEach((s,k)=>tx(c,s,x+15+k*95,365,C.ink,18));tx(c,'0°',x-10,395,C.mut,18);tx(c,'360°',x+w/2-20,395,C.mut,18);tx(c,'720°',x+w-30,395,C.mut,18);
+  tx(c,'kg/cm²',75,142,C.mut,18);tx(c,'40',32,160,C.mut,18);
+  card7(c,'IHP = Pi × V × N / k',`${p} × 2000 cc × ${N} / 450000\n= ${ihp.toFixed(1)} ps`,505,125,410,135);
+  card7(c,'N 是每分鐘動力次數',`${cy} 行程：${n}${cy===4?' / 2':''} = ${N} 次/min`,505,285,410,100);
+  tx(c,'缸內 IHP 100 → 摩擦 FHP 20 ＋ 飛輪 BHP 80（示意）',55,455,C.acc,23);
+  tx(c,'指示功需結合容積變化；此壓力—角度圖面積不是馬力。',55,485,C.mut,18);
+};
+CALC[2][2].draw=(c,t,S)=>{
+  const v=S.volt??200,a=S.amp??60,eta=S.eta??80;
+  rect7(c,45,140,140,65,'#344966');tx(c,'引擎',80,172,C.ink,24);line7(c,185,172,225,172,C.acc,7);
+  c.beginPath();c.arc(260,172,35,0,Math.PI*2);c.strokeStyle=C.acc2;c.lineWidth=4;c.stroke();tx(c,'G',250,172,C.acc2,24);
+  line7(c,295,172,430,172);line7(c,430,172,430,310);line7(c,430,310,260,310);line7(c,260,310,260,210);
+  rect7(c,330,151,44,42,'#344966');tx(c,'A',343,172,C.ink,23);rect7(c,407,222,46,40,'#344966');tx(c,'負載',389,285,C.ink,18);
+  line7(c,300,172,300,230);line7(c,300,270,300,310);c.beginPath();c.arc(300,250,20,0,Math.PI*2);c.stroke();tx(c,'V',292,250,C.ink,21);
+  tx(c,'A 串聯；V 跨接負載兩端',60,355,C.acc2,22);
+  tx(c,`引擎功率 = ${v} × ${a} / ${eta/100}`,55,405,C.ink,23);tx(c,`= ${(v*a/(eta/100)/1000).toFixed(2)} kW`,55,445,C.acc,28);
+  card7(c,'總馬力與淨馬力（課本）','總：拆發電機、風扇、空濾、消音器\n仍保留水泵等主要機件\n淨：裝齊附件，約少 7～10%',505,135,410,255);
+};
+CALC[4][0].onClick=(x,y,S)=>{
+  for(const cx of [235,710]){const dx=x-cx,dy=y-265;if(Math.hypot(dx,dy)>128)continue;
+    const angle=(Math.atan2(dy,dx)+Math.PI/2+Math.PI*2)%(Math.PI*2),vals=CH7Heat[cx===235?0:1];
+    let sum=0;for(let i=0;i<4;i++){sum+=vals[i]/100*Math.PI*2;if(angle<sum){S.part=i;choose7(document.getElementById('panel'),S,'part','選擇熱能去向',['有效功率','排氣＋輻射','冷卻損失','機械摩擦']);return;}}
+  }
+};
 function startCh7(i){
   const src=window.CH7[i-1];
   const cfg={...src,sub:`第7章 第${i}節（全課程第${33+i}節）｜單元七`,state:{},chapters:src.chapters.map((ch,j)=>({
     ...ch,captions:ch.captions.map((s,k)=>[Math.round(k*ch.dur/ch.captions.length),s]),
     panel:CALC[i-1][j].panel,
+    onClick:CALC[i-1][j].onClick,
     draw(c,t,S){base7(c,ch.title,i===5&&j===2?'課本小百科｜2018年資料，非現行車款排名':i===5&&j===0?'扇形為合計100%的教學示意值；完整範圍見下方講義':'課本近似值／典型範圍；曲線為教學模型，非特定實車量測');CALC[i-1][j].draw(c,t,S);}
   }))};
   window.CH7Current=cfg;Player(cfg);
