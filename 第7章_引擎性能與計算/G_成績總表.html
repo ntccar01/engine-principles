@@ -26,6 +26,7 @@ td.miss{background:#3a1f26;color:#ff9a9a}td.sum{color:var(--acc);font-weight:bol
 <p class="legend">🧪 測試功能：在學生頁登入時班級選「🧪 教師測試」，就能用任意座號實際作答；班級選「教師測試」可在這裡看結果，測完按「清除教師測試資料」。</p>
 <p class="legend">格子內為分數；<small>(n)</small>＝作答次數；紅底＝尚未作答。隨堂合計＝F1～F5（各6分，共30分）。成績以上傳時的「班級＋座號」為準，學生登錯座號時請到「作答明細」查看時間與題組後人工更正。</p>
 <div class="tablewrap" id="board"></div>
+<h2>單元七測驗：全班各節答對率</h2><p class="mut">依目前的採計方式（首次／最高／最後）統計這個班級的單元七測驗，找出全班最弱的節次與題目。</p><div id="ana"></div>
 <h2>沒有座號的紀錄</h2><p class="mut" id="noseat">—</p>
 </main>
 <script src="firebase-config.js"></script>
@@ -79,7 +80,7 @@ function table() {
     for (const [c] of COLS) {
       if (c === 'SUMF') continue;
       const list = /^Ch7-V/.test(c) ? (row.grp ? grpRec[c + '|' + row.grp] : null) : indiv.filter(r => r.seat === s && r.lesson === c);
-      const p = pick(list); row.cells[c] = p ? { score: p.score, total: p.total, n: list.length } : null;
+      const p = pick(list); row.cells[c] = p ? { score: p.score, total: p.total, n: list.length, detail: p.detail } : null;
       if (/^Ch7-F/.test(c) && p) { sumF += p.score; anyF = true; }
     }
     row.cells.SUMF = anyF ? { score: sumF, total: 30 } : null; rows.push(row);
@@ -95,8 +96,21 @@ function draw() {
     const v = r.cells[c]; if (!v) return `<td class="${/^Ch7-R/.test(c) ? '' : 'miss'}">—</td>`;
     return `<td class="${c === 'SUMF' ? 'sum' : ''}">${v.score}${v.n > 1 ? ` <small>(${v.n})</small>` : ''}</td>`;
   }).join('')}</tr>`).join('')}</table>`;
+  drawAna(rows);
   const ns = mine.filter(r => !r.seat && !/^Ch7-V/.test(r.lesson));
   $('#noseat').textContent = ns.length ? `${ns.length} 筆（多半是改版前送出的舊紀錄，只有組別）：` + ns.map(r => `${r.lesson} 第${r.grp}組 ${r.score}/${r.total}`).join('、') : '沒有。';
+}
+const SEC = { 1: '7-1 基本單位與換算', 2: '7-2 排氣量與壓縮比', 3: '7-3 馬力與扭力', 4: '7-4＋7-5 引擎效率與油耗率', 5: '7-6 性能因素與計算統整' };
+const secOf = id => { const k = +String(id).replace(/^U7-/, ''); return k <= 5 ? 1 : k <= 9 ? 2 : k <= 13 ? 3 : k <= 18 ? 4 : 5; };
+function drawAna(rows) {
+  const recs = rows.map(r => r.cells.Unit7).filter(Boolean), sec = {}, qq = {};
+  recs.forEach(r => (r.detail || []).forEach(d => { const id = d.id || d.round, n = secOf(id), s = sec[n] = sec[n] || { got: 0, of: 0 }, q = qq[id] = qq[id] || { got: 0, of: 0 }; s.got += d.got; s.of += d.of; q.got += d.got; q.of += d.of; }));
+  if (!recs.length) { $('#ana').innerHTML = '<p class="mut">這個班級還沒有人做單元七測驗。</p>'; return; }
+  const pct = o => Math.round(o.got / o.of * 100), bar = p => `<span style="display:inline-block;height:12px;width:${p * 3}px;border-radius:6px;background:${p < 60 ? '#ff7373' : '#38c6ff'};vertical-align:middle;margin:0 8px"></span>`;
+  const weak = Object.entries(qq).map(([id, o]) => [id, pct(o)]).sort((a, b) => a[1] - b[1]).slice(0, 5);
+  $('#ana').innerHTML = `<p class="mut">共 ${recs.length} 人。紅色＝答對率低於 60%，建議回到該節複習。</p>` +
+    Object.keys(sec).sort().map(n => { const p = pct(sec[n]); return `<p>第${n}節（全課程第${33 + +n}節）${SEC[n]}${bar(p)}<b>${p}%</b></p>`; }).join('') +
+    `<p class="mut">答對率最低的 5 題：${weak.map(([id, p]) => `${id}（第${secOf(id)}節）${p}%`).join('、')}</p>`;
 }
 const dl = (lines, name) => { const csv = '﻿' + lines.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = name; a.click(); };
 $('#csv').onclick = () => {

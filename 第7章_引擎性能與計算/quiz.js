@@ -9,6 +9,10 @@
   if (!source) throw Error('Unknown quiz ' + code);
   const shuffle = a => a.map(x => ({ x, r: Math.random() })).sort((a, b) => a.r - b.r).map(o => o.x);
   const text = (tag, s, cl) => { const n = document.createElement(tag); n.textContent = s; if (cl) n.className = cl; return n; };
+  /* 單元七題號對應節次：U7-1～5 第1節、6～9 第2節、10～13 第3節、14～18 第4節、19～20 第5節 */
+  const SEC = { 1: '7-1 基本單位與換算', 2: '7-2 排氣量與壓縮比', 3: '7-3 馬力與扭力', 4: '7-4＋7-5 引擎效率與油耗率', 5: '7-6 性能因素與計算統整' };
+  const secOf = id => { const k = +String(id).replace(/^U7-/, ''); return k <= 5 ? 1 : k <= 9 ? 2 : k <= 13 ? 3 : k <= 18 ? 4 : 5; };
+  window.CH7_SECOF = secOf; window.CH7_SEC = SEC;
   const recKey = s => `ch7rec_${code}_${s.cls}_${s.seat}`;
   const getRec = s => { try { return JSON.parse(localStorage.getItem(recKey(s)) || 'null'); } catch (e) { return null; } };
   const area = document.createElement('div');
@@ -35,7 +39,14 @@
       const rec = { lesson: code, title: document.title, cls: who.cls, grp: who.grp, seat: who.seat, score, total, pct: Math.round(score / total * 100), sec: Math.round((Date.now() - started) / 1000), detail, at: new Date().toISOString() };
       area.replaceChildren(text('h2', `${Student.label(who)}　完成！${score} / ${total}（${rec.pct}%）`));
       const report = document.createElement('div'); report.className = 'card'; detail.forEach(d => report.append(text('p', `${d.id}：${d.got} / ${d.of}`))); area.append(report);
-      if (unit) qs.forEach(q => { const a = document.createElement('article'); a.append(text('h3', `${q.id}｜${q.q}`), text('p', `你的答案：${q.opts[answers[q.id]]}；正解：${q.opts[q.ans]}`), text('p', q.ex)); area.append(a); });
+      if (unit) {
+        const sec = {}; qs.forEach(q => { const n = secOf(q.id), o = sec[n] = sec[n] || { got: 0, of: 0 }; o.of++; if (answers[q.id] === q.ans) o.got++; });
+        const box = document.createElement('div'); box.className = 'card'; box.append(text('h3', '各節答對情形（錯比較多的節，回去看那一節的 V 動畫和重點）'));
+        Object.keys(sec).sort().forEach(n => { const o = sec[n]; box.append(text('p', `第${n}節（全課程第${33 + +n}節）${SEC[n]}：答對 ${o.got} / ${o.of} 題${o.got < o.of ? '　← 建議複習' : '　✓'}`, o.got < o.of ? 'bad' : 'ok')); });
+        area.append(box);
+        qs.slice().sort((x, y) => +x.id.slice(3) - +y.id.slice(3)).forEach(q => { const ok = answers[q.id] === q.ans, a = document.createElement('article');
+          a.append(text('h3', `${ok ? '✔' : '✘'} ${q.id}（第${secOf(q.id)}節｜${q.objective || SEC[secOf(q.id)]}）`), text('p', q.q), text('p', `你的答案：${q.opts[answers[q.id]]}；正解：${q.opts[q.ans]}`, ok ? 'ok' : 'bad'), text('p', q.ex)); area.append(a); });
+      }
       const status = text('p', '正在送出成績…'); area.prepend(status);
       try { const p = getRec(who); localStorage.setItem(recKey(who), JSON.stringify({ first: p ? p.first : rec, best: p && p.best.score >= rec.score ? p.best : rec, last: rec, n: (p ? p.n : 0) + 1 })); localStorage.setItem('ch7_' + code, JSON.stringify(rec)); } catch (e) { }
       Score.submit(rec).then(r => {

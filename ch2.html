@@ -1,102 +1,52 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第2章 引擎本體的構造及功用｜引擎原理</title><style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
-.wrap{max-width:1240px;margin:0 auto;padding:12px 16px 32px}
-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
-header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:15px}
-header h1{font-size:22px;margin:0}
-header .sub{color:var(--mut);font-size:14px}
-header .score{margin-left:auto;color:var(--mut);font-size:14px}
-.main{display:grid;grid-template-columns:1fr 260px;gap:14px}
-@media(max-width:900px){.main{grid-template-columns:1fr}}
-.stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:default}
-.chtitle{position:absolute;left:12px;top:10px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--acc)}
-.caption{min-height:62px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:10px;padding:12px 16px;font-size:19px;line-height:1.55}
-.caption b{color:var(--acc)}
-.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
-.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;font-family:inherit}
-.controls button:hover{border-color:var(--acc2)}
-.controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:88px}
-.controls .time{color:var(--mut);font-size:14px;margin-left:auto;font-variant-numeric:tabular-nums}
-.controls label{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:4px;cursor:pointer}
-.bar{display:flex;gap:3px;margin-top:10px;height:12px;cursor:pointer}
-.bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
-.bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
-.bar div.done i{background:var(--ok)}
-.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
-.side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
-.side ol{list-style:none;margin:0;padding:0}
-.side li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;gap:8px;align-items:center}
-.side li:hover{background:var(--panel2)}
-.side li.on{background:var(--panel2);outline:1px solid var(--acc)}
-.side li .n{width:22px;height:22px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:12px;flex:none}
-.side li.ok .n{background:var(--ok);color:#002010}
-.side .tips{color:var(--mut);font-size:13px;line-height:1.6;margin:10px 6px 2px;border-top:1px solid var(--line);padding-top:8px}
-.panel{margin-top:10px}
-.panel:empty{display:none}
-.panel .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
-.panel .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0}
-.panel input[type=number]{width:72px;font-size:17px;padding:6px;border-radius:6px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit}
-.panel input[type=range]{width:200px}
-.panel button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px;cursor:pointer;font-family:inherit}
-.panel button.pri{background:var(--acc);color:#1a1200;font-weight:700;border:none}
-.panel .res{font-size:17px;line-height:1.8}
-.panel .res b{color:var(--acc)}
-.panel .fb{font-weight:700}
-.panel .fb.ok{color:var(--ok)}.panel .fb.bad{color:var(--bad)}
-.quiz{position:absolute;inset:0;background:rgba(5,10,20,.82);display:none;align-items:center;justify-content:center;padding:16px}
-.quiz.show{display:flex}
-.quiz .card{background:var(--panel);border:2px solid var(--acc);border-radius:14px;max-width:640px;width:100%;padding:18px 20px}
-.quiz .card h4{margin:0 0 4px;color:var(--acc);font-size:15px}
-.quiz .card p{font-size:20px;margin:6px 0 12px;line-height:1.5}
-.quiz .opt{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;font-size:17px;cursor:pointer;font-family:inherit}
-.quiz .opt:hover{border-color:var(--acc2)}
-.quiz .opt.right{background:#16452d;border-color:var(--ok)}
-.quiz .opt.wrong{background:#4a1d1d;border-color:var(--bad)}
-.quiz .ex{font-size:15px;color:var(--mut);margin-top:8px;min-height:20px;line-height:1.5}
-.quiz .go{margin-top:10px;background:var(--ok);color:#002010;border:none;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;cursor:pointer;display:none;font-family:inherit}
-.endcard{position:absolute;inset:0;background:rgba(5,10,20,.85);display:none;align-items:center;justify-content:center;text-align:center}
-.endcard.show{display:flex}
-.endcard div{font-size:22px;line-height:1.8}
-.endcard b{color:var(--acc);font-size:30px}
-@media(max-width:600px){.caption{font-size:16px}header h1{font-size:18px}.quiz .card p{font-size:17px}.quiz .opt{font-size:15px;padding:8px}}
-.chtitle.hide{opacity:0}
-.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:15px;text-decoration:none;font-weight:700}
-.home:hover{border-color:var(--acc);color:var(--acc)}
-.home.big{margin-top:14px;font-size:18px;padding:10px 18px;background:var(--acc);color:#1a1200;border:none}
-/* 嵌入簡報模式（?embed=1）：隱藏標題列與章節欄，讓畫面完整放進投影片 */
-.embed header,.embed .side,.embed .tips{display:none}
-.embed .main{grid-template-columns:1fr}
-.embed .wrap{max-width:calc((100vh - 150px) * 16 / 9);padding:4px 8px 8px}
-/* 互動段（有操作面板）：畫面再縮小，讓滑桿與「完成本段」按鈕不用捲動就看得到 */
-.embed.haspanel .caption{font-size:15px;min-height:0}
-.embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
-.embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
-
-.actbtn{background:var(--ok);color:#002010;border:none;border-radius:8px;padding:7px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
-#actwrap{display:none}
-
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-top:14px}
-.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;color:var(--ink);text-decoration:none}
-a.card:hover{border-color:var(--acc)}.card .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:2px 8px}
-.card .p{color:var(--mut);margin-left:8px;font-size:14px}.card h2{font-size:20px;margin:10px 0 6px}.card p{color:var(--mut);margin:0;font-size:15px;line-height:1.5}
-.intro{color:var(--mut);line-height:1.7}.sec{margin-top:30px;font-size:22px;display:flex;align-items:center;gap:10px}
-.chgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;margin-top:16px}
-.ch{position:relative;display:flex;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;color:var(--ink);text-decoration:none;min-height:150px}
-a.ch:hover{border-color:var(--acc);transform:translateY(-2px)}.ch{transition:.15s}
-.ch .no{flex:none;width:70px;height:70px;border-radius:14px;background:var(--acc);color:#1a1200;display:grid;place-items:center;font-weight:800;font-size:30px}
-.ch .no small{display:block;font-size:12px;font-weight:700;margin-top:-6px}
-.ch h2{font-size:21px;margin:2px 0 6px}.ch p{color:var(--mut);font-size:14px;line-height:1.55;margin:0 0 10px}
-.ch .st{font-size:13px;font-weight:700;border-radius:20px;padding:2px 10px;display:inline-block}
-.st.ok{background:#143a27;color:var(--ok)}.st.wip{background:#3a2f10;color:var(--acc)}.st.soon{background:#1d2c4a;color:var(--mut)}
-.ch .bar{height:6px;background:var(--panel2);border-radius:3px;margin-top:10px;overflow:hidden}.ch .bar i{display:block;height:100%;background:var(--ok)}
-.ch.soon{opacity:.45;cursor:default}.ch.soon .no{background:#2c3f63;color:var(--mut)}
-.crumb{color:var(--mut);font-size:14px;margin:4px 0 0}.crumb a{color:var(--acc2)}
-.how{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}.how div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--mut);font-size:15px;line-height:1.6}.how b{color:var(--ink)}
-</style></head><body><div class="wrap"><header><a class="home" href="index.html">🏠 課程首頁</a><span class="tag">第2章</span><h1>引擎本體的構造及功用</h1></header>
-<p class="crumb">其他章節：<a href="ch1.html">第1章</a> ・ <a href="第3章_汽油引擎燃料系統/index.html">第3章</a> ・ <a href="第4章_潤滑系統/index.html">第4章</a> ・ <a href="第5章_冷卻系統/index.html">第5章</a> ・ <a href="第6章_點火系統/index.html">第6章</a> ・ <a href="第7章_引擎性能與計算/index.html">第7章</a></p>
-<h2 class="sec">🎞️ 上課簡報</h2><div class="grid"><a class="card" href="S7_第7節_汽缸體、汽缸與汽缸蓋.html"><span class="tag">簡報</span><span class="p">第7節</span><h2>汽缸體、汽缸與汽缸蓋</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S8_第8節_活塞、活塞銷與活塞環.html"><span class="tag">簡報</span><span class="p">第8節</span><h2>活塞、活塞銷與活塞環</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S9_第9節_燃燒室與九節統整發表.html"><span class="tag">簡報</span><span class="p">第9節</span><h2>燃燒室與九節統整發表</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S10_第10節_曲軸、連桿與飛輪.html"><span class="tag">簡報</span><span class="p">第10節（2-4）</span><h2>曲軸、連桿與飛輪</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S11_第11節_汽門機構.html"><span class="tag">簡報</span><span class="p">第11節（2-5）</span><h2>汽門機構</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S12_第12節_引擎軸承與第2章統整.html"><span class="tag">簡報</span><span class="p">第12節（2-6）</span><h2>引擎軸承與第 2 章統整</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a></div>
-<h2 class="sec">🎬 網頁式動畫影片＋🎮 互學挑戰</h2><p class="crumb">每支動畫右上角都有「🎮 互學挑戰」（第 5 節的挑戰在 V4）。</p><div class="grid"><a class="card" href="V7_引擎本體透視拆解.html"><span class="tag">V7</span><span class="p">第7節</span><h2>引擎本體透視拆解</h2><p>汽缸體、缸套、汽缸蓋、床墊＋點選探索</p></a><a class="card" href="V8_活塞環的任務.html"><span class="tag">V8</span><span class="p">第8節</span><h2>活塞環的任務</h2><p>活塞、活塞環、活塞銷、吃機油冒藍煙</p></a><a class="card" href="V9_燃燒室火焰傳播.html"><span class="tag">V9</span><span class="p">第9節</span><h2>燃燒室火焰傳播</h2><p>半球形、楔形、浴槽形、雙火星塞</p></a><a class="card" href="V10_曲軸連桿與飛輪.html"><span class="tag">V10</span><span class="p">第10節（2-4）</span><h2>曲軸、連桿與飛輪</h2><p>連桿兩端、頸與銷、四缸相位、飛輪儲放能、前後端</p></a><a class="card" href="V11_汽門機構.html"><span class="tag">V11</span><span class="p">第11節（2-5）</span><h2>汽門機構</h2><p>正時 2：1、OHV／SOHC／DOHC、進排汽門、防諧振、舉桿與旋轉器</p></a><a class="card" href="V12_引擎軸承與第2章統整.html"><span class="tag">V12</span><span class="p">第12節（2-6）</span><h2>引擎軸承與第 2 章統整</h2><p>四種軸承、三層軸承片、外張與凸出、第 2 章三隊機件</p></a><a class="card" href="T_教師大螢幕.html"><span class="tag">教師</span><h2>🏆 教師大螢幕</h2><p>互學挑戰排行榜、全班同步挑戰、成績匯出</p></a></div>
-<h2 class="sec">🔧 零件位置挑戰</h2><p class="crumb">把零件名稱拖到圖上正確的位置；放錯會有提示，可以重放。</p><div class="grid"><a class="card" href="標記_第7節_引擎本體拆解.html"><span class="tag">挑戰</span><span class="p">第7節</span><h2>引擎本體分層拆解</h2><p>汽缸蓋、床墊、汽缸體、汽缸套、水套、油底殼</p></a><a class="card" href="標記_第10節_曲軸連桿與飛輪.html"><span class="tag">挑戰</span><span class="p">第10節</span><h2>曲軸、連桿與飛輪</h2><p>連桿兩端、頸與銷、曲柄、配重、前後端</p></a><a class="card" href="標記_第11節_OHV汽門機構.html"><span class="tag">挑戰</span><span class="p">第11節</span><h2>OHV 汽門機構</h2><p>凸輪、舉桿、推桿、搖臂、汽門彈簧、汽門</p></a><a class="card" href="標記_第11節_正時皮帶與張力器.html"><span class="tag">挑戰</span><span class="p">第11節</span><h2>正時皮帶與張力器</h2><p>正時齒輪、張力器、鬆弛側與緊邊側</p></a><a class="card" href="標記_第12節_四種軸承位置.html"><span class="tag">挑戰</span><span class="p">第12節</span><h2>四種軸承裝在哪裡？</h2><p>軸襯、平軸承、推力片</p></a></div>
-<h2 class="sec">📖 補課區（缺課同學看這裡）</h2><div class="grid"><a class="card" href="R7_第7節補課包.html"><span class="tag">補課</span><span class="p">第7節</span><h2>汽缸體、汽缸與汽缸蓋</h2><p>影片＋影片測驗＋動畫＋課後測驗</p></a><a class="card" href="R8_第8節補課包.html"><span class="tag">補課</span><span class="p">第8節</span><h2>活塞、活塞銷與活塞環</h2><p>影片＋影片測驗＋動畫＋課後測驗</p></a><a class="card" href="R9_第9節補課包.html"><span class="tag">補課</span><span class="p">第9節</span><h2>燃燒室與九節課程統整</h2><p>影片＋影片測驗＋動畫＋課後測驗</p></a><a class="card" href="R10_第10節補課包.html"><span class="tag">補課</span><span class="p">第10節（2-4）</span><h2>曲軸、連桿與飛輪</h2><p>內建 6 題＋動畫＋課後測驗（影片待補）</p></a><a class="card" href="R11_第11節補課包.html"><span class="tag">補課</span><span class="p">第11節（2-5）</span><h2>汽門機構</h2><p>內建 6 題＋動畫＋課後測驗（影片待補）</p></a><a class="card" href="R12_第12節補課包.html"><span class="tag">補課</span><span class="p">第12節（2-6）</span><h2>引擎軸承與第 2 章統整</h2><p>內建 6 題＋動畫＋課後測驗（影片待補）</p></a></div></div></body></html>
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第2章 引擎本體的構造及功用｜引擎原理</title>
+<style>:root{--bg:#0d1526;--panel:#16223a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.6 "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}a{color:var(--acc2)}
+main{max-width:1500px;margin:auto;padding:14px 24px}.mut{color:var(--mut)}
+.btn{font:inherit;border-radius:8px;border:1px solid var(--line);background:#1d2c4a;color:var(--ink);text-decoration:none;display:inline-block;cursor:pointer}.btn:hover{border-color:var(--acc)}
+.pri{background:var(--acc);color:#171100;font-weight:bold;border-color:var(--acc)}.tag{color:var(--acc);font-weight:bold}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}.top h1{font-size:28px;margin:0}
+.chnav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px;font-size:16px}
+.chnav a{padding:4px 12px;border:1px solid var(--line);border-radius:20px;text-decoration:none;color:var(--mut)}
+.chnav a.on{background:var(--acc);color:#171100;border-color:var(--acc);font-weight:bold}.chnav a:hover{border-color:var(--acc)}
+.lessons{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.les{display:grid;grid-template-columns:260px 1fr;gap:6px 18px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 18px;scroll-margin-top:10px}
+.les.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc) inset}
+.les .tag{font-size:16px;margin:0}.les h2{font-size:24px;margin:2px 0 0;cursor:pointer;color:var(--acc)}
+.rowb{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.rowb .lab{width:3.2em;font-size:15px;color:var(--mut)}
+.rowb .btn{font-size:17px;padding:7px 12px}.rowb.after .btn{background:transparent}
+.btn .st{font-size:13px;margin-left:6px;color:var(--ok);font-weight:bold}
+.unit{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}.unit .btn{padding:10px 16px}
+.foot{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;margin-top:14px;font-size:15px}.foot a{color:var(--mut)}
+@media(max-width:900px){.les{grid-template-columns:1fr}}</style>
+<body><main>
+<div class="top"><h1>第2章：引擎本體的構造及功用</h1><span class="mut">單元二｜6 節・全課程第 7～12 節</span></div>
+<nav class="chnav" aria-label="其他章節"><a href="index.html">🏠 全課程</a><a  href="ch1.html">第1章</a><a class="on" aria-current="page" href="ch2.html">第2章</a><a  href="第3章_汽油引擎燃料系統/index.html">第3章</a><a  href="第4章_潤滑系統/index.html">第4章</a><a  href="第5章_冷卻系統/index.html">第5章</a><a  href="第6章_點火系統/index.html">第6章</a><a  href="第7章_引擎性能與計算/index.html">第7章</a></nav>
+<div class="lessons" id="lessons"></div>
+<div class="unit" id="units"></div>
+<p class="mut" style="font-size:16px">上課順序：S 簡報 → V 動畫 → 🎮 互學挑戰（🔧 零件位置挑戰）→ ✏️ 隨堂測驗；缺課同學用「補課包」。點節次標題可把那一節標成今天上課。</p>
+<div class="foot"><span></span><a href="T_教師大螢幕.html">🏆 教師大螢幕（教師用）</a></div>
+</main>
+<script src="links.js"></script>
+<script>
+const CH=2, LES=[{"n": 1, "g": 7, "title": "汽缸體、汽缸與汽缸蓋", "S": "S7_第7節_汽缸體、汽缸與汽缸蓋.html", "V": [["V7_引擎本體透視拆解.html", "7", "引擎本體透視拆解"]], "act": "V7_引擎本體透視拆解.html?act=1", "code": "Ch2-V7", "M": [["標記_第7節_引擎本體拆解.html", "引擎本體分層拆解"]], "R": "R7_第7節補課包.html", "rk": "review7", "form": "form7"}, {"n": 2, "g": 8, "title": "活塞、活塞銷與活塞環", "S": "S8_第8節_活塞、活塞銷與活塞環.html", "V": [["V8_活塞環的任務.html", "8", "活塞環的任務"]], "act": "V8_活塞環的任務.html?act=1", "code": "Ch2-V8", "M": [], "R": "R8_第8節補課包.html", "rk": "review8", "form": "form8"}, {"n": 3, "g": 9, "title": "燃燒室與九節統整發表", "S": "S9_第9節_燃燒室與九節統整發表.html", "V": [["V9_燃燒室火焰傳播.html", "9", "燃燒室火焰傳播"]], "act": "V9_燃燒室火焰傳播.html?act=1", "code": "Ch2-V9", "M": [], "R": "R9_第9節補課包.html", "rk": "review9", "form": "form9"}, {"n": 4, "g": 10, "title": "曲軸、連桿與飛輪", "S": "S10_第10節_曲軸、連桿與飛輪.html", "V": [["V10_曲軸連桿與飛輪.html", "10", "曲軸、連桿與飛輪"]], "act": "V10_曲軸連桿與飛輪.html?act=1", "code": "Ch2-V10", "M": [["標記_第10節_曲軸連桿與飛輪.html", "曲軸、連桿與飛輪"]], "R": "R10_第10節補課包.html", "rk": "review10", "form": "form10"}, {"n": 5, "g": 11, "title": "汽門機構", "S": "S11_第11節_汽門機構.html", "V": [["V11_汽門機構.html", "11", "汽門機構"]], "act": "V11_汽門機構.html?act=1", "code": "Ch2-V11", "M": [["標記_第11節_OHV汽門機構.html", "OHV 汽門機構"], ["標記_第11節_正時皮帶與張力器.html", "正時皮帶與張力器"]], "R": "R11_第11節補課包.html", "rk": "review11", "form": "form11"}, {"n": 6, "g": 12, "title": "引擎軸承與第 2 章統整", "S": "S12_第12節_引擎軸承與第2章統整.html", "V": [["V12_引擎軸承與第2章統整.html", "12", "引擎軸承與第 2 章統整"]], "act": "V12_引擎軸承與第2章統整.html?act=1", "code": "Ch2-V12", "M": [["標記_第12節_四種軸承位置.html", "四種軸承裝在哪裡？"]], "R": "R12_第12節補課包.html", "rk": "review12", "form": "form12"}], UNITS=[["unit2", "📝 單元二測驗（第7～9節）"], ["unit2b", "📝 單元二續測驗（第10～12節）"]];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const J=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}};
+const LK=window.LINKS||{}, TK='ch'+CH+'_today';
+function draw(){
+  const hist=J('act_history')||[], today=+(localStorage.getItem(TK)||0);
+  const best=code=>hist.filter(r=>r.lesson===code).sort((a,b)=>b.score-a.score)[0];
+  const b=(href,label,st,cls='',tip='')=>`<a class="btn ${cls}" href="${href}"${tip?` title="${esc(tip)}"`:''}>${label}${st?`<span class="st">${esc(st)}</span>`:''}</a>`;
+  document.getElementById('lessons').innerHTML=LES.map(l=>{
+    const v=best(l.code), r=J(l.rk)||{}, rd=Object.values(r).filter(Boolean).length;
+    const up=[l.S?b(l.S,`S${l.S.match(/^S(\d+)/)[1]} 上課簡報`,'','pri'):'', ...l.V.map(([h,k,t])=>b(h,`V${k} 互動動畫`,'','',t)),
+      l.act?b(l.act,'🎮 互學挑戰',v?`✓${v.score}/${v.total}`:''):'', ...l.M.map(([h,t])=>b(h,`🔧 ${esc(t)}`,'','','零件位置挑戰')),
+      l.form&&LK[l.form]?b(LK[l.form],'✏️ 隨堂測驗',''):''].join('');
+    const after=l.R?b(l.R,'🩹 補課包（缺課用）',rd?`${rd} 步✓`:''):'';
+    return `<section class="les ${l.n===today?'on':''}" id="L${l.n}"><div><p class="tag">第${CH}章 第${l.n}節｜全課程第${l.g}節${l.n===today?'　📌 今天':''}</p><h2 data-n="${l.n}" title="點一下標成今天上課">${esc(l.title)}</h2></div>
+      <div><div class="rowb"><span class="lab">上課</span>${up}</div>${after?`<div class="rowb after" style="margin-top:6px"><span class="lab">課後</span>${after}</div>`:''}</div></section>`;}).join('');
+  document.getElementById('units').innerHTML=UNITS.filter(([k])=>LK[k]).map(([k,t])=>b(LK[k],t,'','pri')).join('');
+  document.querySelectorAll('.les h2').forEach(h=>h.onclick=()=>{const n=+h.dataset.n;try{localStorage.setItem(TK,n===today?'':n)}catch(e){}draw();});
+  if(today&&document.getElementById('L'+today))document.getElementById('L'+today).scrollIntoView({block:'nearest'});
+}
+draw();window.addEventListener('pageshow',draw);
+</script></body></html>

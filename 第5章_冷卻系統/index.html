@@ -1,134 +1,52 @@
-<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第5章 冷卻系統｜引擎原理網頁式動畫</title>
-<style>:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}
-.wrap{max-width:1240px;margin:0 auto;padding:12px 16px 32px}
-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
-header .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:4px 10px;font-size:15px}
-header h1{font-size:22px;margin:0}
-header .sub{color:var(--mut);font-size:14px}
-header .score{margin-left:auto;color:var(--mut);font-size:14px}
-.main{display:grid;grid-template-columns:1fr 260px;gap:14px}
-@media(max-width:900px){.main{grid-template-columns:1fr}}
-.stage{position:relative;background:#0a1120;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:default}
-.chtitle{position:absolute;left:12px;top:10px;transition:opacity .6s;pointer-events:none;background:rgba(10,17,32,.75);border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--acc)}
-.caption{min-height:62px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-top:10px;padding:12px 16px;font-size:19px;line-height:1.55}
-.caption b{color:var(--acc)}
-.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
-.controls button,.controls select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer;font-family:inherit}
-.controls button:hover{border-color:var(--acc2)}
-.controls button.main-btn{background:var(--acc);color:#1a1200;font-weight:700;min-width:88px}
-.controls .time{color:var(--mut);font-size:14px;margin-left:auto;font-variant-numeric:tabular-nums}
-.controls label{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:4px;cursor:pointer}
-.bar{display:flex;gap:3px;margin-top:10px;height:12px;cursor:pointer}
-.bar div{background:var(--panel2);border-radius:3px;position:relative;overflow:hidden}
-.bar div i{position:absolute;left:0;top:0;bottom:0;background:var(--acc2)}
-.bar div.done i{background:var(--ok)}
-.side{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;align-self:start}
-.side h3{margin:4px 6px 8px;font-size:15px;color:var(--mut)}
-.side ol{list-style:none;margin:0;padding:0}
-.side li{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;gap:8px;align-items:center}
-.side li:hover{background:var(--panel2)}
-.side li.on{background:var(--panel2);outline:1px solid var(--acc)}
-.side li .n{width:22px;height:22px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:12px;flex:none}
-.side li.ok .n{background:var(--ok);color:#002010}
-.side .tips{color:var(--mut);font-size:13px;line-height:1.6;margin:10px 6px 2px;border-top:1px solid var(--line);padding-top:8px}
-.panel{margin-top:10px}
-.panel:empty{display:none}
-.panel .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
-.panel .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:6px 0}
-.panel input[type=number]{width:72px;font-size:17px;padding:6px;border-radius:6px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit}
-.panel input[type=range]{width:200px}
-.panel button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px;cursor:pointer;font-family:inherit}
-.panel button.pri{background:var(--acc);color:#1a1200;font-weight:700;border:none}
-.panel .res{font-size:17px;line-height:1.8}
-.panel .res b{color:var(--acc)}
-.panel .fb{font-weight:700}
-.panel .fb.ok{color:var(--ok)}.panel .fb.bad{color:var(--bad)}
-.quiz{position:absolute;inset:0;background:rgba(5,10,20,.82);display:none;align-items:center;justify-content:center;padding:16px}
-.quiz.show{display:flex}
-.quiz .card{background:var(--panel);border:2px solid var(--acc);border-radius:14px;max-width:640px;width:100%;padding:18px 20px}
-.quiz .card h4{margin:0 0 4px;color:var(--acc);font-size:15px}
-.quiz .card p{font-size:20px;margin:6px 0 12px;line-height:1.5}
-.quiz .opt{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;font-size:17px;cursor:pointer;font-family:inherit}
-.quiz .opt:hover{border-color:var(--acc2)}
-.quiz .opt.right{background:#16452d;border-color:var(--ok)}
-.quiz .opt.wrong{background:#4a1d1d;border-color:var(--bad)}
-.quiz .ex{font-size:15px;color:var(--mut);margin-top:8px;min-height:20px;line-height:1.5}
-.quiz .go{margin-top:10px;background:var(--ok);color:#002010;border:none;border-radius:8px;padding:9px 16px;font-size:16px;font-weight:700;cursor:pointer;display:none;font-family:inherit}
-.endcard{position:absolute;inset:0;background:rgba(5,10,20,.85);display:none;align-items:center;justify-content:center;text-align:center}
-.endcard.show{display:flex}
-.endcard div{font-size:22px;line-height:1.8}
-.endcard b{color:var(--acc);font-size:30px}
-@media(max-width:600px){.caption{font-size:16px}header h1{font-size:18px}.quiz .card p{font-size:17px}.quiz .opt{font-size:15px;padding:8px}}
-.chtitle.hide{opacity:0}
-.home{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:15px;text-decoration:none;font-weight:700}
-.home:hover{border-color:var(--acc);color:var(--acc)}
-.home.big{margin-top:14px;font-size:18px;padding:10px 18px;background:var(--acc);color:#1a1200;border:none}
-/* 嵌入簡報模式（?embed=1）：隱藏標題列與章節欄，讓畫面完整放進投影片 */
-.embed header,.embed .side,.embed .tips{display:none}
-.embed .main{grid-template-columns:1fr}
-.embed .wrap{max-width:calc((100vh - 150px) * 16 / 9);padding:4px 8px 8px}
-/* 互動段（有操作面板）：畫面再縮小，讓滑桿與「完成本段」按鈕不用捲動就看得到 */
-.embed.haspanel .caption{font-size:15px;min-height:0}
-.embed .caption{font-size:16px;min-height:44px;padding:8px 12px;margin-top:6px}
-.embed .controls{margin-top:6px}.embed .bar{margin-top:6px}
-
-.actbtn{background:var(--ok);color:#002010;border:none;border-radius:8px;padding:7px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
-#actwrap{display:none}
-.act{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px 20px;min-height:70vh}
-.acthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
-.acthead h2{font-size:21px;margin:0}.acthead .tag{background:var(--ok);color:#002010;font-weight:700;border-radius:6px;padding:3px 10px;font-size:14px}
-.ainfo{margin-left:auto;color:var(--mut);font-size:15px;font-variant-numeric:tabular-nums}.ainfo b{color:var(--acc)}
-.act button{font-family:inherit;cursor:pointer}
-.aback,.asec{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:15px}
-.apri{background:var(--acc);color:#1a1200;border:none;border-radius:10px;padding:10px 20px;font-size:18px;font-weight:700}
-.apri:disabled{opacity:.35;cursor:default}
-.astart{max-width:720px;margin:10px auto;font-size:18px;line-height:1.7}.astart b{color:var(--acc)}
-.arow{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0}
-.arow input,.arow select{font-size:18px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#0a1120;color:var(--ink);font-family:inherit;margin-left:6px}
-.arow input{width:150px}
-.alist{color:var(--mut);margin:6px 0 18px}.alist small{background:var(--panel2);border-radius:6px;padding:1px 8px;margin-left:6px;font-size:13px}
-.around h3{margin:2px 0 4px;font-size:21px;color:var(--acc)}.ahint{color:var(--mut);font-size:15px;margin:0 0 12px}
-.apool{display:flex;flex-wrap:wrap;gap:8px;min-height:56px;background:#0a1120;border:1px dashed var(--line);border-radius:10px;padding:10px;margin-bottom:12px}
-.achip{background:var(--panel2);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:9px 13px;font-size:17px;line-height:1.35;text-align:left}
-.achip.sel{border-color:var(--acc);background:#3a2f10;transform:translateY(-2px);box-shadow:0 4px 0 rgba(255,176,32,.35)}
-.achip.bad{border-color:var(--bad)}.achip.ok{border-color:var(--ok);background:#143a27;cursor:default}
-.abins{display:grid;gap:10px}
-.abin{background:#0f1a2e;border:2px solid var(--line);border-radius:12px;padding:8px;min-height:150px;cursor:pointer}
-.abin:hover{border-color:var(--acc2)}.abin h4{margin:2px 4px 8px;font-size:18px;color:var(--acc2);text-align:center}
-.adrop{display:flex;flex-direction:column;gap:6px}
-.amatch{display:grid;grid-template-columns:1fr 1.5fr;gap:14px}
-.acolL,.acolR{display:flex;flex-direction:column;gap:8px}
-.aitem{background:var(--panel2);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:11px 12px;font-size:17px;text-align:left;display:flex;align-items:center;gap:8px;line-height:1.4}
-.aitem.L{font-weight:700}.aitem.sel{border-color:var(--acc);background:#3a2f10}.aitem.ok{background:#143a27}
-.aitem i{font-style:normal;color:#0d1526;font-weight:700;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;flex:none;font-size:14px}
-.aseq{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:12px}
-.aslot{min-width:120px;min-height:58px;border:2px dashed var(--line);border-radius:10px;padding:6px;display:flex;align-items:center;gap:6px;background:#0f1a2e}
-.aslot>i{font-style:normal;color:var(--mut);font-weight:700}.aslot.ok{border:2px solid var(--ok)}.aslot.bad{border:2px solid var(--bad)}
-.aslot .achip{padding:6px 10px;font-size:16px}.aarr{color:var(--mut);font-size:22px}
-.aqq{font-size:20px;line-height:1.55;margin:4px 0 12px}.aqq span{background:var(--panel2);border-radius:6px;padding:1px 8px;font-size:14px;color:var(--mut);margin-right:8px}
-.aopt{display:block;width:100%;text-align:left;background:var(--panel2);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:11px 13px;margin:7px 0;font-size:18px}
-.aopt.ok{border-color:var(--ok);background:#143a27}.aopt.bad{border-color:var(--bad);background:#4a1d1d}.aopt:disabled{cursor:default}
-.aex{color:var(--mut);font-size:16px;min-height:22px;line-height:1.5}
-.afoot{display:flex;align-items:center;gap:12px;margin-top:14px;justify-content:flex-end}
-.amsg{margin-right:auto;font-size:17px;font-weight:700}.amsg.ok{color:var(--ok)}.amsg.bad{color:var(--bad)}
-.amut{color:var(--mut);font-size:15px}
-.aend{text-align:center;max-width:640px;margin:10px auto;font-size:18px}.astar{font-size:56px}
-.aend h3{font-size:26px;margin:6px 0}.abig b{color:var(--acc);font-size:28px}
-.atab{margin:10px auto;border-collapse:collapse;min-width:320px}.atab td{border-bottom:1px solid var(--line);padding:6px 14px;text-align:left}
-.asend{color:var(--mut)}.asend.ok{color:var(--ok)}
-@media(max-width:700px){.amatch{grid-template-columns:1fr}.abins{grid-template-columns:1fr!important}.abin{min-height:80px}}
-.alive{min-height:0;margin:0 0 12px;font-weight:700;border-radius:10px}.alive.on{background:#3a2f10;border:2px solid var(--acc);padding:10px 14px;color:var(--acc)}.alive.go{background:#143a27;border:2px solid var(--ok);padding:10px 14px;color:var(--ok)}
-
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-top:16px}
-.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;color:var(--ink);text-decoration:none}
-.card:hover{border-color:var(--acc)}.card .tag{background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:2px 8px}
-.card .p{color:var(--mut);margin-left:8px;font-size:14px}.card h2{font-size:20px;margin:10px 0 6px}.card p{color:var(--mut);margin:0;font-size:15px;line-height:1.5}
-.intro{color:var(--mut);line-height:1.7}</style></head><body><div class="wrap">
-<header><a class="home" href="../index.html" title="回到課程首頁">🏠 課程首頁</a><span class="tag">第5章</span><h1>冷卻系統</h1></header>
-<p class="intro" style="margin:4px 0 0;font-size:14px">其他章節：<a href="../ch1.html" style="color:var(--acc2)">第1章</a> ・ <a href="../ch2.html" style="color:var(--acc2)">第2章</a> ・ <a href="../第3章_汽油引擎燃料系統/index.html" style="color:var(--acc2)">第3章</a> ・ <a href="../第4章_潤滑系統/index.html" style="color:var(--acc2)">第4章</a> ・ <a href="../第6章_點火系統/index.html" style="color:var(--acc2)">第6章</a> ・ <a href="../第7章_引擎性能與計算/index.html" style="color:var(--acc2)">第7章</a></p>
-<p class="intro">單元五：潤滑與冷卻（全課程第 23～28 節）。本章為第 26～28 節。每支動畫可分段播放、暫停、逐格、調速；看完按「🎮 互學挑戰」，小組合作闖關。</p>
-<h2 style="margin-top:28px;font-size:22px">上課簡報</h2><div class="grid"><a class="card" href="S1_第1節_冷卻功能與水冷循環.html"><span class="tag">簡報</span><span class="p">第1節</span><h2>冷卻系統功能與水冷循環</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S2_第2節_風扇水泵節溫器與水箱蓋.html"><span class="tag">簡報</span><span class="p">第2節</span><h2>風扇、水泵、節溫器與水箱蓋</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a><a class="card" href="S3_第3節_氣冷冷卻液與單元統整.html"><span class="tag">簡報</span><span class="p">第3節</span><h2>氣冷、冷卻液與單元五統整</h2><p>點選開啟上課簡報（全螢幕：F 鍵）</p></a></div>
-<h2 style="margin-top:28px;font-size:22px">網頁式動畫＋互學挑戰</h2><div class="grid"><a class="card" href="V1_冷卻功能與水冷循環.html"><span class="tag">V1</span><span class="p">第1節</span><h2>冷卻系統的功能、種類與水冷循環</h2><p>熱能分配、過冷過熱與油耗曲線、氣冷 vs 水冷十項、壓力式水冷循環（芯子放大）、直流式 vs 橫流式水箱＋互學挑戰</p></a><a class="card" href="V2_風扇水泵節溫器與水箱蓋.html"><span class="tag">V2</span><span class="p">第2節</span><h2>風扇、水泵、節溫器與水箱蓋</h2><p>三代風扇（92／87℃）、離心式水泵與皮帶緊度、節溫器大小循環、壓力式水箱蓋雙閥與副水箱、水管吸震＋互學挑戰</p></a><a class="card" href="V3_氣冷冷卻液與單元統整.html"><span class="tag">V3</span><span class="p">第3節</span><h2>空氣冷卻系統、冷卻液與單元五統整</h2><p>自然／強迫通風、氣冷優缺點、軟水與防凍劑、上水管 vs 下水管與 11 項重點、潤滑＋冷卻雙系統統整＋互學挑戰</p></a></div><h2 style="margin-top:28px;font-size:22px">🔧 零件位置挑戰</h2><p style="color:var(--muted,#9fb0cf);margin:4px 0 10px">把零件名稱拖到圖上正確的位置；放錯會有提示，可以重放。</p><div class="grid"><a class="card" href="標記_第5章_水冷系統循環.html"><span class="tag">挑戰</span><span class="p">第1～2節</span><h2>水冷系統循環</h2><p>水箱、水箱蓋、副水箱、風扇、節溫器、水泵、上下水管、水套</p></a></div><h2 style="margin-top:28px;font-size:22px">補課包（缺課學生用）</h2><div class="grid"><a class="card" href="R1_第1節補課包.html"><span class="tag">補課</span><span class="p">第1節</span><h2>冷卻系統功能與水冷循環</h2><p>動畫＋網頁內建 6 題測驗＋學習單（補課影片、表單待補）</p></a><a class="card" href="R2_第2節補課包.html"><span class="tag">補課</span><span class="p">第2節</span><h2>風扇、水泵、節溫器與水箱蓋</h2><p>動畫＋網頁內建 6 題測驗＋學習單（補課影片、表單待補）</p></a><a class="card" href="R3_第3節補課包.html"><span class="tag">補課</span><span class="p">第3節</span><h2>氣冷、冷卻液與單元五統整</h2><p>動畫＋網頁內建 6 題測驗＋學習單（補課影片、表單待補）</p></a></div><h2 style="margin-top:28px;font-size:22px">教師專區</h2><div class="grid"><a class="card" href="T_教師大螢幕.html"><span class="tag">教師</span><h2>🏆 教師大螢幕</h2><p>即時排行榜、全班同步挑戰、成績匯出（需教師帳號登入）</p></a></div></div></body></html>
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第5章 冷卻系統｜引擎原理</title>
+<style>:root{--bg:#0d1526;--panel:#16223a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.6 "Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif}a{color:var(--acc2)}
+main{max-width:1500px;margin:auto;padding:14px 24px}.mut{color:var(--mut)}
+.btn{font:inherit;border-radius:8px;border:1px solid var(--line);background:#1d2c4a;color:var(--ink);text-decoration:none;display:inline-block;cursor:pointer}.btn:hover{border-color:var(--acc)}
+.pri{background:var(--acc);color:#171100;font-weight:bold;border-color:var(--acc)}.tag{color:var(--acc);font-weight:bold}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}.top h1{font-size:28px;margin:0}
+.chnav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px;font-size:16px}
+.chnav a{padding:4px 12px;border:1px solid var(--line);border-radius:20px;text-decoration:none;color:var(--mut)}
+.chnav a.on{background:var(--acc);color:#171100;border-color:var(--acc);font-weight:bold}.chnav a:hover{border-color:var(--acc)}
+.lessons{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.les{display:grid;grid-template-columns:260px 1fr;gap:6px 18px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 18px;scroll-margin-top:10px}
+.les.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc) inset}
+.les .tag{font-size:16px;margin:0}.les h2{font-size:24px;margin:2px 0 0;cursor:pointer;color:var(--acc)}
+.rowb{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.rowb .lab{width:3.2em;font-size:15px;color:var(--mut)}
+.rowb .btn{font-size:17px;padding:7px 12px}.rowb.after .btn{background:transparent}
+.btn .st{font-size:13px;margin-left:6px;color:var(--ok);font-weight:bold}
+.unit{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}.unit .btn{padding:10px 16px}
+.foot{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;margin-top:14px;font-size:15px}.foot a{color:var(--mut)}
+@media(max-width:900px){.les{grid-template-columns:1fr}}</style>
+<body><main>
+<div class="top"><h1>第5章：冷卻系統</h1><span class="mut">單元五（後半）｜3 節・全課程第 26～28 節</span></div>
+<nav class="chnav" aria-label="其他章節"><a href="../index.html">🏠 全課程</a><a  href="../ch1.html">第1章</a><a  href="../ch2.html">第2章</a><a  href="../第3章_汽油引擎燃料系統/index.html">第3章</a><a  href="../第4章_潤滑系統/index.html">第4章</a><a class="on" aria-current="page" href="index.html">第5章</a><a  href="../第6章_點火系統/index.html">第6章</a><a  href="../第7章_引擎性能與計算/index.html">第7章</a></nav>
+<div class="lessons" id="lessons"></div>
+<div class="unit" id="units"></div>
+<p class="mut" style="font-size:16px">上課順序：S 簡報 → V 動畫 → 🎮 互學挑戰（🔧 零件位置挑戰）→ ✏️ 隨堂測驗；缺課同學用「補課包」。點節次標題可把那一節標成今天上課。</p>
+<div class="foot"><span></span><a href="T_教師大螢幕.html">🏆 教師大螢幕（教師用）</a></div>
+</main>
+<script src="links.js"></script>
+<script>
+const CH=5, LES=[{"n": 1, "g": 26, "title": "冷卻系統功能與水冷循環", "S": "S1_第1節_冷卻功能與水冷循環.html", "V": [["V1_冷卻功能與水冷循環.html", "1", "冷卻系統的功能、種類與水冷循環"]], "act": "V1_冷卻功能與水冷循環.html?act=1", "code": "Ch5-V1", "M": [["標記_第5章_水冷系統循環.html", "水冷系統循環"]], "R": "R1_第1節補課包.html", "rk": "c5review1", "form": ""}, {"n": 2, "g": 27, "title": "風扇、水泵、節溫器與水箱蓋", "S": "S2_第2節_風扇水泵節溫器與水箱蓋.html", "V": [["V2_風扇水泵節溫器與水箱蓋.html", "2", "風扇、水泵、節溫器與水箱蓋"]], "act": "V2_風扇水泵節溫器與水箱蓋.html?act=1", "code": "Ch5-V2", "M": [["標記_第5章_水冷系統循環.html", "水冷系統循環"]], "R": "R2_第2節補課包.html", "rk": "c5review2", "form": ""}, {"n": 3, "g": 28, "title": "氣冷、冷卻液與單元五統整", "S": "S3_第3節_氣冷冷卻液與單元統整.html", "V": [["V3_氣冷冷卻液與單元統整.html", "3", "空氣冷卻系統、冷卻液與單元五統整"]], "act": "V3_氣冷冷卻液與單元統整.html?act=1", "code": "Ch5-V3", "M": [], "R": "R3_第3節補課包.html", "rk": "c5review3", "form": ""}], UNITS=[["unit5", "📝 單元五測驗"]];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const J=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}};
+const LK=window.LINKS||{}, TK='ch'+CH+'_today';
+function draw(){
+  const hist=J('act_history')||[], today=+(localStorage.getItem(TK)||0);
+  const best=code=>hist.filter(r=>r.lesson===code).sort((a,b)=>b.score-a.score)[0];
+  const b=(href,label,st,cls='',tip='')=>`<a class="btn ${cls}" href="${href}"${tip?` title="${esc(tip)}"`:''}>${label}${st?`<span class="st">${esc(st)}</span>`:''}</a>`;
+  document.getElementById('lessons').innerHTML=LES.map(l=>{
+    const v=best(l.code), r=J(l.rk)||{}, rd=Object.values(r).filter(Boolean).length;
+    const up=[l.S?b(l.S,`S${l.S.match(/^S(\d+)/)[1]} 上課簡報`,'','pri'):'', ...l.V.map(([h,k,t])=>b(h,`V${k} 互動動畫`,'','',t)),
+      l.act?b(l.act,'🎮 互學挑戰',v?`✓${v.score}/${v.total}`:''):'', ...l.M.map(([h,t])=>b(h,`🔧 ${esc(t)}`,'','','零件位置挑戰')),
+      l.form&&LK[l.form]?b(LK[l.form],'✏️ 隨堂測驗',''):''].join('');
+    const after=l.R?b(l.R,'🩹 補課包（缺課用）',rd?`${rd} 步✓`:''):'';
+    return `<section class="les ${l.n===today?'on':''}" id="L${l.n}"><div><p class="tag">第${CH}章 第${l.n}節｜全課程第${l.g}節${l.n===today?'　📌 今天':''}</p><h2 data-n="${l.n}" title="點一下標成今天上課">${esc(l.title)}</h2></div>
+      <div><div class="rowb"><span class="lab">上課</span>${up}</div>${after?`<div class="rowb after" style="margin-top:6px"><span class="lab">課後</span>${after}</div>`:''}</div></section>`;}).join('');
+  document.getElementById('units').innerHTML=UNITS.filter(([k])=>LK[k]).map(([k,t])=>b(LK[k],t,'','pri')).join('');
+  document.querySelectorAll('.les h2').forEach(h=>h.onclick=()=>{const n=+h.dataset.n;try{localStorage.setItem(TK,n===today?'':n)}catch(e){}draw();});
+  if(today&&document.getElementById('L'+today))document.getElementById('L'+today).scrollIntoView({block:'nearest'});
+}
+draw();window.addEventListener('pageshow',draw);
+</script></body></html>
