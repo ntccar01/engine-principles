@@ -527,7 +527,7 @@ function Activity(root, cfg) {
       if (first) { firstOk = items.filter(x => x.ok).length; first = false; }
       draw();
       if (bad) msg(`✘ 有 ${bad} 張放錯了（已退回上方，紅框），小組再討論一次！`, false);
-      else { msg(`✔ 全部正確！本關得分 ${firstOk} / ${items.length}`, true); pass(firstOk, items.length); }
+      else { msg(firstOk === items.length ? `✔ 全部正確！本關得分 ${firstOk} / ${items.length}` : `✔ 現在全部正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${items.length} 個，得 ${firstOk} 分`, true); pass(firstOk, items.length); }
     };
     draw();
   }
@@ -557,7 +557,7 @@ function Activity(root, cfg) {
       let bad = 0; Object.keys(link).forEach(k => { if (+k === link[k]) locked[k] = true; else { delete link[k]; bad++; } });
       if (first) { firstOk = Object.keys(locked).length; first = false; }
       draw();
-      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(`✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}`, true); pass(firstOk, L.length); }
+      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(firstOk === L.length ? `✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}` : `✔ 現在全部配對正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${L.length} 組，得 ${firstOk} 分`, true); pass(firstOk, L.length); }
     };
     draw();
   }
@@ -582,7 +582,7 @@ function Activity(root, cfg) {
       let bad = 0; seq.forEach((x, k) => { if (x.i === k) { x.ok = true; x.bad = false; } else { x.bad = true; bad++; } });
       if (first) { firstOk = r.items.length - bad; first = false; }
       if (bad) { const keep = []; for (const x of seq) { if (x.ok && keep.length === x.i) keep.push(x); else break; } seq.forEach(x => { if (!keep.includes(x)) { x.ok = false; } }); draw(); seq = keep; setTimeout(() => { items.forEach(x => x.bad = false); draw(); }, 900); msg(`✘ 有 ${bad} 個位置不對，正確的前段已保留，繼續排！`, false); }
-      else { done = true; draw(); msg(`✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}`, true); pass(firstOk, r.items.length); }
+      else { done = true; draw(); msg(firstOk === r.items.length ? `✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}` : `✔ 現在順序正確了。本關只看第一次檢查：第一次排對 ${firstOk} / ${r.items.length} 個位置，得 ${firstOk} 分`, true); pass(firstOk, r.items.length); }
     };
     draw();
   }
@@ -754,6 +754,6 @@ const V3 = {
   ],
 };
 
-V3.code="Ch1-V3";V3.activity={"title": "第 4 節｜四行程大挑戰", "rounds": [{"type": "order", "title": "排出四行程的順序", "items": ["進氣行程", "壓縮行程", "動力行程", "排氣行程"]}, {"type": "match", "title": "行程 ↔ 發生什麼事", "pairs": [["進氣行程", "活塞下行，吸入混合氣"], ["壓縮行程", "活塞上行，溫度壓力升高"], ["動力行程", "火星塞點火，燃燒推動活塞"], ["排氣行程", "活塞上行，把廢氣排出"]]}, {"type": "classify", "title": "這個行程，汽門怎麼開？", "bins": ["進開、排關", "進關、排關", "進關、排開"], "items": [["進氣行程", 0], ["壓縮行程", 1], ["動力行程", 1], ["排氣行程", 2]]}, {"type": "choice", "title": "小老師考考你", "qs": [["下列何者「不是」往復式活塞引擎的工作四要素？", ["冷卻", "燃料", "壓縮", "點火"], "四要素：燃料、空氣、壓縮、點火。"], ["活塞行程等於下列何者？", ["曲柄臂長的 2 倍（曲柄迴轉直徑）", "連桿長度", "汽缸直徑", "活塞長度"], "TDC 到 BDC 的距離＝曲柄圓直徑。"], ["四缸四行程引擎在 1200 rpm 時，平均每秒產生幾次動力？", ["40 次", "20 次", "80 次", "10 次"], "1200 ÷ 60 ＝ 20 轉／秒；每 2 轉每缸 1 次 → 20 ÷ 2 × 4 ＝ 40。"], ["活塞由上死點移向汽缸中點時，進行何種運動？", ["加速運動", "減速運動", "等速運動", "先減速後加速"], "死點速度為零，中點附近最快。"]]}]};
+V3.code="Ch1-V3";V3.activity={"title": "第 4 節｜四行程大挑戰", "rounds": [{"type": "order", "title": "排出四行程的順序", "hint": "提示：從活塞下行、吸入混合氣的行程開始，排完一個循環。", "items": ["進氣行程", "壓縮行程", "動力行程", "排氣行程"]}, {"type": "match", "title": "行程 ↔ 發生什麼事", "pairs": [["進氣行程", "活塞下行，吸入混合氣"], ["壓縮行程", "活塞上行，溫度壓力升高"], ["動力行程", "火星塞點火，燃燒推動活塞"], ["排氣行程", "活塞上行，把廢氣排出"]]}, {"type": "classify", "title": "這個行程，汽門怎麼開？", "bins": ["進開、排關", "進關、排關", "進關、排開"], "items": [["進氣行程", 0], ["壓縮行程", 1], ["動力行程", 1], ["排氣行程", 2]]}, {"type": "choice", "title": "小老師考考你", "qs": [["下列何者「不是」往復式活塞引擎的工作四要素？", ["冷卻", "燃料", "壓縮", "點火"], "四要素：燃料、空氣、壓縮、點火。"], ["活塞行程等於下列何者？", ["曲柄臂長的 2 倍（曲柄迴轉直徑）", "連桿長度", "汽缸直徑", "活塞長度"], "TDC 到 BDC 的距離＝曲柄圓直徑。"], ["四缸四行程引擎在 1200 rpm 時，平均每秒產生幾次動力？", ["40 次", "20 次", "80 次", "10 次"], "1200 ÷ 60 ＝ 20 轉／秒；每 2 轉每缸 1 次 → 20 ÷ 2 × 4 ＝ 40。"], ["活塞由上死點移向汽缸中點時，進行何種運動？", ["加速運動", "減速運動", "等速運動", "先減速後加速"], "死點速度為零，中點附近最快。"]]}]};
 Player(V3);
 </script></body></html>

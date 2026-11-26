@@ -527,7 +527,7 @@ function Activity(root, cfg) {
       if (first) { firstOk = items.filter(x => x.ok).length; first = false; }
       draw();
       if (bad) msg(`✘ 有 ${bad} 張放錯了（已退回上方，紅框），小組再討論一次！`, false);
-      else { msg(`✔ 全部正確！本關得分 ${firstOk} / ${items.length}`, true); pass(firstOk, items.length); }
+      else { msg(firstOk === items.length ? `✔ 全部正確！本關得分 ${firstOk} / ${items.length}` : `✔ 現在全部正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${items.length} 個，得 ${firstOk} 分`, true); pass(firstOk, items.length); }
     };
     draw();
   }
@@ -557,7 +557,7 @@ function Activity(root, cfg) {
       let bad = 0; Object.keys(link).forEach(k => { if (+k === link[k]) locked[k] = true; else { delete link[k]; bad++; } });
       if (first) { firstOk = Object.keys(locked).length; first = false; }
       draw();
-      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(`✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}`, true); pass(firstOk, L.length); }
+      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(firstOk === L.length ? `✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}` : `✔ 現在全部配對正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${L.length} 組，得 ${firstOk} 分`, true); pass(firstOk, L.length); }
     };
     draw();
   }
@@ -582,7 +582,7 @@ function Activity(root, cfg) {
       let bad = 0; seq.forEach((x, k) => { if (x.i === k) { x.ok = true; x.bad = false; } else { x.bad = true; bad++; } });
       if (first) { firstOk = r.items.length - bad; first = false; }
       if (bad) { const keep = []; for (const x of seq) { if (x.ok && keep.length === x.i) keep.push(x); else break; } seq.forEach(x => { if (!keep.includes(x)) { x.ok = false; } }); draw(); seq = keep; setTimeout(() => { items.forEach(x => x.bad = false); draw(); }, 900); msg(`✘ 有 ${bad} 個位置不對，正確的前段已保留，繼續排！`, false); }
-      else { done = true; draw(); msg(`✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}`, true); pass(firstOk, r.items.length); }
+      else { done = true; draw(); msg(firstOk === r.items.length ? `✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}` : `✔ 現在順序正確了。本關只看第一次檢查：第一次排對 ${firstOk} / ${r.items.length} 個位置，得 ${firstOk} 分`, true); pass(firstOk, r.items.length); }
     };
     draw();
   }
@@ -767,7 +767,7 @@ const V6 = {
       { type: 'classify', title: '空氣計量方式分類', bins: ['壓力計量式（D 型）', '空氣流量計量式（L 型）', '節氣門計量式'],
         items: [['裝進氣歧管壓力感知器', 0], ['又稱速度密度式', 0], ['空氣流量計在節氣門前方', 1], ['翼板式、熱線式、卡門渦流式', 1], ['用節氣門開度＋轉速推算', 2], ['反應靈敏，用於部分賽車', 2]] },
       { type: 'match', title: 'BOSCH 名稱解碼', pairs: BOSCH.map(b => [b[0], b[3]]) },
-      { type: 'order', title: '順序噴射：噴油先後（點火順序 1-3-4-2）', items: ['第 1 缸', '第 3 缸', '第 4 缸', '第 2 缸'] },
+      { type: 'order', title: '順序噴射：噴油先後（點火順序 1-3-4-2）', hint: '提示：從第 1 缸開始，依點火順序排出各缸噴油的先後。', items: ['第 1 缸', '第 3 缸', '第 4 缸', '第 2 缸'] },
       { type: 'choice', title: '噴射正時判斷', qs: [
         ['同期噴射時，電腦需要參考什麼信號？', ['點火信號與曲軸旋轉角度', '車速與油量', '只看空氣流量計的波數', '冷卻水溫度'], '同期＝和曲軸轉動同步。'],
         ['4 支噴油嘴一起噴、不管其他缸活塞位置，是哪一種？', ['同時噴射', '分組噴射', '順序噴射', '非同期噴射'], '以第 1 缸（或第 4 缸）為基準一起噴。'],

@@ -47,10 +47,10 @@
     LS.set('score_pending', left); flushing = false;
   }
   window.Score = {
-    submit(rec) {
+    submit(rec, opt) {
       const st = window.Student && Student.get();
       if (st && !rec.seat && (!rec.cls || rec.cls === st.cls)) rec.seat = st.seat;
-      keepLocal(rec);
+      if (!(opt && opt.noLocal)) keepLocal(rec);
       return write(rec).then(() => ({ ok: true }), e => {
         const c = code(e); console.warn('成績未上傳：', c);
         if (c !== 'no-config' && c !== 'permission-denied') { queue(rec); return { ok: false, err: c, queued: true }; }
@@ -58,6 +58,20 @@
       });
     },
     pending: () => LS.get('score_pending', []).length,
+    /* 指定補課名單：存在 engine_live/assign_Ch7_<班級>（學生可讀、教師可寫）
+       格式① {state:'assign', cls, goAt:0, list:{"1":[3,12],...}}；格式②（規則不收 list 時）cls 欄寫「班級|1:3,12;2:5」 */
+    assignId: cls => 'assign_Ch7_' + cls,
+    parseAssign(d) {
+      if (!d) return {};
+      if (d.list && typeof d.list === 'object') return d.list;
+      const m = String(d.cls || '').split('|')[1]; const out = {};
+      if (m) m.split(';').forEach(p => { const [n, seats] = p.split(':'); if (n && seats) out[n] = seats.split(',').map(Number).filter(Boolean); });
+      return out;
+    },
+    getAssign(cls) {
+      return init().then(({ F, db }) => timeout(F.getDoc(F.doc(db, 'engine_live', Score.assignId(cls))), 10000))
+        .then(s => Score.parseAssign(s.exists() ? s.data() : null)).catch(() => ({}));
+    },
     flush,
     /* 監聽老師的全班同步挑戰：cb({state:'ready'|'go'|'off', cls, goAt}) */
     watchLive(lesson, cb) {

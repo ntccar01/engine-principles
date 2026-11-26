@@ -15,7 +15,7 @@ main{max-width:1500px;padding:14px 24px}
 .rowb .lab{width:3.2em;font-size:15px;color:var(--mut)}
 .rowb .btn{font-size:17px;padding:7px 12px;position:relative}
 .rowb.after .btn{background:transparent}
-.btn .st{font-size:13px;margin-left:6px;color:var(--ok);font-weight:bold}
+.btn .st{font-size:13px;margin-left:6px;color:var(--ok);font-weight:bold}.btn .st.as{color:#ffb020}
 .foot{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;margin-top:14px;font-size:15px}
 .foot a{color:var(--mut)}
 @media(max-width:900px){.les{grid-template-columns:1fr}.top .stuid{margin-left:0}}
@@ -36,6 +36,7 @@ const L = [
   [4, '課本7-4＋7-5｜第37節', '引擎效率與油耗率', '5段動畫・互學22分'],
   [5, '課本7-6＋全章統整｜第38節', '性能因素與計算統整', '5段動畫・互學22分']];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let ASSIGN = {};
 const J = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
 function status() {
   const s = window.Student && Student.get(), hist = J('act_history') || [], out = {};
@@ -43,15 +44,15 @@ function status() {
   for (const [n] of L) {
     const v = best('Ch7-V' + n); out['v' + n] = v ? `✓${v.score}/${v.total}` : '';
     const q = s && J(`ch7rec_Ch7-F${n}_${s.cls}_${s.seat}`); out['f' + n] = q ? `✓${q.first.score}/${q.first.total}` : '';
-    const r = J('ch7review' + n) || [], rq = s && J(`ch7rec_Ch7-R${n}_${s.cls}_${s.seat}`), done = r.filter(Boolean).length;
-    out['r' + n] = done === 4 ? '✓完成' : done ? `${done}/4步` : rq ? `測驗${rq.first.score}/${rq.first.total}` : '';
+    const r = (s && J(`ch7review${n}_${s.cls}_${s.seat}`)) || [], rq = s && J(`ch7rec_Ch7-R${n}_${s.cls}_${s.seat}`), done = r.filter(Boolean).length;
+    out['r' + n] = (ASSIGN[n] && s && ASSIGN[n].includes(s.seat) ? (done === 4 ? '' : '📌老師指定 ') : '') + (done === 4 ? '✓完成' : done ? `${done}/4步` : rq ? `測驗${rq.first.score}/${rq.first.total}` : '');
   }
   const u = s && J(`ch7rec_Unit7_${s.cls}_${s.seat}`); out.unit = u ? `✓ 已完成 ${u.first.score} 分` : '';
   return out;
 }
 function draw() {
   const st = status(), today = +(localStorage.getItem('ch7_today') || 0);
-  const b = (href, label, key, cls = '') => `<a class="btn ${cls}" href="${href}">${label}${st[key] ? `<span class="st">${esc(st[key])}</span>` : ''}</a>`;
+  const b = (href, label, key, cls = '') => `<a class="btn ${cls}" href="${href}">${label}${st[key] ? `<span class="st${/📌/.test(st[key]) ? ' as' : ''}">${esc(st[key])}</span>` : ''}</a>`;
   document.getElementById('lessons').innerHTML = L.map(([n, tag, title, meta]) => `<section class="les ${n === today ? 'on' : ''}" id="L${n}">
     <div><p class="tag">${tag}${n === today ? '　📌 今天' : ''}</p><h2 data-n="${n}" title="點一下標成今天上課">${title}</h2><p class="meta mut">${meta}・隨堂6題</p></div>
     <div><div class="rowb"><span class="lab">上課</span>${b(`S${n}_第${n}節_${title}.html`, `S${n} 上課簡報`, '', 'pri')}${b(`V${n}_${title}.html`, `V${n} 互動動畫`, '')}${b(`V${n}_${title}.html?act=1`, `🎮 互學挑戰`, 'v' + n)}${b(`W${n}_學習單.html`, `W${n} 學習單`, '')}${b(`Q${n}_隨堂測驗.html`, `✏️ F${n} 隨堂測驗`, 'f' + n)}</div>
@@ -62,6 +63,7 @@ function draw() {
   const p = window.Score && Score.pending ? Score.pending() : 0;
   document.getElementById('pend').textContent = p ? `⚠ 這台機器有 ${p} 筆成績還沒上傳，連上網路後會自動補送。` : '';
 }
-Student.badge(document.getElementById('stu')); Student.onChange(draw); draw();
+function loadAssign() { const s = Student.get(); ASSIGN = {}; if (s && window.Score && Score.getAssign) Score.getAssign(s.cls).then(a => { ASSIGN = a || {}; draw(); }); }
+Student.badge(document.getElementById('stu')); Student.onChange(() => { draw(); loadAssign(); }); draw(); loadAssign();
 window.addEventListener('pageshow', draw);
 </script></body></html>

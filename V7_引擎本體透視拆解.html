@@ -527,7 +527,7 @@ function Activity(root, cfg) {
       if (first) { firstOk = items.filter(x => x.ok).length; first = false; }
       draw();
       if (bad) msg(`✘ 有 ${bad} 張放錯了（已退回上方，紅框），小組再討論一次！`, false);
-      else { msg(`✔ 全部正確！本關得分 ${firstOk} / ${items.length}`, true); pass(firstOk, items.length); }
+      else { msg(firstOk === items.length ? `✔ 全部正確！本關得分 ${firstOk} / ${items.length}` : `✔ 現在全部正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${items.length} 個，得 ${firstOk} 分`, true); pass(firstOk, items.length); }
     };
     draw();
   }
@@ -557,7 +557,7 @@ function Activity(root, cfg) {
       let bad = 0; Object.keys(link).forEach(k => { if (+k === link[k]) locked[k] = true; else { delete link[k]; bad++; } });
       if (first) { firstOk = Object.keys(locked).length; first = false; }
       draw();
-      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(`✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}`, true); pass(firstOk, L.length); }
+      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(firstOk === L.length ? `✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}` : `✔ 現在全部配對正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${L.length} 組，得 ${firstOk} 分`, true); pass(firstOk, L.length); }
     };
     draw();
   }
@@ -582,7 +582,7 @@ function Activity(root, cfg) {
       let bad = 0; seq.forEach((x, k) => { if (x.i === k) { x.ok = true; x.bad = false; } else { x.bad = true; bad++; } });
       if (first) { firstOk = r.items.length - bad; first = false; }
       if (bad) { const keep = []; for (const x of seq) { if (x.ok && keep.length === x.i) keep.push(x); else break; } seq.forEach(x => { if (!keep.includes(x)) { x.ok = false; } }); draw(); seq = keep; setTimeout(() => { items.forEach(x => x.bad = false); draw(); }, 900); msg(`✘ 有 ${bad} 個位置不對，正確的前段已保留，繼續排！`, false); }
-      else { done = true; draw(); msg(`✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}`, true); pass(firstOk, r.items.length); }
+      else { done = true; draw(); msg(firstOk === r.items.length ? `✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}` : `✔ 現在順序正確了。本關只看第一次檢查：第一次排對 ${firstOk} / ${r.items.length} 個位置，得 ${firstOk} 分`, true); pass(firstOk, r.items.length); }
     };
     draw();
   }
@@ -762,6 +762,6 @@ const V7 = {
   ],
 };
 
-V7.code="Ch2-V7";V7.activity={"title": "第 7 節｜引擎本體拆解王", "rounds": [{"type": "order", "title": "引擎本體由上而下", "items": ["汽缸蓋", "汽缸床墊", "汽缸體", "油底殼"]}, {"type": "classify", "title": "乾式還是濕式汽缸套？", "bins": ["乾式汽缸套", "濕式汽缸套"], "items": [["外壁不接觸冷卻水", 0], ["厚約 2～4 mm", 0], ["常用於汽油引擎", 0], ["磨損後可搪缸", 0], ["外壁直接接觸冷卻水", 1], ["厚約 5～8 mm", 1], ["常用於柴油引擎", 1], ["下端裝 2～3 條橡皮密封圈", 1]]}, {"type": "match", "title": "機件 ↔ 功用", "pairs": [["汽缸體", "引擎的骨架"], ["汽缸床墊", "防止漏氣、漏水、漏機油"], ["汽缸蓋", "構成燃燒室、裝汽門機構"], ["磨缸交叉細紋", "存留潤滑油"], ["水套", "讓冷卻液流過散熱"]]}, {"type": "choice", "title": "故障偵探", "qs": [["「冷卻水一直減少＋排氣管冒白煙」最可能是哪個機件損壞？", ["汽缸床墊", "活塞環", "油底殼", "火星塞"], "床墊在水孔與汽缸間破損，冷卻水進汽缸燒成水蒸汽。"], ["壓縮壓力較大的引擎，應使用怎樣的汽缸床墊？", ["較薄的", "較厚的", "不用床墊", "橡膠床墊"], "壓縮壓力大用較薄床墊。"], ["現代高速汽油引擎的汽缸蓋多用鋁合金，主要原因是？", ["散熱快，降低燃燒室溫度、減少爆震", "比較便宜", "比較重比較穩", "不會生鏽"], "鋁合金散熱快。"]]}]};
+V7.code="Ch2-V7";V7.activity={"title": "第 7 節｜引擎本體拆解王", "rounds": [{"type": "order", "title": "引擎本體由上而下", "hint": "提示：從引擎最上面的零件，排到最下面的零件。", "items": ["汽缸蓋", "汽缸床墊", "汽缸體", "油底殼"]}, {"type": "classify", "title": "乾式還是濕式汽缸套？", "bins": ["乾式汽缸套", "濕式汽缸套"], "items": [["外壁不接觸冷卻水", 0], ["厚約 2～4 mm", 0], ["常用於汽油引擎", 0], ["磨損後可搪缸", 0], ["外壁直接接觸冷卻水", 1], ["厚約 5～8 mm", 1], ["常用於柴油引擎", 1], ["下端裝 2～3 條橡皮密封圈", 1]]}, {"type": "match", "title": "機件 ↔ 功用", "pairs": [["汽缸體", "引擎的骨架"], ["汽缸床墊", "防止漏氣、漏水、漏機油"], ["汽缸蓋", "構成燃燒室、裝汽門機構"], ["磨缸交叉細紋", "存留潤滑油"], ["水套", "讓冷卻液流過散熱"]]}, {"type": "choice", "title": "故障偵探", "qs": [["「冷卻水一直減少＋排氣管冒白煙」最可能是哪個機件損壞？", ["汽缸床墊", "活塞環", "油底殼", "火星塞"], "床墊在水孔與汽缸間破損，冷卻水進汽缸燒成水蒸汽。"], ["壓縮壓力較大的引擎，應使用怎樣的汽缸床墊？", ["較薄的", "較厚的", "不用床墊", "橡膠床墊"], "壓縮壓力大用較薄床墊。"], ["現代高速汽油引擎的汽缸蓋多用鋁合金，主要原因是？", ["散熱快，降低燃燒室溫度、減少爆震", "比較便宜", "比較重比較穩", "不會生鏽"], "鋁合金散熱快。"]]}]};
 Player(V7);
 </script></body></html>

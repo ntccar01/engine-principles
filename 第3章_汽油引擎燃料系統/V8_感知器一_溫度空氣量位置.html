@@ -527,7 +527,7 @@ function Activity(root, cfg) {
       if (first) { firstOk = items.filter(x => x.ok).length; first = false; }
       draw();
       if (bad) msg(`✘ 有 ${bad} 張放錯了（已退回上方，紅框），小組再討論一次！`, false);
-      else { msg(`✔ 全部正確！本關得分 ${firstOk} / ${items.length}`, true); pass(firstOk, items.length); }
+      else { msg(firstOk === items.length ? `✔ 全部正確！本關得分 ${firstOk} / ${items.length}` : `✔ 現在全部正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${items.length} 個，得 ${firstOk} 分`, true); pass(firstOk, items.length); }
     };
     draw();
   }
@@ -557,7 +557,7 @@ function Activity(root, cfg) {
       let bad = 0; Object.keys(link).forEach(k => { if (+k === link[k]) locked[k] = true; else { delete link[k]; bad++; } });
       if (first) { firstOk = Object.keys(locked).length; first = false; }
       draw();
-      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(`✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}`, true); pass(firstOk, L.length); }
+      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(firstOk === L.length ? `✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}` : `✔ 現在全部配對正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${L.length} 組，得 ${firstOk} 分`, true); pass(firstOk, L.length); }
     };
     draw();
   }
@@ -582,7 +582,7 @@ function Activity(root, cfg) {
       let bad = 0; seq.forEach((x, k) => { if (x.i === k) { x.ok = true; x.bad = false; } else { x.bad = true; bad++; } });
       if (first) { firstOk = r.items.length - bad; first = false; }
       if (bad) { const keep = []; for (const x of seq) { if (x.ok && keep.length === x.i) keep.push(x); else break; } seq.forEach(x => { if (!keep.includes(x)) { x.ok = false; } }); draw(); seq = keep; setTimeout(() => { items.forEach(x => x.bad = false); draw(); }, 900); msg(`✘ 有 ${bad} 個位置不對，正確的前段已保留，繼續排！`, false); }
-      else { done = true; draw(); msg(`✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}`, true); pass(firstOk, r.items.length); }
+      else { done = true; draw(); msg(firstOk === r.items.length ? `✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}` : `✔ 現在順序正確了。本關只看第一次檢查：第一次排對 ${firstOk} / ${r.items.length} 個位置，得 ${firstOk} 分`, true); pass(firstOk, r.items.length); }
     };
     draw();
   }

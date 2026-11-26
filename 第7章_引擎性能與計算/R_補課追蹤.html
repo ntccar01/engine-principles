@@ -1,0 +1,135 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>單元七｜補課追蹤（教師）</title>
+<link rel="stylesheet" href="chapter7.css">
+<style>
+main{max-width:1500px}.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0}
+.bar label{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:16px}
+table.g{font-size:16px;min-width:1000px}table.g th{background:#1d2c4a;position:sticky;top:0;font-weight:normal;color:var(--mut)}
+table.g td{text-align:center;cursor:pointer;line-height:1.35;vertical-align:middle}table.g td:first-child{font-weight:bold;cursor:default}
+td.as{box-shadow:inset 0 0 0 2px #ffb020}td.done{background:#123a28}td.todo{background:#3a1f26}td.prog{background:#1b2f4d}
+td small{color:var(--mut)}td .star{color:#ffb020;font-weight:bold}td.dirty{outline:2px dashed #38c6ff;outline-offset:-4px}
+.legend{font-size:15px;color:var(--mut)}#msg,#save_msg{min-height:1.5em}.sum td{font-weight:bold;cursor:default;background:#16223a}
+</style>
+<body><main>
+<nav><a href="index.html">← 單元七首頁</a><a href="教師專區.html">教師專區</a><a href="G_成績總表.html">個人成績總表</a></nav>
+<h1>單元七｜補課追蹤與指定補課</h1>
+<p class="mut">學生在補課頁（R1～R5）登入班級＋座號後，開啟頁面、每完成一步都會上傳紀錄。這裡看得到誰上線補課、做到第幾步、補課測驗幾分；也可以指定學生補課。</p>
+<div class="bar"><input id="em" type="email" placeholder="教師 Email" value="lin1102@gm.ntc.edu.tw" style="width:260px"><input id="pw" type="password" placeholder="密碼" style="width:150px"><button id="login" class="pri">教師登入</button><span id="who" class="mut"></span><button id="logout" hidden>登出</button></div>
+<div class="bar">
+  <label>班級 <input id="cls" list="clsList" style="width:140px" placeholder="選擇班級"><datalist id="clsList"></datalist></label>
+  <label>座號到 <input id="n" type="number" min="1" max="60" value="32" style="width:5em"> 號</label>
+  <label><input id="only" type="checkbox"> 只顯示有指定或有紀錄的學生</label>
+  <button id="reload">🔄 重新讀取</button>
+  <button id="csv">⬇ 下載補課追蹤 CSV</button>
+</div>
+<p id="msg" class="mut">請先用教師帳號登入。</p>
+<div class="bar"><b>指定補課：</b><span class="mut">點表格的格子可加上／取消 ★ 指定（虛線框＝還沒儲存），也可以在這裡一次輸入：</span>
+  <label>第 <select id="an"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select> 節</label>
+  <label>座號 <input id="aseats" placeholder="例如 3,12,25" style="width:180px"></label><button id="aadd">加入指定</button>
+  <button id="save" class="pri">💾 儲存指定名單</button><span id="save_msg" class="mut"></span></div>
+<p class="legend">格子內容：★＝老師指定、步數（4 步全做完＝完成）、補課測驗分數（/6）、最後上線時間、<small>開啟次數</small>。綠底＝4 步完成；紅底＝已指定但還沒完成；藍底＝有上線但沒做完。</p>
+<div class="tablewrap" id="board"></div>
+</main>
+<script src="firebase-config.js"></script>
+<script type="module">
+const B = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const [A, U, F] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-firestore.js')]);
+const $ = s => document.querySelector(s), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const N5 = [1, 2, 3, 4, 5], TITLES = ['基本單位與換算', '排氣量與壓縮比', '馬力與扭力', '引擎效率與油耗率', '性能因素與計算統整'];
+const app = A.initializeApp(window.FIREBASE_CONFIG), auth = U.getAuth(app), db = F.getFirestore(app);
+const seatOf = r => r.seat || +((String(r.title || '').match(/座號(\d+)/) || [])[1]) || 0;
+let all = [], assign = {}, saved = '{}';
+const LS = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
+$('#clsList').innerHTML = [...(window.CLASS_LIST || []), '教師測試'].map(c => `<option value="${esc(c)}">`).join('');
+$('#cls').value = LS.get('rt_cls', (window.CLASS_LIST || [])[0] || ''); $('#n').value = LS.get('rt_n', 32);
+$('#login').onclick = () => U.signInWithEmailAndPassword(auth, $('#em').value.trim(), $('#pw').value).catch(e => alert('登入失敗：' + (e.code || e.message)));
+$('#pw').onkeydown = e => { if (e.key === 'Enter') $('#login').click(); };
+$('#logout').onclick = () => U.signOut(auth);
+const isT = () => auth.currentUser && !auth.currentUser.isAnonymous;
+U.onAuthStateChanged(auth, u => {
+  const ok = u && !u.isAnonymous; $('#who').textContent = ok ? '已登入：' + u.email : '';
+  ['#em', '#pw', '#login'].forEach(s => $(s).hidden = ok); $('#logout').hidden = !ok;
+  if (ok) load(); else { all = []; $('#board').innerHTML = ''; $('#msg').textContent = '請先用教師帳號登入。'; }
+});
+const aid = cls => 'assign_Ch7_' + cls;
+function parseAssign(d) {
+  if (!d) return {}; if (d.list && typeof d.list === 'object') return JSON.parse(JSON.stringify(d.list));
+  const m = String(d.cls || '').split('|')[1], out = {};
+  if (m) m.split(';').forEach(p => { const [n, s] = p.split(':'); if (n && s) out[n] = s.split(',').map(Number).filter(Boolean); }); return out;
+}
+async function loadAssign(cls) {
+  try { const s = await F.getDoc(F.doc(db, 'engine_live', aid(cls))); if (s.exists()) return parseAssign(s.data()); } catch (e) { }
+  return LS.get('rt_assign_' + cls, {});
+}
+async function load() {
+  const cls = $('#cls').value.trim(); $('#msg').textContent = '讀取中…';
+  try {
+    const codes = N5.flatMap(n => ['Ch7-RP' + n, 'Ch7-R' + n]);
+    const snaps = await Promise.all(codes.map(c => F.getDocs(F.query(F.collection(db, 'engine_scores'), F.where('lesson', '==', c)))));
+    all = snaps.flatMap(s => s.docs.map(d => { const x = d.data(); return Object.assign({ id: d.id }, x, { seat: seatOf(x), t: x.at ? Date.parse(x.at) : (x.ts ? x.ts.toMillis() : 0) }); }));
+    const cl = [...new Set(all.map(r => r.cls))].filter(Boolean);
+    $('#clsList').innerHTML = [...new Set([...(window.CLASS_LIST || []), '教師測試', ...cl])].map(c => `<option value="${esc(c)}">`).join('');
+    assign = await loadAssign(cls); saved = JSON.stringify(norm(assign));
+    draw();
+  } catch (e) { $('#msg').innerHTML = `<span class="bad">無法讀取（${esc(e.code || e.message)}）。請確認登入的是教師帳號。</span>`; }
+}
+const norm = a => { const o = {}; N5.forEach(n => { const v = [...new Set((a[n] || []).map(Number).filter(x => x > 0))].sort((x, y) => x - y); if (v.length) o[n] = v; }); return o; };
+const fmt = t => t ? new Date(t).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+function table() {
+  const cls = $('#cls').value.trim(), N = Math.max(1, Math.min(60, +$('#n').value || 32)), mine = all.filter(r => r.cls === cls && r.seat);
+  const maxSeat = Math.max(N, ...mine.map(r => r.seat), ...N5.flatMap(n => assign[n] || []));
+  const rows = [];
+  for (let s = 1; s <= maxSeat; s++) {
+    const row = { seat: s, c: {} };
+    N5.forEach(n => {
+      const rp = mine.filter(r => r.seat === s && r.lesson === 'Ch7-RP' + n), rq = mine.filter(r => r.seat === s && r.lesson === 'Ch7-R' + n).sort((a, b) => a.t - b.t);
+      const steps = rp.length ? Math.max(...rp.map(r => r.score)) : null, last = Math.max(0, ...rp.map(r => r.t), ...rq.map(r => r.t));
+      row.c[n] = { as: (assign[n] || []).includes(s), steps, quiz: rq.length ? rq[0].score : null, qn: rq.length, last, opens: rp.filter(r => /開啟|登入/.test(r.title || '')).length };
+    });
+    rows.push(row);
+  }
+  return { cls, rows };
+}
+function draw() {
+  const { cls, rows } = table(), only = $('#only').checked, dirtyNow = JSON.stringify(norm(assign)) !== saved;
+  LS.set('rt_cls', cls); LS.set('rt_n', $('#n').value);
+  const savedA = JSON.parse(saved);
+  const show = rows.filter(r => !only || N5.some(n => r.c[n].as || r.c[n].steps !== null || r.c[n].quiz !== null));
+  const sum = N5.map(n => { const as = rows.filter(r => r.c[n].as), done = as.filter(r => r.c[n].steps === 4).length, on = rows.filter(r => r.c[n].steps !== null).length; return `指定 ${as.length} 人・已完成 ${done}<br><small>有上線 ${on} 人</small>`; });
+  $('#msg').textContent = cls ? `${cls}：補課紀錄 ${all.filter(r => r.cls === cls).length} 筆。${dirtyNow ? '　⚠ 指定名單有變更，記得按「儲存指定名單」。' : ''}` : '請選擇班級。';
+  $('#board').innerHTML = `<table class="g"><tr><th>座號</th>${N5.map(n => `<th>第${n}節（全課程第${33 + n}節）<br><small>${TITLES[n - 1]}</small></th>`).join('')}</tr>
+  <tr class="sum"><td>統計</td>${sum.map(x => `<td>${x}</td>`).join('')}</tr>
+  ${show.map(r => `<tr><td>${r.seat}</td>${N5.map(n => { const c = r.c[n], wasAs = (savedA[n] || []).includes(r.seat);
+    const cl = [c.as ? 'as' : '', c.steps === 4 ? 'done' : c.as ? 'todo' : c.steps !== null ? 'prog' : '', c.as !== wasAs ? 'dirty' : ''].join(' ');
+    const txt = [c.as ? '<span class="star">★指定</span>' : '', c.steps !== null ? `${c.steps}/4 步` : '', c.quiz !== null ? `測驗 ${c.quiz}/6${c.qn > 1 ? `<small>(${c.qn}次)</small>` : ''}` : '', c.last ? `<small>${fmt(c.last)}${c.opens ? `・開啟${c.opens}次` : ''}</small>` : ''].filter(Boolean).join('<br>');
+    return `<td class="${cl}" data-s="${r.seat}" data-n="${n}" title="點一下加上／取消指定">${txt || '<small>—</small>'}</td>`; }).join('')}</tr>`).join('')}</table>`;
+}
+$('#board').onclick = e => {
+  const td = e.target.closest('td[data-s]'); if (!td) return; const s = +td.dataset.s, n = td.dataset.n, l = assign[n] = assign[n] || [];
+  const i = l.indexOf(s); if (i >= 0) l.splice(i, 1); else l.push(s); draw();
+};
+$('#aadd').onclick = () => { const n = $('#an').value, l = assign[n] = assign[n] || []; $('#aseats').value.split(/[,，、\s]+/).map(Number).filter(x => x > 0 && x <= 60).forEach(x => { if (!l.includes(x)) l.push(x); }); $('#aseats').value = ''; draw(); };
+$('#save').onclick = async () => {
+  if (!isT()) return alert('請先登入教師帳號');
+  const cls = $('#cls').value.trim(); if (!cls) return alert('請先選班級');
+  const list = norm(assign), ref = F.doc(db, 'engine_live', aid(cls)), enc = N5.filter(n => list[n]).map(n => `${n}:${list[n].join(',')}`).join(';');
+  const m = $('#save_msg'); m.textContent = '儲存中…'; LS.set('rt_assign_' + cls, list);
+  try { await F.setDoc(ref, { state: 'assign', cls, goAt: 0, at: F.serverTimestamp(), list }); }
+  catch (e1) {
+    try { await F.setDoc(ref, { state: 'off', cls: `${cls}|${enc}`, goAt: 0, at: F.serverTimestamp() }); }
+    catch (e2) { saved = JSON.stringify(list); draw(); m.innerHTML = `<span class="bad">資料庫不接受指定名單（${esc(e2.code || e2.message)}），名單只存在這台電腦，學生畫面不會顯示，請口頭通知學生。</span>`; return; }
+  }
+  try { const chk = parseAssign((await F.getDoc(ref)).data()); if (JSON.stringify(norm(chk)) !== JSON.stringify(list)) throw new Error('讀回不一致'); }
+  catch (e) { m.innerHTML = `<span class="bad">已送出但讀回檢查失敗（${esc(e.message)}）。</span>`; return; }
+  saved = JSON.stringify(list); draw(); m.innerHTML = '<span class="ok">✔ 已儲存，學生登入後會在首頁與補課頁看到「老師指定」。</span>';
+};
+const dl = (lines, name) => { const csv = '﻿' + lines.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = name; a.click(); };
+$('#csv').onclick = () => {
+  const { cls, rows } = table(); if (!all.length) return alert('還沒有讀到資料，請先登入。');
+  dl([['班級', '座號', ...N5.flatMap(n => [`第${n}節指定`, `第${n}節步數(/4)`, `第${n}節補課測驗(/6)`, `第${n}節最後上線`, `第${n}節開啟次數`])],
+    ...rows.map(r => [cls, r.seat, ...N5.flatMap(n => { const c = r.c[n]; return [c.as ? '是' : '', c.steps ?? '', c.quiz ?? '', c.last ? new Date(c.last).toLocaleString('zh-TW') : '', c.opens || '']; })])],
+    `單元七補課追蹤_${cls}_${new Date().toISOString().slice(0, 10)}.csv`);
+};
+$('#cls').onchange = () => isT() && load();
+['#n', '#only'].forEach(s => $(s).oninput = $(s).onchange = () => all.length && draw());
+$('#reload').onclick = () => isT() && load();
+</script></body></html>

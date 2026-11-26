@@ -527,7 +527,7 @@ function Activity(root, cfg) {
       if (first) { firstOk = items.filter(x => x.ok).length; first = false; }
       draw();
       if (bad) msg(`✘ 有 ${bad} 張放錯了（已退回上方，紅框），小組再討論一次！`, false);
-      else { msg(`✔ 全部正確！本關得分 ${firstOk} / ${items.length}`, true); pass(firstOk, items.length); }
+      else { msg(firstOk === items.length ? `✔ 全部正確！本關得分 ${firstOk} / ${items.length}` : `✔ 現在全部正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${items.length} 個，得 ${firstOk} 分`, true); pass(firstOk, items.length); }
     };
     draw();
   }
@@ -557,7 +557,7 @@ function Activity(root, cfg) {
       let bad = 0; Object.keys(link).forEach(k => { if (+k === link[k]) locked[k] = true; else { delete link[k]; bad++; } });
       if (first) { firstOk = Object.keys(locked).length; first = false; }
       draw();
-      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(`✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}`, true); pass(firstOk, L.length); }
+      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(firstOk === L.length ? `✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}` : `✔ 現在全部配對正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${L.length} 組，得 ${firstOk} 分`, true); pass(firstOk, L.length); }
     };
     draw();
   }
@@ -582,7 +582,7 @@ function Activity(root, cfg) {
       let bad = 0; seq.forEach((x, k) => { if (x.i === k) { x.ok = true; x.bad = false; } else { x.bad = true; bad++; } });
       if (first) { firstOk = r.items.length - bad; first = false; }
       if (bad) { const keep = []; for (const x of seq) { if (x.ok && keep.length === x.i) keep.push(x); else break; } seq.forEach(x => { if (!keep.includes(x)) { x.ok = false; } }); draw(); seq = keep; setTimeout(() => { items.forEach(x => x.bad = false); draw(); }, 900); msg(`✘ 有 ${bad} 個位置不對，正確的前段已保留，繼續排！`, false); }
-      else { done = true; draw(); msg(`✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}`, true); pass(firstOk, r.items.length); }
+      else { done = true; draw(); msg(firstOk === r.items.length ? `✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}` : `✔ 現在順序正確了。本關只看第一次檢查：第一次排對 ${firstOk} / ${r.items.length} 個位置，得 ${firstOk} 分`, true); pass(firstOk, r.items.length); }
     };
     draw();
   }
@@ -741,6 +741,6 @@ const V1 = {
   ],
 };
 
-V1.code="Ch1-V1";V1.activity={"title": "第 1 節｜熱機分類大挑戰", "rounds": [{"type": "classify", "title": "內燃機還是外燃機？", "bins": ["內燃機", "外燃機"], "items": [["汽油引擎", 0], ["柴油引擎", 0], ["噴射引擎", 0], ["燃氣渦輪引擎", 0], ["蒸汽機", 1], ["蒸汽渦輪（火力發電）", 1], ["史特靈引擎", 1]]}, {"type": "order", "title": "熱機的能量轉換順序", "items": ["化學能（燃料）", "熱能（燃燒）", "機械能（往復或旋轉運動）"]}, {"type": "match", "title": "內燃機 vs 外燃機 比一比", "pairs": [["內燃機的工作介質", "燃燒氣體"], ["外燃機的工作介質", "水蒸汽或被加熱的氣體"], ["史特靈引擎的工作氣體", "氦氣"], ["熱效率較高的是", "內燃機"], ["構造複雜、體積大的是", "外燃機"], ["目前小型車的動力", "汽油引擎"]]}, {"type": "choice", "title": "想一想", "qs": [["電動車把電池的電能直接由馬達轉成機械能，它算熱機嗎？", ["不算，沒有「燃燒產生熱能」再轉成動力的過程", "算，因為有馬達", "算，因為會發熱", "不一定，看電池大小"], "熱機的關鍵是燃料燃燒產生熱能再轉成機械能。"], ["熱機是把燃料中的哪一種能量，最後轉換成機械能？", ["化學能", "電能", "核能", "光能"], "化學能 → 熱能 → 機械能。"], ["下列何者「不是」內燃機的優點？", ["熱效率較低", "構造簡單", "體積較小", "重量較輕"], "內燃機熱效率較高。"]]}]};
+V1.code="Ch1-V1";V1.activity={"title": "第 1 節｜熱機分類大挑戰", "rounds": [{"type": "classify", "title": "內燃機還是外燃機？", "bins": ["內燃機", "外燃機"], "items": [["汽油引擎", 0], ["柴油引擎", 0], ["噴射引擎", 0], ["燃氣渦輪引擎", 0], ["蒸汽機", 1], ["蒸汽渦輪（火力發電）", 1], ["史特靈引擎", 1]]}, {"type": "order", "title": "熱機的能量轉換順序", "hint": "提示：從燃料本身具有的能量開始，排到最後變成的能量。", "items": ["化學能（燃料）", "熱能（燃燒）", "機械能（往復或旋轉運動）"]}, {"type": "match", "title": "內燃機 vs 外燃機 比一比", "pairs": [["內燃機的工作介質", "燃燒氣體"], ["外燃機的工作介質", "水蒸汽或被加熱的氣體"], ["史特靈引擎的工作氣體", "氦氣"], ["熱效率較高的是", "內燃機"], ["構造複雜、體積大的是", "外燃機"], ["目前小型車的動力", "汽油引擎"]]}, {"type": "choice", "title": "想一想", "qs": [["電動車把電池的電能直接由馬達轉成機械能，它算熱機嗎？", ["不算，沒有「燃燒產生熱能」再轉成動力的過程", "算，因為有馬達", "算，因為會發熱", "不一定，看電池大小"], "熱機的關鍵是燃料燃燒產生熱能再轉成機械能。"], ["熱機是把燃料中的哪一種能量，最後轉換成機械能？", ["化學能", "電能", "核能", "光能"], "化學能 → 熱能 → 機械能。"], ["下列何者「不是」內燃機的優點？", ["熱效率較低", "構造簡單", "體積較小", "重量較輕"], "內燃機熱效率較高。"]]}]};
 Player(V1);
 </script></body></html>

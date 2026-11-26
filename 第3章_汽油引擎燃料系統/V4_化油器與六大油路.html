@@ -527,7 +527,7 @@ function Activity(root, cfg) {
       if (first) { firstOk = items.filter(x => x.ok).length; first = false; }
       draw();
       if (bad) msg(`✘ 有 ${bad} 張放錯了（已退回上方，紅框），小組再討論一次！`, false);
-      else { msg(`✔ 全部正確！本關得分 ${firstOk} / ${items.length}`, true); pass(firstOk, items.length); }
+      else { msg(firstOk === items.length ? `✔ 全部正確！本關得分 ${firstOk} / ${items.length}` : `✔ 現在全部正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${items.length} 個，得 ${firstOk} 分`, true); pass(firstOk, items.length); }
     };
     draw();
   }
@@ -557,7 +557,7 @@ function Activity(root, cfg) {
       let bad = 0; Object.keys(link).forEach(k => { if (+k === link[k]) locked[k] = true; else { delete link[k]; bad++; } });
       if (first) { firstOk = Object.keys(locked).length; first = false; }
       draw();
-      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(`✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}`, true); pass(firstOk, L.length); }
+      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(firstOk === L.length ? `✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}` : `✔ 現在全部配對正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${L.length} 組，得 ${firstOk} 分`, true); pass(firstOk, L.length); }
     };
     draw();
   }
@@ -582,7 +582,7 @@ function Activity(root, cfg) {
       let bad = 0; seq.forEach((x, k) => { if (x.i === k) { x.ok = true; x.bad = false; } else { x.bad = true; bad++; } });
       if (first) { firstOk = r.items.length - bad; first = false; }
       if (bad) { const keep = []; for (const x of seq) { if (x.ok && keep.length === x.i) keep.push(x); else break; } seq.forEach(x => { if (!keep.includes(x)) { x.ok = false; } }); draw(); seq = keep; setTimeout(() => { items.forEach(x => x.bad = false); draw(); }, 900); msg(`✘ 有 ${bad} 個位置不對，正確的前段已保留，繼續排！`, false); }
-      else { done = true; draw(); msg(`✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}`, true); pass(firstOk, r.items.length); }
+      else { done = true; draw(); msg(firstOk === r.items.length ? `✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}` : `✔ 現在順序正確了。本關只看第一次檢查：第一次排對 ${firstOk} / ${r.items.length} 個位置，得 ${firstOk} 分`, true); pass(firstOk, r.items.length); }
     };
     draw();
   }
@@ -963,7 +963,7 @@ const V4 = {
   activity: {
     title: '第 4 節｜化油器維修站',
     rounds: [
-      { type: 'order', title: '化油器式燃料系統流程', items: ['油箱', '汽油濾清器', '汽油泵', '化油器', '引擎'] },
+      { type: 'order', title: '化油器式燃料系統流程', hint: '提示：從儲存汽油的地方開始，排出汽油送到引擎的路徑。', items: ['油箱', '汽油濾清器', '汽油泵', '化油器', '引擎'] },
       { type: 'match', title: '工況 × 油路配對', pairs: [['保持浮筒室油面高度', '浮筒油路'], ['停紅燈怠速', '怠速及低速油路'], ['平路中高速巡航', '高速油路'], ['猛踩油門的瞬間', '加速油路'], ['滿載爬陡坡（3/4 以上）', '強力油路'], ['冷車早上發動', '阻風油路']] },
       { type: 'classify', title: '機械式 or 電動式汽油泵？', bins: ['機械式（膜片式）', '電動式'],
         items: [['由凸輪軸帶動', 0], ['膜片上下運動吸油、送油', 0], ['有吸油、送油、調節三個時期', 0], ['馬達＋滾子泵', 1], ['點火開關 ON 就能先供油', 1], ['可裝在溫度較低處減少氣阻', 1], ['多用於汽油噴射系統', 1]] },

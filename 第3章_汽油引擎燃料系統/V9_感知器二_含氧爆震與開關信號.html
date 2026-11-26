@@ -527,7 +527,7 @@ function Activity(root, cfg) {
       if (first) { firstOk = items.filter(x => x.ok).length; first = false; }
       draw();
       if (bad) msg(`✘ 有 ${bad} 張放錯了（已退回上方，紅框），小組再討論一次！`, false);
-      else { msg(`✔ 全部正確！本關得分 ${firstOk} / ${items.length}`, true); pass(firstOk, items.length); }
+      else { msg(firstOk === items.length ? `✔ 全部正確！本關得分 ${firstOk} / ${items.length}` : `✔ 現在全部正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${items.length} 個，得 ${firstOk} 分`, true); pass(firstOk, items.length); }
     };
     draw();
   }
@@ -557,7 +557,7 @@ function Activity(root, cfg) {
       let bad = 0; Object.keys(link).forEach(k => { if (+k === link[k]) locked[k] = true; else { delete link[k]; bad++; } });
       if (first) { firstOk = Object.keys(locked).length; first = false; }
       draw();
-      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(`✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}`, true); pass(firstOk, L.length); }
+      if (bad) msg(`✘ 有 ${bad} 組配錯了，已取消，再試一次！`, false); else { msg(firstOk === L.length ? `✔ 全部配對正確！本關得分 ${firstOk} / ${L.length}` : `✔ 現在全部配對正確了。本關只看第一次檢查：第一次對了 ${firstOk} / ${L.length} 組，得 ${firstOk} 分`, true); pass(firstOk, L.length); }
     };
     draw();
   }
@@ -582,7 +582,7 @@ function Activity(root, cfg) {
       let bad = 0; seq.forEach((x, k) => { if (x.i === k) { x.ok = true; x.bad = false; } else { x.bad = true; bad++; } });
       if (first) { firstOk = r.items.length - bad; first = false; }
       if (bad) { const keep = []; for (const x of seq) { if (x.ok && keep.length === x.i) keep.push(x); else break; } seq.forEach(x => { if (!keep.includes(x)) { x.ok = false; } }); draw(); seq = keep; setTimeout(() => { items.forEach(x => x.bad = false); draw(); }, 900); msg(`✘ 有 ${bad} 個位置不對，正確的前段已保留，繼續排！`, false); }
-      else { done = true; draw(); msg(`✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}`, true); pass(firstOk, r.items.length); }
+      else { done = true; draw(); msg(firstOk === r.items.length ? `✔ 順序完全正確！本關得分 ${firstOk} / ${r.items.length}` : `✔ 現在順序正確了。本關只看第一次檢查：第一次排對 ${firstOk} / ${r.items.length} 個位置，得 ${firstOk} 分`, true); pass(firstOk, r.items.length); }
     };
     draw();
   }
@@ -791,7 +791,7 @@ const V9 = {
       { type: 'classify', title: '輸入還是輸出？', bins: ['輸入（感知器／信號）', '輸出（作動器）'],
         items: [['含氧感知器', 0], ['爆震感知器', 0], ['車速感知器', 0], ['起動信號', 0], ['電瓶電壓感知器', 0], ['噴油嘴', 1], ['點火器', 1], ['怠速控制閥', 1], ['EGR 電磁閥', 1], ['電動燃油泵', 1]] },
       { type: 'match', title: '信號 → 電腦反應', pairs: [['含氧電壓高於 0.45V', '縮短噴射時間'], ['含氧電壓低於 0.45V', '延長噴射時間'], ['爆震信號', '點火時間延後'], ['怠速時冷氣作用', '怠速控制閥開度變大'], ['起動信號', '起動時與起動後增量'], ['車速 40 km/h 以下', '略增噴油量提高穩定性']] },
-      { type: 'order', title: '回饋控制一圈', items: ['混合比變濃', '排氣含氧量變少', '含氧感知器電壓高於 0.45V', '電腦縮短噴射時間', '混合比回到 15：1 附近'] },
+      { type: 'order', title: '回饋控制一圈', hint: '提示：從「混合比變濃」開始，排出含氧感知器與電腦把混合比拉回來的過程。', items: ['混合比變濃', '排氣含氧量變少', '含氧感知器電壓高於 0.45V', '電腦縮短噴射時間', '混合比回到 15：1 附近'] },
       { type: 'choice', title: '哪個感知器壞了？', qs: [
         ['暖車後油耗大增、排氣變黑，電腦一直沒有修正混合比，最可能是？', ['含氧感知器', '爆震感知器', '車速感知器', '起動信號'], '含氧感知器負責混合比回饋修正。'],
         ['加油門時「敲缸」聲變大，電腦卻沒有延後點火，最可能是？', ['爆震感知器', '含氧感知器', '水溫感知器', '電瓶電壓感知器'], '爆震感知器的信號讓電腦延後點火。'],
