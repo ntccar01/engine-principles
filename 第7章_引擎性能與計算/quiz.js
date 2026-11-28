@@ -31,9 +31,9 @@
     el.append(go, area); area.replaceChildren();
   }
 
-  let started = false;
+  let quizOn = false;
   function start(who) {
-    started = true;
+    quizOn = true;
     const qs = unit ? shuffle(source) : source.slice();
     let qi = 0, score = 0, tried = false, started = Date.now(), finished = false, detail = [], answers = {};
     function finish() {
@@ -91,5 +91,5 @@
     }
   }
   gate();
-  if (window.Student && Student.onChange) Student.onChange(() => { if (!started) gate(); });
+  if (window.Student && Student.onChange) Student.onChange(() => { if (!quizOn) gate(); });
 })();
