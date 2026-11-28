@@ -66,6 +66,21 @@ figure{position:relative}.lb{position:absolute;left:0;top:-2px;padding:6px 18px;
 #notes{display:none;position:fixed;left:0;right:0;bottom:0;max-height:34vh;overflow:auto;background:#0f1729ee;border-top:2px solid var(--acc);padding:14px 22px 46px;white-space:pre-wrap;font-size:19px;line-height:1.6;z-index:15}
 body.n #notes{display:block}
 #help{position:fixed;left:14px;top:12px;color:#4d5f82;font-size:13px;z-index:20;opacity:0;transition:.3s}#help:hover{opacity:1}
+#pside{display:none}
+body.pres{overflow:hidden;background:#050a14}
+body.pres #nav,body.pres #help,body.pres #notes{display:none!important}
+body.pres #deck{left:0;top:0;transform-origin:0 0}
+body.pres #pside{display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;width:38vw;background:#0f1729;border-left:2px solid var(--acc);padding:14px 18px;gap:10px}
+#pside .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#pside button{background:#1b2742;color:#cfe;border:1px solid #2c3d63;border-radius:8px;padding:8px 14px;font-size:18px;cursor:pointer}
+#pside .big{font-size:26px;padding:10px 22px}
+#ptime{font-size:30px;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums;cursor:pointer}
+#pnum{font-size:20px;color:var(--mute)}
+#pnext{font-size:17px;color:var(--mute);border:1px dashed #2c3d63;border-radius:8px;padding:8px 10px}
+#pnext b{color:var(--ink)}
+#pnotes{flex:1;overflow:auto;white-space:pre-wrap;font-size:var(--nfs,24px);line-height:1.6;background:#0a1120;border-radius:10px;padding:14px 16px}
+#plink{font-size:15px;color:#7f93b8}
+#pbelow{position:fixed;left:0;bottom:0;width:62vw;padding:10px 16px;color:#7f93b8;font-size:15px}
 </style></head><body>
 <div id="deck">
 <section class="slide">
@@ -152,23 +167,43 @@ body.n #notes{display:block}
 <div><img src="img/talk_yt.jpg" alt="YouTube 頻道"><h2 style="margin-top:24px">謝謝聆聽</h2><p class="mut">林慶泓　國立臺東專科學校附設高職部 汽車科</p></div></div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>16 / 16</span></div></section>
 </div>
 <div id="notes"></div>
-<div id="help">← → 換頁　N 講稿　F 全螢幕</div>
-<div id="nav"><button id="pv">◀</button><button id="nb">講稿</button><button id="fb">全螢幕</button><button id="nx">▶</button></div>
+<div id="help">← → 換頁　N 講稿（同一畫面）　P 講者畫面（雙螢幕）　F 全螢幕</div>
+<div id="nav"><button id="pv">◀</button><button id="nb">講稿</button><button id="pb" title="雙螢幕：在筆電開講者畫面，投影只顯示簡報">🎤 講者畫面</button><button id="fb">全螢幕</button><button id="nx">▶</button></div>
+<div id="pside">
+ <div class="row"><span id="ptime" title="點一下重新計時">00:00</span><span id="pnum"></span><span style="flex:1"></span><button id="pfs1">A－</button><button id="pfs2">A＋</button></div>
+ <div class="row"><button class="big" id="pp">◀ 上一頁</button><button class="big" id="pn">下一頁 ▶</button></div>
+ <div id="pnext"></div>
+ <div id="pnotes"></div>
+ <div id="plink">投影畫面：<span id="pconn">尚未連線（請從投影的簡報按「🎤 講者畫面」開啟本視窗）</span></div>
+</div>
+<div id="pbelow">↑ 目前投影的畫面　｜　← → 或空白鍵換頁，投影畫面會同步</div>
 <script>
 const NOTES=["【0:30｜累計 0:00–0:30】\n各位老師午安，我是臺東專科學校附設高職部汽車科的林慶泓。\n今天用 30 分鐘，分享我這一年用 AI 做《引擎原理》數位教材的經驗。重點不是工具有多厲害，而是「老師在哪裡把關」。\n等一下會請大家拿出手機一起操作兩次，先準備好。","【1:30｜累計 0:30–2:00】\n先講為什麼要自己做。\n我的班上是 32 位高一學生，學習成就和動機都偏低；課本字多、圖不會動，學生看不出零件怎麼連動。\n教室沒有引擎實物、也沒有剖面教具，只有學校的平板，要分組共用。\n加上高優計畫要求科技融入和四學。所以我的想法很簡單：既然沒有引擎可以拆，那就把引擎畫出來，讓它在平板上動。","【1:00｜累計 2:00–3:00】\n這是現在的成果：七章、38 節課全部上線。\n每節課都有一支網頁動畫、一份上課簡報、一個補課包；測驗做在網站裡，共 46 份，成績自動進總表；另外還有 7 份高優教案和學習單。\n除了 AI 訂閱，網站放 GitHub Pages、成績用 Firebase 免費方案，幾乎零成本。\n但今天不談數量，我要談的是：這些東西「怎麼做對」。","【1:30｜累計 3:00–4:30】\n先看一節課怎麼用。以第 4 節「四行程引擎」為例，50 分鐘照四學走：\n導學先問「早上車子發不動，可能少了什麼？」引起動機；\n自學 10 分鐘，各組用平板看動畫，每段看完有小問題；\n老師導學整理觀念；共學時三人輪流操作、說明、記錄；\n互學是全班同步的挑戰賽，大螢幕即時排名；最後每個人自己做隨堂測驗。\n動畫不是放給學生看就好，它要放進這個流程裡，才會變成學習。","【3:00｜累計 4:30–7:30】\n請大家拿出手機，掃這個 QR Code，打開「四行程引擎透視動畫」。\n（等 30 秒）\n請按播放，看第一段「認識汽缸各部位」。看完它會停住，先不要急著作答——你可以選「再看一次」，也可以按「我懂了，回答問題」。\n請大家回答這一題。答錯沒關係，等一下第 11 頁會用到。\n（現場若網路不穩：改看投影的截圖，我直接操作一次。）","【1:30｜累計 7:30–9:00】\n這些東西不是 AI 一次做出來的。我和 AI 的分工是一個循環：\n一、老師訂目標：學生卡在哪、下課要會什麼。\n二、AI 交草稿：摘要、規畫、題目，不確定的地方列出來。\n三、老師核對：對照課本，看對不對、順序學生能不能懂。\n四、AI 依確認過的規畫製作。\n五、老師自己先播、先操作、先作答，再帶學生試用。\n六、看學生的答案再修。\n每一圈，判斷都在老師手上。","【2:00｜累計 9:00–11:00】\n很多老師問：要怎麼跟 AI 講？我的經驗是說清楚這六件事。\n以四行程為例：學生是高一汽車科、基礎較弱；下課要會說出四行程的順序和作用；參考我給的課本頁碼；做 4 段解說，每段附預測題和答錯提示；不要自己加數值，先交規畫給我確認；最後列出圖示、答案和課本的對照表。\n最後兩件事最重要：「先交規畫」讓你在它動手前就能改方向；「列出對照」讓你核對有依據。\n只說「幫我做一份漂亮的簡報」，通常得到的是好看但不能教的東西。","【1:30｜累計 11:00–12:30】\n第一個把關案例：膜片式汽油泵。\nAI 第一版只畫了膜片和凸輪，看起來很專業，但學生看不出凸輪怎麼帶動膜片。\n我截圖指出位置、說明應該怎麼動，請 AI 先複述它的理解再改。\n改完是完整機構：凸輪推搖臂、搖臂拉拉桿、拉桿帶膜片，吸油、送油都看得到。\n老師檢查的不是畫面漂不漂亮，而是因果和連動對不對。學生會照著畫面記，畫錯就是教錯。","【1:30｜累計 12:30–14:00】\n第二個案例比較不一樣，是「感覺」。\n我做題目時一直覺得，段末小問題的答案好像常常是 A。我請 AI 不要附和我，先統計。\n結果 177 題裡，A 有 92 題、D 只有 9 題——學生用猜的也容易答對。\n調整後四個選項差不多平均，但我還是要求逐題核對，確定答案沒有跑掉。\n這裡的重點是：老師的直覺很重要，但要請 AI 用數據驗證，不要讓它順著你說。","【1:00｜累計 14:00–15:00】\n第三個案例，是上課用了才發現的。\n原本的設計是：每段動畫一播完，題目就直接跳出來。\n試教時我看到：學生還沒看清楚就要作答，只好用猜的；題目蓋住整個畫面，想回去看也回不去。\n這個問題，AI 自己檢查程式不會發現，只有在教室看學生用，才看得出來。","【3:00｜累計 15:00–18:00】\n我把問題描述給 AI，請它提方案，最後三個一起做：\n第一，播完先停住，學生可以「再看一次」，準備好再按「回答問題」；\n第二，作答時可按「回去看這段」，畫面角落留一個「回到題目」按鈕；\n第三，答錯會出現「跳到相關說明」，直接跳到對應的那句字幕，播完那句自動停住，提醒回到題目。\n請大家用手機試試看：剛才那題如果答錯，按「跳到相關說明」；答對的老師，可以按「回去看這段」。\n（等 1 分鐘）\n只計第一次答對的規則不變，所以學生不會因為可以回頭看就亂猜。","【1:00｜累計 18:00–19:00】\n改完一支動畫還不夠。這次的修改，38 支動畫一次全部套用，並寫進我的「開發規範」和「技能包」範本。\n以後不管是我、AI，還是其他老師用技能包做新課程，一開始就是新的做法，不會再犯同樣的錯。\n這是我覺得 AI 時代老師最重要的工作之一：把課堂上發現的問題，變成下一次的規則。","【2:00｜累計 19:00–21:00】\n誠實講優點和限制。\n優點：動畫可以暫停、逐格、重看，看不清楚的動作能拆開；答錯知道回哪裡看；課後補課和課堂用同一套教材。\n限制：動畫是簡化的，也可能畫錯，所以老師一定要核對；有排行榜和重試，學生可能只想猜答案，要請他說理由；網路和平板是前提，要準備紙本學習單備案。\n小組答對不代表每個人都會，最後一定要有個人作答。","【2:00｜累計 21:00–23:00】\n如果各位回去想試，我的建議是三件事：\n第一，從一節課開始，選一個學生最常卡住的概念，不要一開始就想做整個學期。\n第二，讓 AI 先交規畫，你確認了它才動手；並要求它列出跟課本的對照。\n第三，自己先試教，再看學生怎麼用。真正的問題，常常是上課才看得到。\nAI 讓我們做得快，但做得對、教得會，還是老師的專業。","【1:00｜累計 23:00–24:00】\n這三個入口給大家參考，可以拍照或掃碼：\n課程網站，上課用；YouTube 頻道「師傅開講・動機秒懂教室」，學生課後補課；分享頁有我的教案、學習單和開發歷程，Word 檔可以下載改成自己的課。","【4:00＋緩衝｜累計 24:00–30:00】\n最後想請教大家一個問題：您的課裡，哪一個概念最需要「動起來」給學生看？\n歡迎現場分享，或會後找我交流。謝謝大家。"];
 const sl=[...document.querySelectorAll('.slide')],deck=document.getElementById('deck'),nt=document.getElementById('notes');
 let cur=Math.min(sl.length-1,Math.max(0,(parseInt(location.hash.slice(1))||1)-1));
-function fit(){const s=Math.min(innerWidth/1600,innerHeight/900);deck.style.transform='translate(-50%,-50%) scale('+s+')';}
-function show(i){cur=Math.max(0,Math.min(sl.length-1,i));sl.forEach((s,j)=>s.classList.toggle('on',j===cur));nt.textContent=NOTES[cur]||'';history.replaceState(null,'','#'+(cur+1));}
-addEventListener('resize',fit);fit();show(cur);
+const PRES=/presenter/.test(location.search);if(PRES){document.body.classList.add('pres');document.title='講者畫面｜'+document.title;}
+function fit(){if(PRES){const w=innerWidth*0.62-20,h=innerHeight-60,s=Math.min(w/1600,h/900);deck.style.transform='translate(10px,10px) scale('+s+')';return;}const s=Math.min(innerWidth/1600,innerHeight/900);deck.style.transform='translate(-50%,-50%) scale('+s+')';}
+function show(i,remote){cur=Math.max(0,Math.min(sl.length-1,i));sl.forEach((s,j)=>s.classList.toggle('on',j===cur));nt.textContent=NOTES[cur]||'';history.replaceState(null,'','#'+(cur+1));
+ if(PRES){pnotes.textContent=NOTES[cur]||'';pnotes.scrollTop=0;pnum.textContent=(cur+1)+' / '+sl.length;const nx=sl[cur+1];pnext.innerHTML=nx?'下一頁：<b>'+(nx.querySelector('h2.t,h1')||{}).textContent+'</b>':'（最後一頁）';}
+ if(!remote)send({t:'go',i:cur});}
+/* 雙螢幕同步：BroadcastChannel（同網站）＋視窗互傳（file:// 備援） */
+let bc=null,peer=PRES?window.opener:null;try{bc=new BroadcastChannel('ai_talk');}catch(e){}
+function send(m){try{bc&&bc.postMessage(m);}catch(e){}try{peer&&!peer.closed&&peer.postMessage(Object.assign({ai_talk:1},m),'*');}catch(e){}}
+function recv(m){if(!m)return;if(m.t==='go'&&m.i!==cur)show(m.i,true);else if(m.t==='hello'){send({t:'go',i:cur});send({t:'here'});}else if(m.t==='here'&&PRES)pconn.textContent='✅ 已連線，換頁會同步';else if(m.t==='embed'&&!PRES)loadEmbed(true);}
+if(bc)bc.onmessage=e=>recv(e.data);addEventListener('message',e=>{if(e.data&&e.data.ai_talk){if(!PRES&&e.source)peer=e.source;recv(e.data);}});
+addEventListener('resize',fit);fit();show(cur,true);
+if(PRES){send({t:'hello'});let t0=Date.now();setInterval(()=>{const d=Math.floor((Date.now()-t0)/1000);ptime.textContent=String(Math.floor(d/60)).padStart(2,'0')+':'+String(d%60).padStart(2,'0');},500);ptime.onclick=()=>t0=Date.now();pp.onclick=()=>show(cur-1);pn.onclick=()=>show(cur+1);let fz=24;const setF=d=>{fz=Math.max(16,Math.min(40,fz+d));document.body.style.setProperty('--nfs',fz+'px');};pfs1.onclick=()=>setF(-2);pfs2.onclick=()=>setF(2);}
 if(/notes/.test(location.search))document.body.classList.add('n');
 addEventListener('keydown',e=>{if(e.target.tagName==='IFRAME')return;
  if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(cur+1);}
  else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(cur-1);}
- else if(e.key==='n'||e.key==='N')document.body.classList.toggle('n');
+ else if(e.key==='n'||e.key==='N'){if(!PRES)document.body.classList.toggle('n');}
+ else if(e.key==='p'||e.key==='P'){if(!PRES)openPres();}
  else if(e.key==='f'||e.key==='F')fs();
  else if(e.key==='Home')show(0);else if(e.key==='End')show(sl.length-1);});
 function fs(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}
-pv.onclick=()=>show(cur-1);nx.onclick=()=>show(cur+1);nb.onclick=()=>document.body.classList.toggle('n');fb.onclick=fs;
-document.querySelectorAll('.ph').forEach(p=>p.onclick=()=>{p.outerHTML='<iframe src="'+p.dataset.src+'" title="四行程引擎透視動畫" allow="autoplay"></iframe>';});
+function openPres(){document.body.classList.remove('n');const w=window.open(location.pathname+'?presenter#'+(cur+1),'ai_talk_presenter','width=1280,height=760');if(w)peer=w;else alert('瀏覽器擋住了彈出視窗，請允許本網站開啟彈出視窗後再按一次。');}
+pv.onclick=()=>show(cur-1);nx.onclick=()=>show(cur+1);nb.onclick=()=>document.body.classList.toggle('n');pb.onclick=openPres;fb.onclick=fs;
+function loadEmbed(remote){document.querySelectorAll('.ph').forEach(p=>{if(PRES){p.innerHTML='▶ 已在投影畫面開啟動畫<br><small>請在投影畫面上操作</small>';}else p.outerHTML='<iframe src="'+p.dataset.src+'" title="四行程引擎透視動畫" allow="autoplay"></iframe>';});if(!remote)send({t:'embed'});}
+document.querySelectorAll('.ph').forEach(p=>p.onclick=()=>loadEmbed(false));
 </script></body></html>
