@@ -354,9 +354,9 @@ a.btn.off{background:#2a2f3a;color:#7c8598;border:1px dashed #4a5263;pointer-eve
   document.querySelectorAll('.copy').forEach(b => b.onclick = e => { e.stopPropagation(); const t = b.parentElement.querySelector('.ptxt').innerText; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => b.textContent = '✔ 已複製').catch(() => b.textContent = '請手動選取複製'); });
   // 學生連結 QR（需網路；無網路時只顯示網址）
   const qr = document.getElementById('qr');
-  if (qr) { const url = location.href.split('#')[0]; const u = document.getElementById('qrurl'); if (u) u.textContent = url;
+  if (qr) { const url = location.href.split('#')[0]; const u = document.getElementById('qrurl'); if (u) { try { u.textContent = decodeURI(url); } catch (e) { u.textContent = url; } }
     const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-    sc.onload = () => { try { new QRCode(qr, { text: url, width: 220, height: 220 }); } catch (e) { } }; sc.onerror = () => qr.style.display = 'none'; document.head.append(sc); }
+    sc.onload = () => { try { new QRCode(qr, { text: url, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.L }); } catch (e) { } }; sc.onerror = () => qr.style.display = 'none'; document.head.append(sc); }
   addEventListener('hashchange', () => { const n = parseInt(location.hash.slice(1)); if (n && n - 1 !== cur) show(n - 1); });
   show(Math.max(0, (parseInt(location.hash.slice(1)) || 1) - 1));
 })();
