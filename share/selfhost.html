@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>教師自建版：把引擎原理網站複製成自己的｜引擎原理</title>
+<style>
+:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#c3d0e6;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","Noto Sans TC","PingFang TC",system-ui,sans-serif;font-size:19px;line-height:1.75}
+.wrap{max-width:980px;margin:0 auto;padding:22px 20px 60px}
+a{color:var(--acc2)}h1{font-size:38px;line-height:1.3;margin:10px 0 6px}h2{font-size:28px;margin:42px 0 10px;color:var(--acc)}h3{font-size:22px;margin:22px 0 6px}
+.kicker{display:inline-block;background:var(--acc);color:#1a1200;font-weight:700;border-radius:6px;padding:3px 10px;font-size:16px}
+.mut{color:var(--mut)}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:14px 0}
+.warn{border-color:var(--bad);background:rgba(255,93,93,.08)}.tip{border-color:var(--ok);background:rgba(61,220,132,.07)}
+ol li,ul li{margin:6px 0}b.acc{color:var(--acc)}
+pre{background:#0a1120;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-size:16px;line-height:1.55;position:relative;white-space:pre}
+.cp{position:absolute;right:8px;top:8px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:14px;font-family:inherit}
+code{background:#0a1120;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.92em}
+table{border-collapse:collapse;width:100%;margin:10px 0}td,th{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--panel2)}
+.top a{margin-right:14px;text-decoration:none}
+@media print{body{background:#fff;color:#111}.card,pre,code,th{background:#f4f6fa!important;color:#111;border-color:#bbb}.cp,.top{display:none}a{color:#0645ad}h2{color:#b45309}.mut{color:#444}}
+</style></head><body><div class="wrap">
+<p class="top"><a href="index.html">← 回開發歷程分享頁</a><a href="../index.html">課程網站</a></p>
+<span class="kicker">給研習老師｜教師自建版</span>
+<h1>把引擎原理網站複製成「自己的」</h1>
+<p class="mut">直接用我的網址，動畫、簡報、補課包都可以自由使用。但互學挑戰成績、站內測驗、成績總表會存進<b>我的</b>資料庫，您看不到，也會用掉我的免費額度。想讓學生計分、自己看成績，請照這頁做一份自己的網站，大約 30～40 分鐘，全部免費。</p>
+
+<div class="card tip"><b>需要準備：</b>一個 Google 帳號（給 Firebase 用）、一個 GitHub 帳號（免費註冊：github.com）。<br>
+<b>完成後：</b>您會有自己的網址 <code>https://您的帳號.github.io/engine-principles/</code>，學生成績存在您自己的 Firebase，只有您能看。</div>
+
+<h2>步驟一：複製網站到您的 GitHub</h2>
+<ol>
+<li>登入 GitHub，打開 <a href="https://github.com/ntccar01/engine-principles" target="_blank" rel="noopener">github.com/ntccar01/engine-principles</a>。</li>
+<li>按右上角 <b class="acc">Fork</b> → 直接按 <b class="acc">Create fork</b>。現在您的帳號底下就有一份一樣的網站。</li>
+<li>在您那份（網址是 <code>github.com/您的帳號/engine-principles</code>）按 <b>Settings</b> → 左側 <b>Pages</b>。</li>
+<li>「Source」選 <b>Deploy from a branch</b>，Branch 選 <b>main</b>、資料夾 <b>/(root)</b>，按 <b>Save</b>。</li>
+<li>等 1～3 分鐘，重新整理 Pages 頁面，上方會出現您的網站網址。先打開確認看得到首頁。</li>
+</ol>
+<div class="card warn">⚠ 這時候網站裡的 Firebase 設定<b>還是我的</b>。在完成步驟三之前，請先不要讓學生送成績。</div>
+
+<h2>步驟二：建立您自己的 Firebase 專案</h2>
+<ol>
+<li>到 <a href="https://console.firebase.google.com/" target="_blank" rel="noopener">console.firebase.google.com</a>，按「建立新的 Firebase 專案」，輸入名稱（例如 <code>engine-我的學校</code>）。Google Analytics、Gemini 可以都不開，按「建立專案」。</li>
+<li><b>Authentication</b>（驗證）→「開始使用」→「登入方法」，啟用兩種：
+ <ul><li><b>匿名</b>（學生作答用，不用帳號）</li><li><b>電子郵件/密碼</b>（老師登入成績總表、教師大螢幕用）</li></ul></li>
+<li>Authentication →「使用者」→「新增使用者」：輸入<b>您的 Email 和一組密碼</b>。這就是您的教師帳號，請記下來。</li>
+<li><b>Firestore Database</b> →「建立資料庫」→ 版本選 Standard → 位置選 <b>asia-east1 (Taiwan)</b>（建立後不能改）→ 選「以正式版模式啟動」→「建立」。</li>
+<li>進 Firestore 的「<b>規則</b>」分頁，把裡面全部刪掉，貼上下面這段，<b>把 <code>你的Email@example.com</code> 改成步驟 3 的 Email</b>，按「發布」。</li>
+</ol>
+<pre id="rules">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 教師：用「電子郵件/密碼」登入、且 Email 是下面這個
+    function teacher() {
+      return request.auth != null
+        && request.auth.token.email == '你的Email@example.com';
+    }
+    // 成績：學生（匿名登入）只能新增；只有老師能看、能刪
+    match /engine_scores/{id} {
+      allow create: if request.auth != null;
+      allow read, delete: if teacher();
+      allow update: if false;
+    }
+    // 上課同步、指定補課：大家可讀單筆，只有老師能改
+    match /engine_live/{id} {
+      allow get: if true;
+      allow list, write: if teacher();
+    }
+  }
+}</pre>
+<ol start="6">
+<li>左上齒輪 →「專案設定」→ 往下到「您的應用程式」→ 按 <b>&lt;/&gt;</b>（網頁）→ 取個暱稱 →「註冊應用程式」。畫面會出現一段 <code>firebaseConfig = { apiKey: … }</code>，先留著這個畫面。</li>
+</ol>
+
+<h2>步驟三：把網站換成您的 Firebase</h2>
+<p>網站裡有 <b>6 個</b> <code>firebase-config.js</code>，內容一樣，<b>都要改</b>：</p>
+<table><tr><th>位置（在您 GitHub 那份網站裡）</th></tr>
+<tr><td><code>firebase-config.js</code>（最外層，第 1、2 章用）</td></tr>
+<tr><td><code>第3章_汽油引擎燃料系統/firebase-config.js</code></td></tr>
+<tr><td><code>第4章_潤滑系統/firebase-config.js</code></td></tr>
+<tr><td><code>第5章_冷卻系統/firebase-config.js</code></td></tr>
+<tr><td><code>第6章_點火系統/firebase-config.js</code></td></tr>
+<tr><td><code>第7章_引擎性能與計算/firebase-config.js</code></td></tr></table>
+<ol>
+<li>在 GitHub 點開檔案 → 右上 <b>鉛筆圖示</b>（Edit）。</li>
+<li>把 <code>apiKey</code> 到 <code>appId</code> 這 6 行，換成步驟二第 6 點畫面上的值（大括號裡那 6 行）。</li>
+<li>把最後一行的班級改成您的班級，例如：<code>window.CLASS_LIST = ['機械一甲', '機械一乙'];</code></li>
+<li>按右上 <b>Commit changes…</b> → <b>Commit changes</b>。其他 5 個檔照做（可以直接整份複製貼上）。</li>
+</ol>
+<p class="mut">改好之後的樣子（數值換成您的）：</p>
+<pre>window.FIREBASE_CONFIG = {
+  apiKey: "您的 apiKey",
+  authDomain: "您的專案.firebaseapp.com",
+  projectId: "您的專案",
+  storageBucket: "您的專案.firebasestorage.app",
+  messagingSenderId: "數字",
+  appId: "1:數字:web:英數字"
+};
+window.CLASS_LIST = ['機械一甲', '機械一乙'];</pre>
+
+<h2>步驟四：試一次</h2>
+<ol>
+<li>等 1～3 分鐘讓 GitHub 更新，打開<b>您的</b>網站（按 Ctrl＋F5 強制重新整理）。</li>
+<li>開任一節的「隨堂測驗」，班級選 <b>🧪 教師測試</b>，作答送出。</li>
+<li>打開首頁頁尾的「教師專區」→「成績總表」，<b>Email 欄位換成您的 Email</b>（預設是我的），輸入密碼登入，班級選「教師測試」，看得到剛才那筆就成功了。</li>
+<li>測完可在成績總表按「🗑 清除教師測試資料」。</li>
+</ol>
+
+<h2>常見問題</h2>
+<div class="card"><b>Q：不自建，直接用您的網址可以嗎？</b><br>可以看動畫、簡報、補課包、學習單、教案，完全沒問題。只是請<b>不要</b>讓學生在我的網址送成績：您看不到，還會混進我的班級資料、用掉我的免費額度。</div>
+<div class="card"><b>Q：會花錢嗎？</b><br>不會。GitHub Pages 免費；Firebase 用免費的 Spark 方案，不必綁信用卡，每天約 5 萬次讀取、2 萬次寫入，一般班級用不完。超過也不會收費，只是當天計分暫停、隔天恢復。</div>
+<div class="card"><b>Q：登入成績總表顯示「權限不足」？</b><br>檢查三件事：① 規則裡的 Email 跟您登入的 Email 一字不差；② Authentication 已啟用「電子郵件/密碼」；③ 規則已按「發布」（生效約需 1 分鐘）。</div>
+<div class="card"><b>Q：學生登入時要輸入「班級通行碼」嗎？</b><br>不用。通行碼只在作者自己的 Firebase 啟用；您換成自己的 <code>firebase-config.js</code> 後，登入畫面不會出現通行碼欄位。若您也想用，可在規則的 <code>hasOnly([...])</code> 加入 <code>'k'</code>，並加一行 <code>&amp;&amp; request.resource.data.k == '您的碼'</code>，再把 <code>student.js</code>、<code>score.js</code> 裡的 <code>classtool1141019</code> 改成您的專案 ID。</div>
+<div class="card"><b>Q：我之後更新網站，您的新版本怎麼拿？</b><br>在您 GitHub 那份網站上方按 <b>Sync fork</b> 可以取得我的更新。⚠ 同步後請檢查 6 個 <code>firebase-config.js</code> 是不是還是您的設定；如果被換回我的，再改一次。</div>
+<div class="card"><b>Q：網站裡還有哪些是作者的連結？</b><br>各章的 <code>links.js</code> 裡有 YouTube 補課影片、剛好學、Edcafe 等網址。影片可以直接沿用；剛好學、Edcafe 這類需要老師帳號的活動，請換成您自己開的連結（不換的話按鈕會連到我的活動）。</div>
+<p class="mut" style="margin-top:30px">有問題歡迎聯繫：林慶泓 老師（國立臺東專科學校附設高職部 汽車科）</p>
+</div>
+<script>
+document.querySelectorAll('pre').forEach(p=>{const b=document.createElement('button');b.className='cp';b.textContent='複製';b.onclick=()=>{navigator.clipboard.writeText(p.innerText.replace(/複製$/,'').trim()).then(()=>{b.textContent='✔ 已複製';setTimeout(()=>b.textContent='複製',1500);});};p.append(b);});
+</script>
+</body></html>

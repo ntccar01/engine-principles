@@ -6,6 +6,10 @@
   const CLS = () => (window.CLASS_LIST && window.CLASS_LIST.length) ? window.CLASS_LIST : ['汽車一甲', '汽車一乙'];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const subs = [];
+  /* 班級通行碼（只有林老師的 Firebase 需要；別人自建時不會出現）。對錯由 Firebase 規則判斷，網站裡沒有正確答案。 */
+  const needKey = () => (window.FIREBASE_CONFIG || {}).projectId === 'classtool1141019';
+  const hasKey = () => { try { return !!(localStorage.getItem('stu_key') || '').trim(); } catch (e) { return false; } };
+  const saveKey = v => { try { localStorage.setItem('stu_key', String(v).trim().toLowerCase()); } catch (e) { } };
   function get() {
     try {
       const cls = localStorage.getItem(K.cls), seat = +localStorage.getItem(K.seat), grp = +localStorage.getItem(K.grp);
@@ -31,6 +35,7 @@
       <input class="s_man" maxlength="20" placeholder="輸入班級" value="${manual ? esc(cur.cls) : ''}" ${manual ? '' : 'hidden'}>
       <label>座號 <input class="s_seat" type="number" inputmode="numeric" min="1" max="60" value="${opt.keepSeat && cur.seat ? cur.seat : ''}" placeholder="1～60" style="width:6em"></label>
       <label>組別 <select class="s_grp"><option value="0">不填</option>${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}" ${i + 1 === cur.grp ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label><span class="mut">（組別可不填）</span>
+      ${needKey() ? `<label>班級通行碼 <input class="s_key" maxlength="30" autocomplete="off" placeholder="${hasKey() ? '已輸入過，可留空' : '老師上課會告訴你'}" style="width:11em"></label>` : ''}
       <button class="pri s_ok">確定</button></div><p class="bad s_msg"></p></div>`;
     const q = s => box.querySelector(s), sel = q('.s_cls'), man = q('.s_man');
     sel.onchange = () => { man.hidden = sel.value !== '__m'; };
@@ -39,8 +44,12 @@
       const cls = (sel.value === '__m' ? man.value.trim() : sel.value), seat = +q('.s_seat').value, grp = +q('.s_grp').value;
       if (!cls) return q('.s_msg').textContent = '請選擇或輸入班級。';
       if (!Number.isInteger(seat) || seat < 1 || seat > 60) return q('.s_msg').textContent = '請輸入正確的座號（1～60）。';
+      const key = q('.s_key') ? q('.s_key').value.trim() : '';
+      if (q('.s_key') && !key && !hasKey()) return q('.s_msg').textContent = '請輸入班級通行碼（老師上課會告訴你）。';
       if (!confirm(cls === TEST ? `教師測試模式\n\n成績會記在「${TEST}」班級 ${seat} 號，不會混進學生成績；可在成績總表一鍵清除。` : `確認是本人？\n\n${cls}　${seat} 號　${grp ? `第 ${grp} 組` : '組別未填'}`)) return;
+      if (key) saveKey(key);
       const s = { cls, seat, grp }; set(s); done && done(s);
+      if (key && window.Score && Score.flush) Score.flush().catch(() => { });  // 之前因沒通行碼留在本機的成績，現在補送
     };
     if (!opt.keepSeat) setTimeout(() => { try { q('.s_seat').focus(); } catch (e) { } }, 50);
   }
