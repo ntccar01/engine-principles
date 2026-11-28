@@ -2630,8 +2630,8 @@ window.REMEDIAL_QUIZ = {
           <h3>🎉 影片小測驗完成！首次答對 ${firstOk} / ${qs.length} 題（${pct}%）</h3>
           <p style="color:var(--mut,#9fb0cf);margin:4px 0 10px">第 2 步已自動為你打勾！${pct < 70 ? '建議針對剛才答錯的題目回看上方影片段落，或再測驗一次。' : '表現很棒，請繼續往下完成第 3 步動畫操作！'}</p>
           <div class="rqrow">
-            <label>班級 <select id="rqcls">${CLS.map(c => `<option ${c === savedCls ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
-            <label>組別 <select id="rqgrp">${Array.from({ length: 12 }, (_, i) => `<option ${String(i + 1) === savedGrp ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>
+            ${window.Student ? `<span id="rqwho"></span>` : `<label>班級 <select id="rqcls">${CLS.map(c => `<option ${c === savedCls ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
+            <label>組別 <select id="rqgrp">${Array.from({ length: 12 }, (_, i) => `<option ${String(i + 1) === savedGrp ? 'selected' : ''}>${i + 1}</option>`).join('')}</select></label>`}
             <button type="button" class="rqbtn" id="rqsend">📤 傳送補課紀錄給老師</button>
             <button type="button" class="rqbtn sec" id="rqagain">🔄 重新測驗一次</button>
           </div>
@@ -2641,10 +2641,19 @@ window.REMEDIAL_QUIZ = {
       qWrap.querySelector('#rqagain').onclick = () => { qi = 0; firstOk = 0; renderQ(); };
       const sendBtn = qWrap.querySelector('#rqsend');
       const msgEl = qWrap.querySelector('#rqmsg');
+      /* 有 student.js 時改用「班級＋座號」登入（與隨堂測驗相同），老師可在成績總表看到誰補過課 */
+      const who = qWrap.querySelector('#rqwho');
+      if (who) Student.badge(who);
       sendBtn.onclick = () => {
-        const cls = qWrap.querySelector('#rqcls').value;
-        const grp = +qWrap.querySelector('#rqgrp').value;
-        try { localStorage.setItem('act_cls', cls); localStorage.setItem('act_grp', String(grp)); } catch (_) {}
+        let cls, grp, seat;
+        if (window.Student) {
+          const st = Student.get();
+          if (!st) { Student.dialog(() => sendBtn.click(), { title: '傳送前請先登入：班級＋座號' }); return; }
+          cls = st.cls; grp = st.grp; seat = st.seat;
+        } else {
+          cls = qWrap.querySelector('#rqcls').value; grp = +qWrap.querySelector('#rqgrp').value;
+          try { localStorage.setItem('act_cls', cls); localStorage.setItem('act_grp', String(grp)); } catch (_) {}
+        }
         sendBtn.disabled = true;
         msgEl.textContent = '傳送中…';
         const rec = {
@@ -2652,6 +2661,7 @@ window.REMEDIAL_QUIZ = {
           title: document.title.replace(/｜.*$/, ''),
           cls: cls,
           grp: grp,
+          seat: seat,
           score: firstOk,
           total: qs.length,
           pct: pct,

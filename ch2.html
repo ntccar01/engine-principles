@@ -4,7 +4,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.6 "Microsoft Jhe
 main{max-width:1500px;margin:auto;padding:14px 24px}.mut{color:var(--mut)}
 .btn{font:inherit;border-radius:8px;border:1px solid var(--line);background:#1d2c4a;color:var(--ink);text-decoration:none;display:inline-block;cursor:pointer}.btn:hover{border-color:var(--acc)}
 .pri{background:var(--acc);color:#171100;font-weight:bold;border-color:var(--acc)}.tag{color:var(--acc);font-weight:bold}
-.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}.top h1{font-size:28px;margin:0}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}.top h1{font-size:28px;margin:0}.stuid{display:flex;gap:8px;align-items:center;font-size:16px;margin-left:auto}
 .chnav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px;font-size:16px}
 .chnav a{padding:4px 12px;border:1px solid var(--line);border-radius:20px;text-decoration:none;color:var(--mut)}
 .chnav a.on{background:var(--acc);color:#171100;border-color:var(--acc);font-weight:bold}.chnav a:hover{border-color:var(--acc)}
@@ -19,34 +19,37 @@ main{max-width:1500px;margin:auto;padding:14px 24px}.mut{color:var(--mut)}
 .foot{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;margin-top:14px;font-size:15px}.foot a{color:var(--mut)}
 @media(max-width:900px){.les{grid-template-columns:1fr}}</style>
 <body><main>
-<div class="top"><h1>第2章：引擎本體的構造及功用</h1><span class="mut">單元二｜6 節・全課程第 7～12 節</span></div>
+<div class="top"><h1>第2章：引擎本體的構造及功用</h1><span class="mut">單元二｜6 節・全課程第 7～12 節</span><span class="stuid" id="stu"></span></div>
 <nav class="chnav" aria-label="其他章節"><a href="index.html">🏠 全課程</a><a  href="ch1.html">第1章</a><a class="on" aria-current="page" href="ch2.html">第2章</a><a  href="第3章_汽油引擎燃料系統/index.html">第3章</a><a  href="第4章_潤滑系統/index.html">第4章</a><a  href="第5章_冷卻系統/index.html">第5章</a><a  href="第6章_點火系統/index.html">第6章</a><a  href="第7章_引擎性能與計算/index.html">第7章</a></nav>
 <div class="lessons" id="lessons"></div>
 <div class="unit" id="units"></div>
-<p class="mut" style="font-size:16px">上課順序：S 簡報 → V 動畫 → 🎮 互學挑戰（🔧 零件位置挑戰）→ ✏️ 隨堂測驗；缺課同學用「補課包」。點節次標題可把那一節標成今天上課。</p>
-<div class="foot"><span></span><a href="T_教師大螢幕.html">🏆 教師大螢幕（教師用）</a></div>
+<p class="mut" style="font-size:16px">上課順序：S 簡報 → V 動畫 → 🎮 互學挑戰（🔧 零件位置挑戰）→ ✏️ 隨堂測驗（站內，登入班級＋座號）；缺課同學用「補課包」。點節次標題可把那一節標成今天上課。</p>
+<div class="foot"><span class="mut" id="pend"></span><span><a href="T_教師大螢幕.html">🏆 教師大螢幕</a>　<a href="教師專區.html">🔒 教師專區（成績總表）</a></span></div>
 </main>
-<script src="links.js"></script>
+<script src="links.js"></script><script src="firebase-config.js"></script><script src="student.js"></script><script src="score.js"></script>
 <script>
-const CH=2, LES=[{"n": 1, "g": 7, "title": "汽缸體、汽缸與汽缸蓋", "S": "S7_第7節_汽缸體、汽缸與汽缸蓋.html", "V": [["V7_引擎本體透視拆解.html", "7", "引擎本體透視拆解"]], "act": "V7_引擎本體透視拆解.html?act=1", "code": "Ch2-V7", "M": [["標記_第7節_引擎本體拆解.html", "引擎本體分層拆解"]], "R": "R7_第7節補課包.html", "rk": "review7", "form": "form7"}, {"n": 2, "g": 8, "title": "活塞、活塞銷與活塞環", "S": "S8_第8節_活塞、活塞銷與活塞環.html", "V": [["V8_活塞環的任務.html", "8", "活塞環的任務"]], "act": "V8_活塞環的任務.html?act=1", "code": "Ch2-V8", "M": [], "R": "R8_第8節補課包.html", "rk": "review8", "form": "form8"}, {"n": 3, "g": 9, "title": "燃燒室與九節統整發表", "S": "S9_第9節_燃燒室與九節統整發表.html", "V": [["V9_燃燒室火焰傳播.html", "9", "燃燒室火焰傳播"]], "act": "V9_燃燒室火焰傳播.html?act=1", "code": "Ch2-V9", "M": [], "R": "R9_第9節補課包.html", "rk": "review9", "form": "form9"}, {"n": 4, "g": 10, "title": "曲軸、連桿與飛輪", "S": "S10_第10節_曲軸、連桿與飛輪.html", "V": [["V10_曲軸連桿與飛輪.html", "10", "曲軸、連桿與飛輪"]], "act": "V10_曲軸連桿與飛輪.html?act=1", "code": "Ch2-V10", "M": [["標記_第10節_曲軸連桿與飛輪.html", "曲軸、連桿與飛輪"]], "R": "R10_第10節補課包.html", "rk": "review10", "form": "form10"}, {"n": 5, "g": 11, "title": "汽門機構", "S": "S11_第11節_汽門機構.html", "V": [["V11_汽門機構.html", "11", "汽門機構"]], "act": "V11_汽門機構.html?act=1", "code": "Ch2-V11", "M": [["標記_第11節_OHV汽門機構.html", "OHV 汽門機構"], ["標記_第11節_正時皮帶與張力器.html", "正時皮帶與張力器"]], "R": "R11_第11節補課包.html", "rk": "review11", "form": "form11"}, {"n": 6, "g": 12, "title": "引擎軸承與第 2 章統整", "S": "S12_第12節_引擎軸承與第2章統整.html", "V": [["V12_引擎軸承與第2章統整.html", "12", "引擎軸承與第 2 章統整"]], "act": "V12_引擎軸承與第2章統整.html?act=1", "code": "Ch2-V12", "M": [["標記_第12節_四種軸承位置.html", "四種軸承裝在哪裡？"]], "R": "R12_第12節補課包.html", "rk": "review12", "form": "form12"}], UNITS=[["unit2", "📝 單元二測驗（第7～9節）"], ["unit2b", "📝 單元二續測驗（第10～12節）"]];
+const CH=2, LES=[{"n": 1, "g": 7, "title": "汽缸體、汽缸與汽缸蓋", "S": "S7_第7節_汽缸體、汽缸與汽缸蓋.html", "V": [["V7_引擎本體透視拆解.html", "7", "引擎本體透視拆解"]], "act": "V7_引擎本體透視拆解.html?act=1", "code": "Ch2-V7", "M": [["標記_第7節_引擎本體拆解.html", "引擎本體分層拆解"]], "R": "R7_第7節補課包.html", "rk": "review7", "q": "Q7_隨堂測驗.html", "qc": "Ch2-F7"}, {"n": 2, "g": 8, "title": "活塞、活塞銷與活塞環", "S": "S8_第8節_活塞、活塞銷與活塞環.html", "V": [["V8_活塞環的任務.html", "8", "活塞環的任務"]], "act": "V8_活塞環的任務.html?act=1", "code": "Ch2-V8", "M": [], "R": "R8_第8節補課包.html", "rk": "review8", "q": "Q8_隨堂測驗.html", "qc": "Ch2-F8"}, {"n": 3, "g": 9, "title": "燃燒室與九節統整發表", "S": "S9_第9節_燃燒室與九節統整發表.html", "V": [["V9_燃燒室火焰傳播.html", "9", "燃燒室火焰傳播"]], "act": "V9_燃燒室火焰傳播.html?act=1", "code": "Ch2-V9", "M": [], "R": "R9_第9節補課包.html", "rk": "review9", "q": "Q9_隨堂測驗.html", "qc": "Ch2-F9"}, {"n": 4, "g": 10, "title": "曲軸、連桿與飛輪", "S": "S10_第10節_曲軸、連桿與飛輪.html", "V": [["V10_曲軸連桿與飛輪.html", "10", "曲軸、連桿與飛輪"]], "act": "V10_曲軸連桿與飛輪.html?act=1", "code": "Ch2-V10", "M": [["標記_第10節_曲軸連桿與飛輪.html", "曲軸、連桿與飛輪"]], "R": "R10_第10節補課包.html", "rk": "review10", "q": "Q10_隨堂測驗.html", "qc": "Ch2-F10"}, {"n": 5, "g": 11, "title": "汽門機構", "S": "S11_第11節_汽門機構.html", "V": [["V11_汽門機構.html", "11", "汽門機構"]], "act": "V11_汽門機構.html?act=1", "code": "Ch2-V11", "M": [["標記_第11節_OHV汽門機構.html", "OHV 汽門機構"], ["標記_第11節_正時皮帶與張力器.html", "正時皮帶與張力器"]], "R": "R11_第11節補課包.html", "rk": "review11", "q": "Q11_隨堂測驗.html", "qc": "Ch2-F11"}, {"n": 6, "g": 12, "title": "引擎軸承與第 2 章統整", "S": "S12_第12節_引擎軸承與第2章統整.html", "V": [["V12_引擎軸承與第2章統整.html", "12", "引擎軸承與第 2 章統整"]], "act": "V12_引擎軸承與第2章統整.html?act=1", "code": "Ch2-V12", "M": [["標記_第12節_四種軸承位置.html", "四種軸承裝在哪裡？"]], "R": "R12_第12節補課包.html", "rk": "review12", "q": "Q12_隨堂測驗.html", "qc": "Ch2-F12"}], UNITS=[["Q_單元二測驗.html", "Unit2", "📝 單元二測驗（第7～9節，100 分）"], ["Q_單元二續測驗.html", "Unit2b", "📝 單元二續測驗（第10～12節，100 分）"]];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const J=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}};
 const LK=window.LINKS||{}, TK='ch'+CH+'_today';
 function draw(){
-  const hist=J('act_history')||[], today=+(localStorage.getItem(TK)||0);
-  const best=code=>hist.filter(r=>r.lesson===code).sort((a,b)=>b.score-a.score)[0];
+  const hist=J('act_history')||[], today=+(localStorage.getItem(TK)||0), s=window.Student&&Student.get();
+  const best=code=>hist.filter(r=>r.lesson===code&&(!s||r.cls===s.cls)).sort((a,b)=>b.score-a.score)[0];
+  const rec=code=>{const q=s&&J(`ch7rec_${code}_${s.cls}_${s.seat}`);return q?`✓${q.first.score}/${q.first.total}`:''};
   const b=(href,label,st,cls='',tip='')=>`<a class="btn ${cls}" href="${href}"${tip?` title="${esc(tip)}"`:''}>${label}${st?`<span class="st">${esc(st)}</span>`:''}</a>`;
   document.getElementById('lessons').innerHTML=LES.map(l=>{
     const v=best(l.code), r=J(l.rk)||{}, rd=Object.values(r).filter(Boolean).length;
     const up=[l.S?b(l.S,`S${l.S.match(/^S(\d+)/)[1]} 上課簡報`,'','pri'):'', ...l.V.map(([h,k,t])=>b(h,`V${k} 互動動畫`,'','',t)),
       l.act?b(l.act,'🎮 互學挑戰',v?`✓${v.score}/${v.total}`:''):'', ...l.M.map(([h,t])=>b(h,`🔧 ${esc(t)}`,'','','零件位置挑戰')),
-      l.form&&LK[l.form]?b(LK[l.form],'✏️ 隨堂測驗',''):''].join('');
+      b(l.q,'✏️ 隨堂測驗',rec(l.qc))].join('');
     const after=l.R?b(l.R,'🩹 補課包（缺課用）',rd?`${rd} 步✓`:''):'';
     return `<section class="les ${l.n===today?'on':''}" id="L${l.n}"><div><p class="tag">第${CH}章 第${l.n}節｜全課程第${l.g}節${l.n===today?'　📌 今天':''}</p><h2 data-n="${l.n}" title="點一下標成今天上課">${esc(l.title)}</h2></div>
       <div><div class="rowb"><span class="lab">上課</span>${up}</div>${after?`<div class="rowb after" style="margin-top:6px"><span class="lab">課後</span>${after}</div>`:''}</div></section>`;}).join('');
-  document.getElementById('units').innerHTML=UNITS.filter(([k])=>LK[k]).map(([k,t])=>b(LK[k],t,'','pri')).join('');
+  document.getElementById('units').innerHTML=UNITS.map(([h,k,t])=>b(h,t,rec(k),'pri')).join('');
+  const p=window.Score&&Score.pending?Score.pending():0; document.getElementById('pend').textContent=p?`⚠ 這台機器有 ${p} 筆成績還沒上傳，連上網路後會自動補送。`:'';
   document.querySelectorAll('.les h2').forEach(h=>h.onclick=()=>{const n=+h.dataset.n;try{localStorage.setItem(TK,n===today?'':n)}catch(e){}draw();});
   if(today&&document.getElementById('L'+today))document.getElementById('L'+today).scrollIntoView({block:'nearest'});
 }
+if(window.Student){Student.badge(document.getElementById('stu'));Student.onChange(draw);}
 draw();window.addEventListener('pageshow',draw);
 </script></body></html>

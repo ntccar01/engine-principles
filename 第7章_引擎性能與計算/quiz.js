@@ -1,18 +1,25 @@
-/* 第7章測驗（隨堂 Ch7-F1～F5、補課 Ch7-R1～R5、單元七 Unit7）
-   作答前須登入「班級＋座號」（student.js）；成績以班級＋座號上傳，供學期評量。
-   隨堂／補課：6 題各 1 分，首次答對才計分。單元七：20 題亂序，每題 5 分，一次交卷。
+/* 全課程站內測驗（第1～7章共用）：隨堂 ChN-F*、補課 ChN-R*、單元 Unit*
+   題庫：quiz_bank.js（window.QUIZ_BANK／QUIZ_META）；第7章另有 lesson-data.js（CH7_QUIZZES）與 remedial_quiz_data.js。
+   作答前須登入「班級＋座號」（組別可不填，student.js）；成績以班級＋座號上傳 Firestore，供學期評量。
+   隨堂／補課：6 題各 1 分，首次答對才計分。單元測驗：20 題亂序（「承上題」與前一題綁在一起），每題 5 分，一次交卷。
    同一位學生可重做（練習），教師成績總表可選「首次／最高／最後」計分。 */
 (function () {
   const el = document.querySelector('[data-quiz]'); if (!el) return;
-  const code = el.dataset.quiz, unit = code === 'Unit7';
-  const source = (window.CH7_QUIZZES || {})[code] || (window.REMEDIAL_QUIZ || {})[code];
+  const code = el.dataset.quiz, unit = /^Unit/.test(code);
+  const source = (window.QUIZ_BANK || {})[code] || (window.CH7_QUIZZES || {})[code] || (window.REMEDIAL_QUIZ || {})[code];
+  const META = (window.QUIZ_META || {})[code] || {};
   if (!source) throw Error('Unknown quiz ' + code);
   const shuffle = a => a.map(x => ({ x, r: Math.random() })).sort((a, b) => a.r - b.r).map(o => o.x);
+  /* 亂序時「承上題」（link:1）跟著前一題一起移動 */
+  const shuffleGroups = a => { const g = []; a.forEach(q => q.link && g.length ? g[g.length - 1].push(q) : g.push([q])); return shuffle(g).flat(); };
   const text = (tag, s, cl) => { const n = document.createElement(tag); n.textContent = s; if (cl) n.className = cl; return n; };
   /* 單元七題號對應節次：U7-1～5 第1節、6～9 第2節、10～13 第3節、14～18 第4節、19～20 第5節 */
   const SEC = { 1: '7-1 基本單位與換算', 2: '7-2 排氣量與壓縮比', 3: '7-3 馬力與扭力', 4: '7-4＋7-5 引擎效率與油耗率', 5: '7-6 性能因素與計算統整' };
-  const secOf = id => { const k = +String(id).replace(/^U7-/, ''); return k <= 5 ? 1 : k <= 9 ? 2 : k <= 13 ? 3 : k <= 18 ? 4 : 5; };
-  window.CH7_SECOF = secOf; window.CH7_SEC = SEC;
+  const u7sec = id => { const k = +String(id).replace(/^U7-/, ''); return k <= 5 ? 1 : k <= 9 ? 2 : k <= 13 ? 3 : k <= 18 ? 4 : 5; };
+  window.CH7_SECOF = u7sec; window.CH7_SEC = SEC;
+  /* 各題節次：題庫有 sec（全課程節次）就用它，單元七用上面的對照 */
+  const secOf = q => q.sec || u7sec(q.id);
+  const secName = n => META.secs ? `全課程第${n}節 ${META.secs[n] || ''}` : `第${n}節（全課程第${33 + +n}節）${SEC[n]}`;
   const recKey = s => `ch7rec_${code}_${s.cls}_${s.seat}`;
   const getRec = s => { try { return JSON.parse(localStorage.getItem(recKey(s)) || 'null'); } catch (e) { return null; } };
   const area = document.createElement('div');
@@ -34,7 +41,7 @@
   let quizOn = false;
   function start(who) {
     quizOn = true;
-    const qs = unit ? shuffle(source) : source.slice();
+    const qs = unit ? shuffleGroups(source) : source.slice(), order = new Map(source.map((q, i) => [q, i]));
     let qi = 0, score = 0, tried = false, started = Date.now(), finished = false, detail = [], answers = {};
     function finish() {
       if (finished) return; finished = true; const total = unit ? 100 : qs.length;
@@ -42,12 +49,12 @@
       area.replaceChildren(text('h2', `${Student.label(who)}　完成！${score} / ${total}（${rec.pct}%）`));
       const report = document.createElement('div'); report.className = 'card'; detail.forEach(d => report.append(text('p', `${d.id}：${d.got} / ${d.of}`))); area.append(report);
       if (unit) {
-        const sec = {}; qs.forEach(q => { const n = secOf(q.id), o = sec[n] = sec[n] || { got: 0, of: 0 }; o.of++; if (answers[q.id] === q.ans) o.got++; });
+        const sec = {}; qs.forEach(q => { const n = secOf(q), o = sec[n] = sec[n] || { got: 0, of: 0 }; o.of++; if (answers[q.id] === q.ans) o.got++; });
         const box = document.createElement('div'); box.className = 'card'; box.append(text('h3', '各節答對情形（錯比較多的節，回去看那一節的 V 動畫和重點）'));
-        Object.keys(sec).sort().forEach(n => { const o = sec[n]; box.append(text('p', `第${n}節（全課程第${33 + +n}節）${SEC[n]}：答對 ${o.got} / ${o.of} 題${o.got < o.of ? '　← 建議複習' : '　✓'}`, o.got < o.of ? 'bad' : 'ok')); });
+        Object.keys(sec).sort((a, b) => a - b).forEach(n => { const o = sec[n]; box.append(text('p', `${secName(n)}：答對 ${o.got} / ${o.of} 題${o.got < o.of ? '　← 建議複習' : '　✓'}`, o.got < o.of ? 'bad' : 'ok')); });
         area.append(box);
-        qs.slice().sort((x, y) => +x.id.slice(3) - +y.id.slice(3)).forEach(q => { const ok = answers[q.id] === q.ans, a = document.createElement('article');
-          a.append(text('h3', `${ok ? '✔' : '✘'} ${q.id}（第${secOf(q.id)}節｜${q.objective || SEC[secOf(q.id)]}）`), text('p', q.q), text('p', `你的答案：${q.opts[answers[q.id]]}；正解：${q.opts[q.ans]}`, ok ? 'ok' : 'bad'), text('p', q.ex)); area.append(a); });
+        qs.slice().sort((x, y) => order.get(x) - order.get(y)).forEach(q => { const ok = answers[q.id] === q.ans, a = document.createElement('article');
+          a.append(text('h3', `${ok ? '✔' : '✘'} ${q.id}（${META.secs ? secName(secOf(q)) : `第${secOf(q)}節｜${q.objective || SEC[secOf(q)]}`}）`), text('p', q.q), text('p', `你的答案：${q.opts[answers[q.id]]}；正解：${q.opts[q.ans]}`, ok ? 'ok' : 'bad'), text('p', q.ex)); area.append(a); });
       }
       const status = text('p', '正在送出成績…'); area.prepend(status);
       try { const p = getRec(who); localStorage.setItem(recKey(who), JSON.stringify({ first: p ? p.first : rec, best: p && p.best.score >= rec.score ? p.best : rec, last: rec, n: (p ? p.n : 0) + 1 })); localStorage.setItem('ch7_' + code, JSON.stringify(rec)); } catch (e) { }
@@ -73,7 +80,7 @@
       area.append(msg, btn);
     } else one();
     function one() {
-      const q = qs[qi], id = q.id || `${code.replace('Ch7-', '')}-${qi + 1}`; tried = false;
+      const q = qs[qi], id = q.id || `${code.replace(/^Ch\d+-/, '')}-${qi + 1}`; tried = false;
       area.replaceChildren(text('p', `${qi + 1} / ${qs.length}｜題號 ${id}`, 'tag'), text('h3', q.q));
       const fb = text('p', '', 'feedback');
       q.opts.forEach((o, k) => {

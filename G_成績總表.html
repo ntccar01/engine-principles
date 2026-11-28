@@ -1,0 +1,159 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>全課程｜個人成績總表（教師）</title>
+<link rel="stylesheet" href="quiz.css">
+<style>
+main{max-width:1500px}.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0}
+.bar label{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:16px}
+table.g{font-size:16px;min-width:1100px}table.g th{background:#1d2c4a;position:sticky;top:0;font-weight:normal;color:var(--mut);white-space:nowrap}
+table.g td{white-space:nowrap;text-align:center}table.g td:first-child{font-weight:bold}
+td.miss{background:#3a1f26;color:#ff9a9a}td.sum{color:var(--acc);font-weight:bold}small{color:var(--mut)}
+.legend{font-size:15px;color:var(--mut)}#msg{min-height:1.5em}
+</style>
+<body><main>
+<nav><a href="index.html">← 全課程首頁</a><a href="教師專區.html">教師專區</a><a href="T_教師大螢幕.html">教師大螢幕</a><a href="第7章_引擎性能與計算/R_補課追蹤.html">補課追蹤（第7章）</a></nav>
+<h1>全課程｜個人成績總表</h1>
+<p class="mut">學生在站內隨堂測驗、單元測驗、補課測驗登入「班級＋座號」後送出的成績，依座號整理。互學挑戰是小組成績，依學生登入時填的組別帶入（組別沒填的同學該欄空白）。選「全學期總表」可一次看到第1～7章的隨堂合計與各單元測驗，適合學期評量。</p>
+<div class="bar" id="lg"><input id="em" type="email" placeholder="教師 Email" value="lin1102@gm.ntc.edu.tw" style="width:260px"><input id="pw" type="password" placeholder="密碼" style="width:150px"><button id="login" class="pri">教師登入</button><span id="who" class="mut"></span><button id="logout" hidden>登出</button></div>
+<div class="bar">
+  <label>章節 <select id="ch"><option value="all">📊 全學期總表（隨堂合計＋單元測驗）</option><option value="1">第1章 熱機與內燃機之認識</option><option value="2">第2章 引擎本體的構造及功用</option><option value="3">第3章 汽油引擎燃料系統</option><option value="4">第4章 潤滑系統</option><option value="5">第5章 冷卻系統</option><option value="6">第6章 點火系統</option><option value="7">第7章 引擎性能與計算</option></select></label>
+  <label>班級 <input id="cls" list="clsList" style="width:140px" placeholder="選擇班級"><datalist id="clsList"></datalist></label>
+  <label>座號到 <input id="n" type="number" min="1" max="60" value="32" style="width:5em"> 號</label>
+  <label>同一題組做很多次時採計 <select id="mode"><option value="first">首次</option><option value="best">最高分</option><option value="last">最後一次</option></select></label>
+  <button id="reload">🔄 重新讀取</button>
+  <button id="csv" class="pri">⬇ 下載成績總表 CSV</button>
+  <button id="csvRaw">⬇ 下載作答明細 CSV</button>
+  <button id="delTest" class="bad" hidden title="只刪除班級「教師測試」的紀錄">🗑 清除教師測試資料</button>
+</div>
+<p id="msg" class="mut">請先用教師帳號登入。</p>
+<p class="legend">🧪 測試功能：在學生頁登入時班級選「🧪 教師測試」，就能用任意座號實際作答；班級選「教師測試」可在這裡看結果，測完按「清除教師測試資料」。</p>
+<p class="legend">格子內為分數；<small>(n)</small>＝作答次數；紅底＝尚未作答（補課欄不標紅）。隨堂合計＝本章各節隨堂（每節6分）。成績以上傳時的「班級＋座號」為準，學生登錯座號時請到「作答明細」查看時間與題組後人工更正。2026-11 以前用 Google 表單做的測驗不在這裡，請到教師專區開舊表單的回覆。</p>
+<div class="tablewrap" id="board"></div>
+<h2>單元測驗：全班各節答對率</h2><p class="mut">依目前的採計方式（首次／最高／最後）統計這個班級的單元測驗，找出全班最弱的節次與題目（選單一章節時顯示）。</p><div id="ana"></div>
+<h2>沒有座號的紀錄</h2><p class="mut" id="noseat">—</p>
+</main>
+<script src="firebase-config.js"></script>
+<script src="quiz_bank.js"></script><script src="第3章_汽油引擎燃料系統/quiz_bank.js"></script><script src="第4章_潤滑系統/quiz_bank.js"></script><script src="第5章_冷卻系統/quiz_bank.js"></script><script src="第6章_點火系統/quiz_bank.js"></script>
+<script type="module">
+const B = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const [A, U, F] = await Promise.all([import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'), import(B + 'firebase-firestore.js')]);
+const $ = s => document.querySelector(s), esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const CH = {"1": {"name": "第1章 熱機與內燃機之認識", "F": ["Ch1-F1", "Ch1-F2", "Ch1-F3", "Ch1-F4", "Ch1-F5", "Ch1-F6"], "U": ["Unit1"], "V": ["Ch1-V1", "Ch1-V2", "Ch1-L3", "Ch1-V3", "Ch1-V4", "Ch1-V6"], "R": ["R1", "R2", "R3", "R4", "R5", "R6"]}, "2": {"name": "第2章 引擎本體的構造及功用", "F": ["Ch2-F7", "Ch2-F8", "Ch2-F9", "Ch2-F10", "Ch2-F11", "Ch2-F12"], "U": ["Unit2", "Unit2b"], "V": ["Ch2-V7", "Ch2-V8", "Ch2-V9", "Ch2-V10", "Ch2-V11", "Ch2-V12"], "R": ["R7", "R8", "R9", "R10", "R11", "R12"]}, "3": {"name": "第3章 汽油引擎燃料系統", "F": ["Ch3-F1", "Ch3-F2", "Ch3-F3", "Ch3-F4", "Ch3-F5", "Ch3-F6", "Ch3-F7", "Ch3-F8", "Ch3-F9", "Ch3-F10"], "U": ["Unit3", "Unit4"], "V": ["Ch3-V1", "Ch3-V2", "Ch3-V3", "Ch3-V4", "Ch3-V5", "Ch3-V6", "Ch3-V7", "Ch3-V8", "Ch3-V9", "Ch3-V10"], "R": ["Ch3-R1", "Ch3-R2", "Ch3-R3", "Ch3-R4", "Ch3-R5", "Ch3-R6", "Ch3-R7", "Ch3-R8", "Ch3-R9", "Ch3-R10"]}, "4": {"name": "第4章 潤滑系統", "F": ["Ch4-F1", "Ch4-F2", "Ch4-F3"], "U": ["Unit5"], "V": ["Ch4-V1", "Ch4-V2", "Ch4-V3"], "R": ["Ch4-R1", "Ch4-R2", "Ch4-R3"]}, "5": {"name": "第5章 冷卻系統", "F": ["Ch5-F1", "Ch5-F2", "Ch5-F3"], "U": ["Unit5"], "V": ["Ch5-V1", "Ch5-V2", "Ch5-V3"], "R": ["Ch5-R1", "Ch5-R2", "Ch5-R3"]}, "6": {"name": "第6章 點火系統", "F": ["Ch6-F1", "Ch6-F2", "Ch6-F3", "Ch6-F4", "Ch6-F5"], "U": ["Unit6"], "V": ["Ch6-V1", "Ch6-V2", "Ch6-V3", "Ch6-V4", "Ch6-V5"], "R": ["Ch6-R1", "Ch6-R2", "Ch6-R3", "Ch6-R4", "Ch6-R5"]}, "7": {"name": "第7章 引擎性能與計算", "F": ["Ch7-F1", "Ch7-F2", "Ch7-F3", "Ch7-F4", "Ch7-F5"], "U": ["Unit7"], "V": ["Ch7-V1", "Ch7-V2", "Ch7-V3", "Ch7-V4", "Ch7-V5"], "R": ["Ch7-R1", "Ch7-R2", "Ch7-R3", "Ch7-R4", "Ch7-R5"]}}, UN = {"Unit1": "單元一", "Unit2": "單元二", "Unit2b": "單元二續", "Unit3": "單元三", "Unit4": "單元四", "Unit5": "單元五", "Unit6": "單元六", "Unit7": "單元七"};
+
+const isV = c => /-[VL]\d+$/.test(c), isR = c => /^(Ch\d-)?R\d+$/.test(c), isF = c => /-F\d+$/.test(c), isU = c => /^Unit/.test(c);
+/* 欄位：[代碼, 標題, 滿分]；SUM_n＝第n章隨堂合計 */
+function cols(ch) {
+  if (ch === 'all') {
+    const out = [], seen = new Set();
+    for (const [k, c] of Object.entries(CH)) {
+      out.push(['SUM_' + k, `第${k}章隨堂合計`, c.F.length * 6]);
+      c.U.forEach(u => { if (!seen.has(u)) { seen.add(u); out.push([u, UN[u] + '測驗', 100]); } });
+    }
+    return out;
+  }
+  const c = CH[ch], n = f => f.replace(/^.*-/, '');
+  return [...c.F.map(f => [f, '隨堂' + n(f).slice(1), 6]), ['SUM_' + ch, '隨堂合計', c.F.length * 6], ...c.U.map(u => [u, UN[u] + '測驗', 100]),
+    ...c.V.map((v, i) => [v, '互學' + (+n(c.F[i]).slice(1)) + '(組)', '']), ...c.R.map(r => [r, '補課' + n(r).slice(1), 6])];
+}
+const app = A.initializeApp(window.FIREBASE_CONFIG), auth = U.getAuth(app), db = F.getFirestore(app);
+let all = [], loadedCls = null;
+const params = new URLSearchParams(location.search);
+$('#clsList').innerHTML = (window.CLASS_LIST || []).map(c => `<option value="${esc(c)}">`).join('');
+try { $('#cls').value = localStorage.getItem('g_cls') || (window.CLASS_LIST || [])[0] || ''; $('#n').value = localStorage.getItem('g_n') || 32; $('#ch').value = params.get('ch') || localStorage.getItem('g_ch') || 'all'; } catch (e) { }
+$('#login').onclick = () => U.signInWithEmailAndPassword(auth, $('#em').value.trim(), $('#pw').value).catch(e => alert('登入失敗：' + (e.code || e.message)));
+$('#pw').onkeydown = e => { if (e.key === 'Enter') $('#login').click(); };
+$('#logout').onclick = () => U.signOut(auth);
+U.onAuthStateChanged(auth, u => {
+  const ok = u && !u.isAnonymous;
+  $('#who').textContent = ok ? '已登入：' + u.email : ''; ['#em', '#pw', '#login'].forEach(s => $(s).hidden = ok); $('#logout').hidden = !ok;
+  if (ok) load(); else { all = []; loadedCls = null; $('#board').innerHTML = ''; $('#msg').textContent = '請先用教師帳號登入。'; }
+});
+const TEST = '教師測試';
+const seatOf = r => r.seat || +((String(r.title || '').match(/座號(\d+)/) || [])[1]) || 0;
+const grpOf = r => /未分組/.test(r.title || '') ? 0 : (+r.grp || 0);
+const norm = d => { const x = d.data(); return Object.assign({ id: d.id }, x, { seat: seatOf(x), grp: grpOf(x), t: x.at ? Date.parse(x.at) : (x.ts ? x.ts.toMillis() : 0) }); };
+/* 一次讀「這個班級」的全部紀錄（全課程共用 engine_scores） */
+async function load() {
+  const cls = $('#cls').value.trim(); if (!cls) { $('#msg').textContent = '請選擇班級。'; return; }
+  $('#msg').textContent = `讀取 ${cls} 的成績中…`;
+  try {
+    const snap = await F.getDocs(F.query(F.collection(db, 'engine_scores'), F.where('cls', '==', cls)));
+    all = snap.docs.map(norm); loadedCls = cls; draw();
+  } catch (e) { $('#msg').innerHTML = `<span class="bad">無法讀取成績（${esc(e.code || e.message)}）。請確認登入的是教師帳號。</span>`; }
+}
+function pick(list) {
+  if (!list || !list.length) return null; const a = list.slice().sort((x, y) => x.t - y.t), m = $('#mode').value;
+  return m === 'first' ? a[0] : m === 'last' ? a[a.length - 1] : a.slice().sort((x, y) => y.score - x.score || x.t - y.t)[0];
+}
+function table() {
+  const cls = loadedCls || '', ch = $('#ch').value, COLS = cols(ch), N = Math.max(1, Math.min(60, +$('#n').value || 32));
+  const mine = all.filter(r => r.cls === cls);
+  const indiv = mine.filter(r => r.seat && !isV(r.lesson));
+  const groupOf = {}; mine.filter(r => r.seat && r.grp).sort((a, b) => a.t - b.t).forEach(r => groupOf[r.seat] = r.grp);
+  const grpRec = {}; mine.filter(r => isV(r.lesson)).forEach(r => { const k = r.lesson + '|' + r.grp; (grpRec[k] = grpRec[k] || []).push(r); });
+  const maxSeat = Math.max(N, ...indiv.map(r => r.seat));
+  const rows = [];
+  for (let s = 1; s <= maxSeat; s++) {
+    const row = { seat: s, grp: groupOf[s] || '', cells: {} };
+    const get = c => { const list = isV(c) ? (row.grp ? grpRec[c + '|' + row.grp] : null) : indiv.filter(r => r.seat === s && r.lesson === c); const p = pick(list); return p ? { score: p.score, total: p.total, n: list.length, detail: p.detail } : null; };
+    for (const [c] of COLS) {
+      if (c.startsWith('SUM_')) { const fs = CH[c.slice(4)].F.map(get).filter(Boolean); row.cells[c] = fs.length ? { score: fs.reduce((a, v) => a + v.score, 0), n: fs.length, of: CH[c.slice(4)].F.length } : null; }
+      else row.cells[c] = get(c);
+    }
+    rows.push(row);
+  }
+  return { cls, ch, COLS, rows, mine };
+}
+function draw() {
+  if (!loadedCls) return;
+  const { cls, ch, COLS, rows, mine } = table();
+  $('#delTest').hidden = cls !== TEST;
+  try { localStorage.setItem('g_cls', cls); localStorage.setItem('g_n', $('#n').value); localStorage.setItem('g_ch', ch); } catch (e) { }
+  $('#msg').textContent = `${cls}：共 ${mine.length} 筆紀錄（全課程）。`;
+  $('#board').innerHTML = `<table class="g"><tr><th>座號</th><th>組別</th>${COLS.map(c => `<th>${c[1]}<br><small>${c[2] ? '/' + c[2] : ''}</small></th>`).join('')}</tr>${rows.map(r => `<tr><td>${r.seat}</td><td>${r.grp}</td>${COLS.map(([c]) => {
+    const v = r.cells[c]; if (!v) return `<td class="${isR(c) ? '' : 'miss'}">—</td>`;
+    if (c.startsWith('SUM_')) return `<td class="sum">${v.score}${v.n < v.of ? ` <small>(${v.n}/${v.of}節)</small>` : ''}</td>`;
+    return `<td>${v.score}${isV(c) && v.total ? `<small>/${v.total}</small>` : ''}${v.n > 1 ? ` <small>(${v.n})</small>` : ''}</td>`;
+  }).join('')}</tr>`).join('')}</table>`;
+  drawAna(rows, ch);
+  const ns = mine.filter(r => !r.seat && !isV(r.lesson));
+  $('#noseat').textContent = ns.length ? `${ns.length} 筆（多半是改版前送出的舊紀錄，只有組別）：` + ns.slice(0, 80).map(r => `${r.lesson} 第${r.grp}組 ${r.score}/${r.total}`).join('、') : '沒有。';
+}
+/* 單元測驗各節答對率：題庫裡每題有 sec（全課程節次）；單元七用固定對照 */
+const BANKQ = {}; Object.entries(window.QUIZ_BANK || {}).forEach(([code, qs]) => qs.forEach(q => BANKQ[code + '|' + q.id] = q.sec));
+const SECN = Object.assign({}, ...Object.values(window.QUIZ_META || {}).map(m => m.secs || {}));
+const u7 = id => { const k = +String(id).replace(/^U7-/, ''); return 33 + (k <= 5 ? 1 : k <= 9 ? 2 : k <= 13 ? 3 : k <= 18 ? 4 : 5); };
+Object.assign(SECN, { 34: '7-1 基本單位與換算', 35: '7-2 排氣量與壓縮比', 36: '7-3 馬力與扭力', 37: '7-4＋7-5 引擎效率與油耗率', 38: '7-6 性能因素與計算統整' });
+const secOf = (code, id) => code === 'Unit7' ? u7(id) : BANKQ[code + '|' + id];
+function drawAna(rows, ch) {
+  if (ch === 'all') { $('#ana').innerHTML = '<p class="mut">選單一章節即可看到該章單元測驗的各節分析。</p>'; return; }
+  const pct = o => Math.round(o.got / o.of * 100), bar = p => `<span style="display:inline-block;height:12px;width:${p * 3}px;border-radius:6px;background:${p < 60 ? '#ff7373' : '#38c6ff'};vertical-align:middle;margin:0 8px"></span>`;
+  $('#ana').innerHTML = CH[ch].U.map(code => {
+    const recs = rows.map(r => r.cells[code]).filter(Boolean), sec = {}, qq = {};
+    if (!recs.length) return `<h3>${UN[code]}測驗</h3><p class="mut">這個班級還沒有人做${UN[code]}測驗。</p>`;
+    recs.forEach(r => (r.detail || []).forEach(d => { const id = d.id || d.round, n = secOf(code, id) || 0, s = sec[n] = sec[n] || { got: 0, of: 0 }, q = qq[id] = qq[id] || { got: 0, of: 0 }; s.got += d.got; s.of += d.of; q.got += d.got; q.of += d.of; }));
+    const weak = Object.entries(qq).map(([id, o]) => [id, pct(o)]).sort((a, b) => a[1] - b[1]).slice(0, 5);
+    return `<h3>${UN[code]}測驗（${recs.length} 人）</h3>` + Object.keys(sec).sort((a, b) => a - b).map(n => { const p = pct(sec[n]); return `<p>全課程第${n}節 ${esc(SECN[n] || '')}${bar(p)}<b>${p}%</b></p>`; }).join('') +
+      `<p class="mut">答對率最低的 5 題：${weak.map(([id, p]) => `${id}（第${secOf(code, id)}節）${p}%`).join('、')}</p>`;
+  }).join('<p class="mut">紅色＝答對率低於 60%，建議回到該節複習。</p>');
+}
+const dl = (lines, name) => { const csv = '﻿' + lines.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = name; a.click(); };
+const chName = ch => ch === 'all' ? '全學期' : CH[ch].name.split(' ')[0];
+$('#csv').onclick = () => {
+  if (!loadedCls) return alert('還沒有讀到成績，請先登入。');
+  const { cls, ch, COLS, rows } = table(); const mode = $('#mode').selectedOptions[0].text;
+  dl([['班級', '座號', '組別', ...COLS.map(c => `${c[1]}${c[2] ? '(/' + c[2] + ')' : ''}`)], ...rows.map(r => [cls, r.seat, r.grp, ...COLS.map(([c]) => r.cells[c] ? r.cells[c].score : '')])], `${chName(ch)}成績總表_${cls}_採計${mode}_${new Date().toISOString().slice(0, 10)}.csv`);
+};
+$('#csvRaw').onclick = () => {
+  const { cls, ch, COLS, mine } = table(); const codes = new Set(ch === 'all' ? null : COLS.map(c => c[0]));
+  const list = ch === 'all' ? mine : mine.filter(r => codes.has(r.lesson)); if (!list.length) return alert('這個班級還沒有紀錄。');
+  dl([['作答時間', '題組', '班級', '座號', '組別', '得分', '滿分', '正確率', '用時(秒)', '各題明細'], ...list.sort((a, b) => a.t - b.t).map(r => [new Date(r.t).toLocaleString('zh-TW'), r.lesson, r.cls, r.seat || '', r.grp, r.score, r.total, r.pct, r.sec, (r.detail || []).map(d => `${d.round}:${d.got}/${d.of}`).join('；')])], `${chName(ch)}作答明細_${cls}_${new Date().toISOString().slice(0, 10)}.csv`);
+};
+$('#delTest').onclick = async () => {
+  const list = all.filter(r => r.cls === TEST); if (!list.length) return alert('沒有教師測試資料。');
+  if (!confirm(`刪除班級「${TEST}」的 ${list.length} 筆紀錄（全課程）？學生成績不受影響。`)) return;
+  try { for (let i = 0; i < list.length; i += 400) { const b = F.writeBatch(db); list.slice(i, i + 400).forEach(r => b.delete(F.doc(db, 'engine_scores', r.id))); await b.commit(); } alert('已清除。'); load(); }
+  catch (e) { alert('刪除失敗：' + (e.code || e.message)); }
+};
+$('#cls').onchange = () => auth.currentUser && !auth.currentUser.isAnonymous && load();
+['#n', '#mode', '#ch'].forEach(s => $(s).oninput = $(s).onchange = () => draw());
+$('#reload').onclick = () => auth.currentUser && !auth.currentUser.isAnonymous && load();
+</script></body></html>
