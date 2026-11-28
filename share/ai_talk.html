@@ -80,6 +80,13 @@ body.pres #pside{display:flex;flex-direction:column;position:fixed;top:0;right:0
 #pnext b{color:var(--ink)}
 #pnotes{flex:1;overflow:auto;white-space:pre-wrap;font-size:var(--nfs,24px);line-height:1.6;background:#0a1120;border-radius:10px;padding:14px 16px}
 #plink{font-size:15px;color:#7f93b8}
+#demo{display:none;position:fixed;inset:0;z-index:50;background:#000}
+#demo.show{display:block}#demo iframe{width:100%;height:100%;border:0;background:#fff}
+#demo button{position:fixed;right:14px;bottom:14px;z-index:51;background:#c2410c;color:#fff;border:0;border-radius:10px;padding:8px 16px;font-size:16px;cursor:pointer;opacity:.85}
+.dlist{display:flex;flex-wrap:wrap;gap:8px}
+.dlist button{background:#123a36!important;border-color:#2b7a72!important;color:#c9fff6!important;font-size:17px!important}
+#pdemo{font-size:16px;color:#ffd166}
+#notes .dlist{margin-top:10px}
 #pbelow{position:fixed;left:0;bottom:0;width:62vw;padding:10px 16px;color:#7f93b8;font-size:15px}
 </style></head><body>
 <div id="deck">
@@ -166,13 +173,15 @@ body.pres #pside{display:flex;flex-direction:column;position:fixed;top:0;right:0
 <div class="g2w"><div class="card qs"><h3>想一想</h3><p>① 學生最常卡住的是哪個概念？</p><p>② 你會先請 AI 幫你做哪一份教材？</p><p>③ 怎麼確認每位學生真的學會了？</p></div>
 <div><img src="img/talk_yt.jpg" alt="YouTube 頻道"><h2 style="margin-top:24px">謝謝聆聽</h2><p class="mut">林慶泓　國立臺東專科學校附設高職部 汽車科</p></div></div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>16 / 16</span></div></section>
 </div>
-<div id="notes"></div>
+<div id="notes"><div id="ntext"></div><div class="dlist" id="ndl"></div></div>
+<div id="demo"><button id="dclose">✕ 回到簡報（Esc）</button><iframe id="dfr" title="示範網頁"></iframe></div>
 <div id="help">← → 換頁　N 講稿（同一畫面）　P 講者畫面（雙螢幕）　F 全螢幕</div>
 <div id="nav"><button id="pv">◀</button><button id="nb">講稿</button><button id="pb" title="雙螢幕：在筆電開講者畫面，投影只顯示簡報">🎤 講者畫面</button><button id="fb">全螢幕</button><button id="nx">▶</button></div>
 <div id="pside">
  <div class="row"><span id="ptime" title="點一下重新計時">00:00</span><span id="pnum"></span><span style="flex:1"></span><button id="pfs1">A－</button><button id="pfs2">A＋</button></div>
  <div class="row"><button class="big" id="pp">◀ 上一頁</button><button class="big" id="pn">下一頁 ▶</button></div>
  <div id="pnext"></div>
+ <div><div style="font-size:15px;color:#7f93b8;margin-bottom:4px">本頁示範（點了會在投影畫面開啟）</div><div class="dlist" id="pdl"></div><div id="pdemo"></div></div>
  <div id="pnotes"></div>
  <div id="plink">投影畫面：<span id="pconn">尚未連線（請從投影的簡報按「🎤 講者畫面」開啟本視窗）</span></div>
 </div>
@@ -183,18 +192,23 @@ const sl=[...document.querySelectorAll('.slide')],deck=document.getElementById('
 let cur=Math.min(sl.length-1,Math.max(0,(parseInt(location.hash.slice(1))||1)-1));
 const PRES=/presenter/.test(location.search);if(PRES){document.body.classList.add('pres');document.title='講者畫面｜'+document.title;}
 function fit(){if(PRES){const w=innerWidth*0.62-20,h=innerHeight-60,s=Math.min(w/1600,h/900);deck.style.transform='translate(10px,10px) scale('+s+')';return;}const s=Math.min(innerWidth/1600,innerHeight/900);deck.style.transform='translate(-50%,-50%) scale('+s+')';}
-function show(i,remote){cur=Math.max(0,Math.min(sl.length-1,i));sl.forEach((s,j)=>s.classList.toggle('on',j===cur));nt.textContent=NOTES[cur]||'';history.replaceState(null,'','#'+(cur+1));
- if(PRES){pnotes.textContent=NOTES[cur]||'';pnotes.scrollTop=0;pnum.textContent=(cur+1)+' / '+sl.length;const nx=sl[cur+1];pnext.innerHTML=nx?'下一頁：<b>'+(nx.querySelector('h2.t,h1')||{}).textContent+'</b>':'（最後一頁）';}
+const DEMOS={"0":[["課程網站首頁","../index.html"]],"2":[["課程網站首頁","../index.html"]],"3":[["V3 四行程動畫","../V3_%E5%9B%9B%E8%A1%8C%E7%A8%8B%E5%BC%95%E6%93%8E%E9%80%8F%E8%A6%96%E5%8B%95%E7%95%AB.html"],["第 4 節上課簡報","../S4_%E7%AC%AC4%E7%AF%80_%E5%9B%9B%E8%A1%8C%E7%A8%8B%E5%BC%95%E6%93%8E%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86.html"],["教師大螢幕","../T_%E6%95%99%E5%B8%AB%E5%A4%A7%E8%9E%A2%E5%B9%95.html"]],"4":[["V3 四行程動畫","../V3_%E5%9B%9B%E8%A1%8C%E7%A8%8B%E5%BC%95%E6%93%8E%E9%80%8F%E8%A6%96%E5%8B%95%E7%95%AB.html"]],"6":[["單元一教案（PDF）","docs/lp_u1.pdf"]],"7":[["汽油泵動畫（第 3 章 V4）","../%E7%AC%AC3%E7%AB%A0_%E6%B1%BD%E6%B2%B9%E5%BC%95%E6%93%8E%E7%87%83%E6%96%99%E7%B3%BB%E7%B5%B1/V4_%E5%8C%96%E6%B2%B9%E5%99%A8%E8%88%87%E5%85%AD%E5%A4%A7%E6%B2%B9%E8%B7%AF.html"],["分享頁：前後對照","index.html#check"]],"9":[["V3 四行程動畫","../V3_%E5%9B%9B%E8%A1%8C%E7%A8%8B%E5%BC%95%E6%93%8E%E9%80%8F%E8%A6%96%E5%8B%95%E7%95%AB.html"]],"10":[["V3 四行程動畫","../V3_%E5%9B%9B%E8%A1%8C%E7%A8%8B%E5%BC%95%E6%93%8E%E9%80%8F%E8%A6%96%E5%8B%95%E7%95%AB.html"]],"11":[["分享頁：開發歷程","index.html#flow"]],"14":[["課程網站首頁","../index.html"],["教師分享頁","index.html"]],"15":[["教師分享頁","index.html"]]};
+function demoBtns(box){box.innerHTML='';(DEMOS[cur]||[]).forEach(d=>{const b=document.createElement('button');b.textContent='▶ '+d[0];b.onclick=()=>demo(d[1],false,d[0]);box.append(b);});if(!box.children.length)box.innerHTML='<span style="color:#5d6f92;font-size:15px">（本頁沒有示範網頁）</span>';}
+function openDemo(url,name){const dm=document.getElementById('demo');if(!url){dm.classList.remove('show');dfr.src='about:blank';return;}dfr.src=url;dm.classList.add('show');}
+function demo(url,close,name){if(PRES){send({t:'demo',url:close?'':url,name});pdemo.innerHTML=close||!url?'':'▶ 示範中：'+name+'　<button id="pdx">關閉示範</button>';if(!close&&url)pdx.onclick=()=>demo('',true);}else{openDemo(close?'':url,name);send({t:'demo',url:close?'':url,name});}}
+function show(i,remote){cur=Math.max(0,Math.min(sl.length-1,i));sl.forEach((s,j)=>s.classList.toggle('on',j===cur));ntext.textContent=NOTES[cur]||'';demoBtns(ndl);history.replaceState(null,'','#'+(cur+1));
+ if(PRES){demoBtns(pdl);pnotes.textContent=NOTES[cur]||'';pnotes.scrollTop=0;pnum.textContent=(cur+1)+' / '+sl.length;const nx=sl[cur+1];pnext.innerHTML=nx?'下一頁：<b>'+(nx.querySelector('h2.t,h1')||{}).textContent+'</b>':'（最後一頁）';}
  if(!remote)send({t:'go',i:cur});}
 /* 雙螢幕同步：BroadcastChannel（同網站）＋視窗互傳（file:// 備援） */
 let bc=null,peer=PRES?window.opener:null;try{bc=new BroadcastChannel('ai_talk');}catch(e){}
 function send(m){try{bc&&bc.postMessage(m);}catch(e){}try{peer&&!peer.closed&&peer.postMessage(Object.assign({ai_talk:1},m),'*');}catch(e){}}
-function recv(m){if(!m)return;if(m.t==='go'&&m.i!==cur)show(m.i,true);else if(m.t==='hello'){send({t:'go',i:cur});send({t:'here'});}else if(m.t==='here'&&PRES)pconn.textContent='✅ 已連線，換頁會同步';else if(m.t==='embed'&&!PRES)loadEmbed(true);}
+function recv(m){if(!m)return;if(m.t==='go'&&m.i!==cur)show(m.i,true);else if(m.t==='hello'){send({t:'go',i:cur});send({t:'here'});}else if(m.t==='here'&&PRES)pconn.textContent='✅ 已連線，換頁會同步';else if(m.t==='embed'&&!PRES)loadEmbed(true);else if(m.t==='demo'){if(PRES)pdemo.innerHTML=m.url?'▶ 示範中：'+m.name+'　<button id="pdx">關閉示範</button>':'';if(PRES&&m.url)pdx.onclick=()=>demo('',true);if(!PRES)openDemo(m.url,m.name);}}
 if(bc)bc.onmessage=e=>recv(e.data);addEventListener('message',e=>{if(e.data&&e.data.ai_talk){if(!PRES&&e.source)peer=e.source;recv(e.data);}});
 addEventListener('resize',fit);fit();show(cur,true);
 if(PRES){send({t:'hello'});let t0=Date.now();setInterval(()=>{const d=Math.floor((Date.now()-t0)/1000);ptime.textContent=String(Math.floor(d/60)).padStart(2,'0')+':'+String(d%60).padStart(2,'0');},500);ptime.onclick=()=>t0=Date.now();pp.onclick=()=>show(cur-1);pn.onclick=()=>show(cur+1);let fz=24;const setF=d=>{fz=Math.max(16,Math.min(40,fz+d));document.body.style.setProperty('--nfs',fz+'px');};pfs1.onclick=()=>setF(-2);pfs2.onclick=()=>setF(2);}
 if(/notes/.test(location.search))document.body.classList.add('n');
-addEventListener('keydown',e=>{if(e.target.tagName==='IFRAME')return;
+dclose.onclick=()=>demo('',true);
+addEventListener('keydown',e=>{if(e.target.tagName==='IFRAME')return;if(e.key==='Escape'&&document.getElementById('demo').classList.contains('show')){demo('',true);return;}
  if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(cur+1);}
  else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(cur-1);}
  else if(e.key==='n'||e.key==='N'){if(!PRES)document.body.classList.toggle('n');}
