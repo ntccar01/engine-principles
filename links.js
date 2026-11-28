@@ -3,7 +3,9 @@
 window.LINKS = {
   剛好學: 'https://ntccar01.github.io/ntccalsstools/',
   classroom: '',          // Google Classroom 班級網址
-  chateverywhere: 'https://chateverywhere.app/',
+  chatgpt: 'https://chatgpt.com/',
+  gemini: 'https://gemini.google.com/',
+  chateverywhere: 'https://chateverywhere.app/',   // 舊按鈕保留，簡報已改用 ChatGPT／Gemini
   notebooklm: 'https://notebooklm.google.com/',
   // 第 1 節
   edcafe1: '',            // V1 Edcafe 影片測驗
@@ -16,8 +18,7 @@ window.LINKS = {
   video2: 'https://youtu.be/3uoP9y0Hv_I',             // 補課包：ep02 看懂 P-V 圖
   edcafeR2: '',           // 補課包：Edcafe YouTube 影片測驗網址
   // 第 3 節
-  canva3: '',             // Canva 引擎分類資訊卡範本（分享連結）
-  padlet3: '',            // Padlet 畫廊（7 欄）
+  // 資訊卡：改用站內「資訊卡.html?k=s3」，截圖後上傳剛好學（不再用 Canva／Padlet）
   form3: 'Q3_隨堂測驗.html',              // 站內隨堂測驗（Q 頁）
   video3: '',             // 補課包：NotebookLM 影片摘要（YouTube 網址）
   edcafeR3: '',           // 補課包：Edcafe YouTube 影片測驗網址
@@ -47,7 +48,7 @@ window.LINKS = {
   edcafeR8: '',           // 補課包：Edcafe YouTube 影片測驗網址
   // 第 9 節
   mindmap: 'https://ntccar01.github.io/Xmind/',  // 心智圖工具與上傳
-  padlet9: '',            // Padlet 小組發表互評
+  // 互評：改用剛好學（老師大螢幕投影 QR Code），不再用 Padlet
   form9: 'Q9_隨堂測驗.html',              // 站內隨堂測驗（Q 頁）
   video9: '',             // 補課包：NotebookLM 影片摘要（YouTube 網址）
   edcafeR9: '',           // 補課包：Edcafe YouTube 影片測驗網址

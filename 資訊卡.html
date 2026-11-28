@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小組資訊卡</title>
+<style>
+:root{--bg:#0d1526;--panel:#16223a;--panel2:#1d2c4a;--line:#2c3f63;--ink:#e8eef9;--mut:#9fb0cf;--acc:#ffb020;--acc2:#38c6ff;--ok:#3ddc84;--bad:#ff5d5d}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Microsoft JhengHei","Noto Sans TC","PingFang TC",system-ui,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:14px 16px 40px}
+nav{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+nav a{color:var(--acc2);text-decoration:none;font-size:15px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.bar label{font-size:16px;color:var(--mut)}
+select,input[type=text]{font:inherit;font-size:16px;background:#0a1120;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+button,.lk{font:inherit;font-size:16px;border-radius:10px;padding:9px 14px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;gap:6px;align-items:center}
+.pri{background:var(--acc);color:#1a1200;border:none;font-weight:700}
+.ok{background:var(--ok);color:#002010;border:none;font-weight:700}
+/* 資訊卡本體 */
+#card{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:22px 24px}
+.chead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.chead .tag{background:#ff8a3d;color:#1a0c00;font-weight:700;border-radius:999px;padding:4px 14px;font-size:16px}
+.chead .who{color:var(--mut);font-size:17px}
+#f_name{font-size:40px;font-weight:800;margin:4px 0 16px;min-height:52px}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.lcol{display:grid;gap:14px}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.box b{display:block;font-size:19px;margin-bottom:6px}
+.y{color:var(--acc)}.g{color:var(--ok)}.r{color:var(--bad)}.m{color:var(--mut)}
+.ed{font-size:22px;line-height:1.5;min-height:34px;outline:none;white-space:pre-wrap;word-break:break-word}
+.ed:empty:before{content:attr(data-ph);color:#5d6f92}
+.ed:focus{background:#0a1120;border-radius:6px;box-shadow:0 0 0 2px var(--acc2)}
+#imgbox{height:250px;border:2px dashed var(--line);display:grid;place-items:center;overflow:hidden;padding:6px;text-align:center;position:relative}
+#imgbox img{max-width:100%;max-height:100%;border-radius:8px;display:block}
+#imgbox .hint{color:var(--mut);font-size:17px;line-height:1.6}
+.src{font-size:14px;color:var(--mut);margin-top:6px}
+.srcrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:20px}
+.srcrow select,.srcrow input{font-size:18px}
+.view{display:none}
+/* 截圖模式 */
+body.shot nav,body.shot .bar,body.shot .steps,body.shot .edit{display:none!important}
+body.shot .view{display:inline}
+body.shot main{max-width:none;padding:10px}
+body.shot #imgbox{border-style:solid}
+body.shot .ed:empty:before{content:""}
+#shotbar{display:none;position:fixed;right:10px;bottom:10px;z-index:9}
+body.shot #shotbar{display:block;opacity:.25}body.shot #shotbar:hover{opacity:1}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 18px;margin-top:14px;font-size:18px;line-height:1.8}
+.steps b{color:var(--acc)}
+#msg{color:var(--ok);font-size:15px}
+@media(max-width:760px){.grid,.two{grid-template-columns:1fr}#f_name{font-size:30px}.ed{font-size:19px}}
+</style></head><body>
+<main>
+<nav><a href="ch1.html">← 第1章首頁</a><a href="index.html">全課程</a><span class="m" id="lessonName"></span></nav>
+<div class="bar">
+  <label>組別 <select id="grp"></select></label>
+  <label>負責 <select id="topic"></select></label>
+  <button class="pri" id="bShot">📸 截圖模式</button>
+  <button class="ok" id="bSave">⬇ 存成圖片</button>
+  <button id="bClear">🗑 清除重填</button>
+  <span id="msg"></span>
+</div>
+
+<section id="card">
+  <div class="chead"><span class="tag" id="cTag">資訊卡</span><span class="who" id="cWho"></span></div>
+  <div class="ed" id="f_name" contenteditable="true" data-ph="引擎類型名稱（例：水冷式引擎）"></div>
+  <div class="grid">
+    <div class="lcol">
+      <div class="box"><b class="y">名稱與特點</b><div class="ed" id="f_feat" contenteditable="true" data-ph="貼上 AI 查到、你們查證過的特點（1～3 句）"></div></div>
+      <div class="two">
+        <div class="box"><b class="g">優點</b><div class="ed" id="f_pro" contenteditable="true" data-ph="1～3 個優點"></div></div>
+        <div class="box"><b class="r">缺點</b><div class="ed" id="f_con" contenteditable="true" data-ph="1～3 個缺點"></div></div>
+      </div>
+      <div class="box"><b class="m">資料來源（AI＋查證）</b>
+        <div class="srcrow"><span class="edit"><select id="f_ai"></select></span><span class="view" id="v_ai"></span> 查詢 → 對照課本 p.<span class="edit"><input type="text" id="f_page" size="4" placeholder="頁碼"></span><span class="view" id="v_page"></span> 查證</div>
+      </div>
+    </div>
+    <div class="lcol">
+      <div class="box" id="imgbox"><div class="hint" id="imgHint">📷 點這裡選一張圖片<br><small>（也可以複製圖片後，在本頁按 Ctrl＋V 貼上）</small></div><input type="file" id="file" accept="image/*" hidden></div>
+      <div class="src edit"><input type="text" id="f_isrc" placeholder="圖片出處（網址或「自行拍攝」）" style="width:100%;font-size:14px"></div>
+      <div class="src view" id="v_isrc"></div>
+      <div class="box"><b class="y">實際車款</b><div class="ed" id="f_car" contenteditable="true" data-ph="例：Toyota Corolla"></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="steps">
+  <b>完成後：</b>① 按「📸 截圖模式」再截圖（或按「⬇ 存成圖片」）　② 掃老師大螢幕上的 <b>剛好學 QR Code</b>，上傳這張圖　③ 準備上台 1 分鐘分享：特點、優缺點、實際車款<br>
+  <span class="m">內容會自動存在這台平板；換平板或清除瀏覽器資料就會不見。AI 查到的內容一定要對照課本查證。</span>
+  <a class="lk" data-link="剛好學" style="margin-left:8px">📤 開啟剛好學</a>
+</div>
+</main>
+<div id="shotbar"><button id="bBack">✏️ 返回編輯</button></div>
+<script src="links.js"></script>
+<script>
+(function(){
+const TPL = {
+  s3: { lesson: '第 3 節　往復式活塞引擎之分類', tag: '引擎分類資訊卡', home: 'ch1.html', groups: 11,
+    topics: ['熱力循環','工作循環','使用燃料','冷卻方式：氣冷式','冷卻方式：水冷式','汽缸排列（A）','汽缸排列（B）','汽門位置（A）','汽門位置（B）','點火方式：火花點火 SI','點火方式：壓縮點火 CI'] }
+};
+const AIS = ['ChatGPT','Gemini','Copilot','ChatEverywhere','其他 AI 平台'];
+const key = new URLSearchParams(location.search).get('k') || 's3', T = TPL[key] || TPL.s3, SK = 'infocard_' + key;
+const $ = id => document.getElementById(id);
+document.title = T.tag + '｜' + T.lesson; $('lessonName').textContent = '｜' + T.lesson; $('cTag').textContent = T.tag;
+document.querySelector('nav a').href = T.home;
+for (let i = 1; i <= T.groups; i++) $('grp').add(new Option('第 ' + i + ' 組', i));
+T.topics.forEach(t => $('topic').add(new Option(t, t)));
+AIS.forEach(a => $('f_ai').add(new Option(a, a)));
+const L = window.LINKS || {};
+document.querySelectorAll('[data-link]').forEach(a => { const u = L[a.dataset.link]; if (u) { a.href = u; a.target = '_blank'; a.rel = 'noopener'; } else a.style.display = 'none'; });
+const ED = ['f_name','f_feat','f_pro','f_con','f_car'];
+let img = '';
+function data(){ const d = { grp: $('grp').value, topic: $('topic').value, ai: $('f_ai').value, page: $('f_page').value, isrc: $('f_isrc').value, img }; ED.forEach(k => d[k] = $(k).innerText.trim()); return d; }
+function save(){ try { localStorage.setItem(SK, JSON.stringify(data())); } catch(e) { flash('⚠ 圖片太大，未能自動儲存（截圖仍可用）'); } who(); }
+function who(){ $('cWho').textContent = $('grp').selectedOptions[0].text + '｜負責：' + $('topic').value; }
+function flash(t){ $('msg').textContent = t; clearTimeout(flash.t); flash.t = setTimeout(() => $('msg').textContent = '', 2500); }
+function showImg(){ const b = $('imgbox'); b.querySelectorAll('img').forEach(x => x.remove()); $('imgHint').style.display = img ? 'none' : ''; if (img) { const i = new Image(); i.src = img; i.alt = '資訊卡圖片'; b.prepend(i); } }
+// 載入
+try { const d = JSON.parse(localStorage.getItem(SK) || 'null'); if (d) { $('grp').value = d.grp || 1; $('topic').value = d.topic || T.topics[0]; $('f_ai').value = d.ai || AIS[0]; $('f_page').value = d.page || ''; $('f_isrc').value = d.isrc || ''; img = d.img || ''; ED.forEach(k => $(k).innerText = d[k] || ''); } else $('topic').value = T.topics[0]; } catch(e) {}
+showImg(); who();
+$('grp').onchange = () => { const i = +$('grp').value - 1; if (T.topics[i] && !localStorage.getItem(SK + '_topicset')) $('topic').value = T.topics[i]; save(); };
+$('topic').onchange = () => { try { localStorage.setItem(SK + '_topicset', '1'); } catch(e) {} save(); };
+['f_ai','f_page','f_isrc'].forEach(k => $(k).oninput = save);
+ED.forEach(k => { const e = $(k); e.addEventListener('input', save);
+  e.addEventListener('paste', ev => { const t = ev.clipboardData && ev.clipboardData.getData('text/plain'); if (t != null && !(ev.clipboardData.files && ev.clipboardData.files.length)) { ev.preventDefault(); document.execCommand('insertText', false, t.replace(/\*\*|__|#+\s/g, '')); } }); });
+// 圖片
+function loadFile(f){ if (!f || !/^image\//.test(f.type)) return; const r = new FileReader(); r.onload = () => { const i = new Image(); i.onload = () => { const s = Math.min(1, 900 / Math.max(i.width, i.height)); const c = document.createElement('canvas'); c.width = Math.round(i.width * s); c.height = Math.round(i.height * s); c.getContext('2d').drawImage(i, 0, 0, c.width, c.height); img = c.toDataURL('image/jpeg', .82); showImg(); save(); }; i.src = r.result; }; r.readAsDataURL(f); }
+$('imgbox').onclick = () => { if (!document.body.classList.contains('shot')) $('file').click(); };
+$('file').onchange = e => loadFile(e.target.files[0]);
+document.addEventListener('paste', e => { const f = [...(e.clipboardData ? e.clipboardData.files : [])].find(x => /^image\//.test(x.type)); if (f) { e.preventDefault(); loadFile(f); flash('✔ 已貼上圖片'); } });
+// 截圖模式
+function shot(on){ document.body.classList.toggle('shot', on); ED.forEach(k => $(k).contentEditable = on ? 'false' : 'true');
+  $('v_ai').textContent = $('f_ai').value; $('v_page').textContent = $('f_page').value || '＿＿'; $('v_isrc').textContent = $('f_isrc').value ? '圖片出處：' + $('f_isrc').value : ''; window.scrollTo(0, 0); }
+$('bShot').onclick = () => shot(true); $('bBack').onclick = () => shot(false);
+addEventListener('keydown', e => { if (e.key === 'Escape') shot(false); });
+$('bClear').onclick = () => { if (!confirm('確定清除這張資訊卡的所有內容？')) return; ED.forEach(k => $(k).innerText = ''); $('f_page').value = ''; $('f_isrc').value = ''; img = ''; showImg(); save(); };
+// 存成圖片（自行繪製，不需外部程式庫）
+$('bSave').onclick = async () => {
+  const d = data(), W = 1600, H = 900, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const F = '"Microsoft JhengHei","Noto Sans TC","PingFang TC",sans-serif', col = { bg:'#0d1526', panel:'#16223a', line:'#2c3f63', ink:'#e8eef9', mut:'#9fb0cf', y:'#ffb020', gr:'#3ddc84', rd:'#ff5d5d' };
+  g.fillStyle = col.bg; g.fillRect(0, 0, W, H);
+  const rr = (x, y, w, h, r, fill, stroke, dash) => { g.beginPath(); g.roundRect(x, y, w, h, r); g.fillStyle = fill; g.fill(); g.setLineDash(dash ? [10, 8] : []); g.strokeStyle = stroke; g.lineWidth = 2; g.stroke(); g.setLineDash([]); };
+  const wrap = (t, x, y, w, lh, size, color, maxL) => { g.font = size + 'px ' + F; g.fillStyle = color; let line = '', n = 0; const out = [];
+    for (const para of (t || '').split('\n')) { line = ''; for (const ch of para) { if (g.measureText(line + ch).width > w) { out.push(line); line = ch; } else line += ch; } out.push(line); }
+    out.slice(0, maxL).forEach((l, i) => g.fillText(i === maxL - 1 && out.length > maxL ? l.slice(0, -1) + '…' : l, x, y + i * lh)); };
+  g.textBaseline = 'top';
+  rr(40, 34, 260, 44, 22, '#ff8a3d', '#ff8a3d'); g.font = 'bold 24px ' + F; g.fillStyle = '#1a0c00'; g.fillText(T.tag, 58, 43);
+  g.font = '24px ' + F; g.fillStyle = col.mut; const wt = $('grp').selectedOptions[0].text + '｜負責：' + d.topic; g.fillText(wt, W - 40 - g.measureText(wt).width, 44);
+  wrap(d.f_name || '（引擎類型名稱）', 40, 100, 1500, 64, 'bold 54', col.ink, 1);
+  const L1 = 40, LW = 1000, R1 = 1080, RW = 480;
+  rr(L1, 190, LW, 210, 18, col.panel, col.line); g.font = 'bold 26px ' + F; g.fillStyle = col.y; g.fillText('名稱與特點', L1 + 26, 210); wrap(d.f_feat, L1 + 26, 252, LW - 52, 40, 28, col.ink, 3);
+  rr(L1, 420, (LW - 20) / 2, 210, 18, col.panel, col.line); g.font = 'bold 26px ' + F; g.fillStyle = col.gr; g.fillText('優點', L1 + 26, 440); wrap(d.f_pro, L1 + 26, 482, (LW - 20) / 2 - 52, 40, 28, col.ink, 3);
+  const cx = L1 + (LW - 20) / 2 + 20; rr(cx, 420, (LW - 20) / 2, 210, 18, col.panel, col.line); g.font = 'bold 26px ' + F; g.fillStyle = col.rd; g.fillText('缺點', cx + 26, 440); wrap(d.f_con, cx + 26, 482, (LW - 20) / 2 - 52, 40, 28, col.ink, 3);
+  rr(L1, 650, LW, 130, 18, col.panel, col.line); g.font = 'bold 26px ' + F; g.fillStyle = col.mut; g.fillText('資料來源（AI＋查證）', L1 + 26, 670); wrap(d.ai + ' 查詢 → 對照課本 p.' + (d.page || '＿＿') + ' 查證', L1 + 26, 715, LW - 52, 40, 30, col.ink, 1);
+  rr(R1, 190, RW, 400, 18, col.panel, col.line, !img);
+  if (img) { const im = new Image(); im.src = img; await im.decode().catch(() => {}); const s = Math.min((RW - 24) / im.width, (400 - 24) / im.height); const w = im.width * s, h = im.height * s; g.drawImage(im, R1 + (RW - w) / 2, 190 + (400 - h) / 2, w, h); }
+  else { g.font = '26px ' + F; g.fillStyle = col.mut; g.fillText('📷（未放圖片）', R1 + 140, 375); }
+  if (d.isrc) wrap('圖片出處：' + d.isrc, R1, 600, RW, 22, 18, col.mut, 1);
+  rr(R1, 640, RW, 140, 18, col.panel, col.line); g.font = 'bold 26px ' + F; g.fillStyle = col.y; g.fillText('實際車款', R1 + 26, 660); wrap(d.f_car, R1 + 26, 702, RW - 52, 38, 28, col.ink, 2);
+  g.font = '20px ' + F; g.fillStyle = '#5d6f92'; g.fillText(T.lesson, 40, 820);
+  c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = '資訊卡_第' + d.grp + '組.png'; document.body.append(a); a.click(); a.remove(); flash('✔ 已存成圖片，到相簿或下載資料夾找'); }, 'image/png');
+};
+})();
+</script>
+</body></html>
