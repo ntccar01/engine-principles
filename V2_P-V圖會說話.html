@@ -291,24 +291,28 @@ function Player(cfg) {
   <header><a class="home" href="ch1.html" title="回到動畫首頁">🏠 回首頁</a><span class="tag">${cfg.code}</span><h1>${cfg.title}</h1><span class="sub">${cfg.sub || ''}</span><span class="score" id="score"></span>${cfg.activity ? '<button class="actbtn" id="actbtn">🎮 互學挑戰</button>' : ''}</header>
   <div class="main"><div>
     <div class="stage"><canvas id="cv" width="${W}" height="${HGT}"></canvas><div class="chtitle" id="cht"></div>
-      <div class="quiz" id="quiz"><div class="card"><h4>✋ 停一下！回答正確才能繼續</h4><p id="qq"></p><div id="qo"></div><div class="ex" id="qe"></div><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="quiz" id="quiz"><div class="card"><div class="qhead"><h4>✋ 停一下！回答正確才能繼續</h4><button class="qback" id="qback" title="先收起題目，回去看這段">📖 回去看這段</button></div><p id="qq"></p><div id="qo"></div><div class="ex" id="qe"></div><button class="jump" id="qjump">🔎 跳到相關說明</button><button class="go" id="qgo">繼續下一段 ▶</button></div></div>
+      <div class="qready" id="qready"><span>✅ 這段看完了</span><button id="qreplay">⏪ 再看一次這段</button><button class="pri" id="qans">我懂了，回答問題 ▶</button></div><button class="qmini" id="qmini">✋ 題目還沒答完，點這裡回到題目</button>
       <div class="endcard" id="end"><div>🎉 影片完成！<br>首次答對 <b id="endsc"></b> 題<br><span style="font-size:16px;color:#9fb0cf">可點選右側章節重看，或按 R 重新開始</span><br>${cfg.activity ? '<button class="home big" id="actend" style="margin-right:10px">🎮 進入互學挑戰</button>' : ''}<a class="home big" href="ch1.html">🏠 回首頁選下一支動畫</a></div></div>
     </div>
     <div class="bar" id="bar"></div>
     <div class="seek" id="seekrow" title="拖曳到想講解的畫面（拖動時自動暫停）"><input type="range" id="seek" min="0" max="1000" step="1" value="0"><div class="ticks" id="ticks"></div></div>
     <div class="controls">
       <button id="prev" title="上一段">⏮</button><button class="main-btn" id="play">▶ 播放</button><button id="step" title="逐格（暫停時）">逐格 ▸</button><button id="next" title="下一段">⏭</button>
-      <select id="spd"><option value=".25">0.25x</option><option value=".5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+      <select id="spd"><option value=".25">0.25x</option><option value=".5">0.5x</option><option value=".75">0.75x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
       <label><input type="checkbox" id="tts">🔊 語音旁白</label><span class="time" id="tm"></span>
     </div>
     <div class="caption" id="cap"></div>
     <div class="panel" id="panel"></div>
   </div>
-  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>下方拉桿可直接拖到想講的畫面（刻度＝每句字幕開頭），↑ ↓ 跳上一句／下一句。<br>每段結束有小問題，答對才會繼續。</div></aside></div></div>`;
+  <aside class="side"><h3>章節</h3><ol id="list"></ol><div class="tips">鍵盤：空白鍵 播放／暫停、← → 切換章節、R 重新開始。<br>下方拉桿可直接拖到想講的畫面（刻度＝每句字幕開頭），↑ ↓ 跳上一句／下一句。<br>每段看完會先停住：可「⏪ 再看一次」或按「回答問題」；作答時也能按「📖 回去看這段」，答錯可「🔎 跳到相關說明」。</div></aside></div></div>`;
   const cv = $('#cv'), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = W * dpr; cv.height = HGT * dpr; ctx.scale(dpr, dpr);
   const chs = cfg.chapters, S = Object.assign({}, cfg.state || {}), passed = chs.map(() => false), firstOk = chs.map(() => null);
   let muteCap = false, dragging = false;
+  /* 段末小問題（2026-11-28）：段落看完先停住，學生自己按「回答問題」；作答中可收起題目回去看；答錯可跳到相關字幕 */
+  let qPend = -1, stopAt = null;
+  { const st = document.createElement('style'); st.textContent = '.quiz .qhead{display:flex;justify-content:space-between;align-items:center;gap:10px}.quiz .qback,.quiz .jump{background:transparent;border:1px solid #38c6ff;color:#38c6ff;border-radius:8px;padding:6px 10px;font-size:15px;cursor:pointer;font-family:inherit;white-space:nowrap}.quiz .jump{display:none;margin:10px 8px 0 0;padding:8px 12px}.qready{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:none;gap:10px;align-items:center;background:rgba(13,21,38,.95);border:2px solid #3ddc84;border-radius:12px;padding:10px 14px;font-size:17px;z-index:5;white-space:nowrap;color:#e8eef9}.qready.show{display:flex}.qready button{font:inherit;font-size:16px;border-radius:8px;padding:8px 12px;border:1px solid #2c3f63;background:#1d2c4a;color:#e8eef9;cursor:pointer}.qready .pri{background:#3ddc84;color:#002010;border:none;font-weight:700}.qmini{position:absolute;right:12px;bottom:12px;display:none;background:#ffb020;color:#171100;border:none;border-radius:10px;padding:9px 14px;font-size:16px;font-weight:700;cursor:pointer;z-index:6;font-family:inherit;box-shadow:0 4px 14px rgba(0,0,0,.45)}.qmini.show{display:block}.qmini.pulse{animation:qpulse 1s ease-in-out infinite}@keyframes qpulse{50%{transform:scale(1.08)}}@media(max-width:700px){.qready{white-space:normal;flex-wrap:wrap;justify-content:center;width:94%}}'; document.head.append(st); }
   { const st = document.createElement('style'); st.textContent = '.seek{position:relative;margin:8px 0 0;padding-bottom:10px}.seek input{width:100%;margin:0;height:22px;accent-color:#ffb020;cursor:pointer}.seek .ticks{position:absolute;left:0;right:0;bottom:0;height:10px;pointer-events:none}.seek .ticks i{position:absolute;bottom:0;width:2px;height:9px;background:#9fb0cf;opacity:.75;transform:translateX(-1px)}.seek.off{opacity:.35}.seek.off input{cursor:not-allowed}'; document.head.append(st); }
   let ci = 0, t = 0, playing = false, speed = 1, lastCap = '', last = performance.now(), ended = false;
   const durOf = c => c.loop ? (c.nominal || 20) : c.dur;
@@ -320,7 +324,7 @@ function Player(cfg) {
   $('#bar').onclick = e => { const d = e.target.closest('#bar > div'); const i = [...$('#bar').children].indexOf(d); if (i < 0) return; const r = d.getBoundingClientRect(), f = clamp((e.clientX - r.left) / r.width, 0, 1);
     go(i, true); if (!chs[i].loop && f > .03) seekTo(f * chs[i].dur, true); };
   const setPlay = p => { playing = p; $('#play').textContent = p ? '⏸ 暫停' : '▶ 播放'; if (!p && window.speechSynthesis) speechSynthesis.pause(); else if (window.speechSynthesis) speechSynthesis.resume(); if (curAudio) { if (p) curAudio.play().catch(() => { }); else curAudio.pause(); } };
-  $('#play').onclick = () => { if (ended) { restart(); return; } if ($('#quiz').classList.contains('show')) return; if (!playing && muteCap) { muteCap = false; lastCap = ''; } setPlay(!playing); };
+  $('#play').onclick = () => { if (ended) { restart(); return; } if ($('#quiz').classList.contains('show')) return; if ($('#qready').classList.contains('show')) { replaySeg(); return; } if (!playing && muteCap) { muteCap = false; lastCap = ''; } setPlay(!playing); };
   $('#prev').onclick = () => go(Math.max(0, ci - 1), true);
   $('#next').onclick = () => { if (ci < chs.length - 1) go(ci + 1, true); };
   $('#step').onclick = () => { setPlay(false); t = Math.min(t + 1 / 15, chs[ci].loop ? 1e9 : chs[ci].dur); };
@@ -339,9 +343,9 @@ function Player(cfg) {
   cv.addEventListener('mousemove', e => {
     const c = chs[ci]; if (!c.onClick) { cv.style.cursor = 'default'; return; } cv.style.cursor = 'pointer';
   });
-  function restart() { passed.fill(false); firstOk.fill(null); $('#end').classList.remove('show'); ended = false; go(0, false); setPlay(true); }
+  function restart() { passed.fill(false); firstOk.fill(null); qPend = -1; stopAt = null; miniOff(); $('#end').classList.remove('show'); ended = false; go(0, false); setPlay(true); }
   function go(i, keepPlay) {
-    ci = i; t = 0; lastCap = ''; ended = false; $('#end').classList.remove('show'); $('#quiz').classList.remove('show');
+    ci = i; t = 0; lastCap = ''; ended = false; stopAt = null; $('#end').classList.remove('show'); $('#quiz').classList.remove('show'); $('#qready').classList.remove('show'); if (qPend >= 0 && !passed[qPend]) $('#qmini').classList.add('show');
     stopTTS();
     const p = $('#panel'); p.innerHTML = ''; p.style.display = ''; if (chs[i].panel) chs[i].panel(p, S); document.body.classList.toggle('haspanel', !!chs[i].panel);
     if (chs[i].enter) chs[i].enter(S);
@@ -354,7 +358,7 @@ function Player(cfg) {
   const marksOf = c => [0, ...(c.captions || []).map(x => x[0]).filter(a => a > 0 && a < c.dur)].sort((a, b) => a - b);
   function setTicks() { const c = chs[ci], row = $('#seekrow'), sk = $('#seek'); if (!row) return; row.classList.toggle('off', !!c.loop); sk.disabled = !!c.loop; sk.value = 0;
     $('#ticks').innerHTML = c.loop ? '' : marksOf(c).map(a => `<i style="left:calc(8px + (100% - 16px) * ${(a / c.dur).toFixed(4)})"></i>`).join(''); }
-  function seekTo(tt, quiet) { const c = chs[ci]; if (c.loop || $('#quiz').classList.contains('show')) return; stopTTS(); t = clamp(tt, 0, c.dur - .01); muteCap = !playing; if (playing) lastCap = ''; }
+  function seekTo(tt, quiet) { const c = chs[ci]; if (c.loop || $('#quiz').classList.contains('show')) return; $('#qready').classList.remove('show'); stopTTS(); t = clamp(tt, 0, c.dur - .01); muteCap = !playing; if (playing) lastCap = ''; }
   function jump(dir) { const c = chs[ci]; if (c.loop) return; const m = marksOf(c); let tt;
     if (dir > 0) { tt = m.find(a => a > t + .05); if (tt == null) return; } else { const p = m.filter(a => a < t - .4); tt = p.length ? p[p.length - 1] : 0; }
     setPlay(false); seekTo(tt); }
@@ -363,19 +367,50 @@ function Player(cfg) {
       const near = marksOf(c).reduce((b, a) => Math.abs(a - tt) < Math.abs(b - tt) ? a : b, 0); if (Math.abs(near - tt) < c.dur * .03) tt = near; seekTo(tt); });
     sk.addEventListener('change', () => { dragging = false; sk.blur(); }); sk.addEventListener('pointerup', () => { dragging = false; }); }
   function score() { const n = firstOk.filter(x => x === true).length, q = chs.filter(c => c.quiz).length; $('#score').textContent = `首次答對 ${n} / ${q}`; return n; }
+  /* 段末：先停住讓學生選「再看一次」或「回答問題」；題目已開過（收起中）就直接回到題目 */
+  function atEnd() { if (qPend === ci) { openQuiz(); return; } setPlay(false); $('#qready').classList.add('show'); }
+  function replaySeg() { $('#qready').classList.remove('show'); stopTTS(); t = 0; lastCap = ''; muteCap = false; setPlay(true); }
+  function miniOff() { const m = $('#qmini'); m.classList.remove('show', 'pulse'); m.textContent = '✋ 題目還沒答完，點這裡回到題目'; }
+  function openQuiz() {
+    if (qPend < 0) return; if (ci !== qPend) { go(qPend, false); t = chs[qPend].loop ? 0 : chs[qPend].dur; }
+    setPlay(false); stopTTS(); stopAt = null; miniOff(); $('#qready').classList.remove('show');
+    if (document.body.classList.contains('embed')) $('#panel').style.display = 'none';
+    $('#quiz').classList.add('show');
+  }
+  function minimizeQuiz() { $('#quiz').classList.remove('show'); if (document.body.classList.contains('embed') && chs[ci].panel) $('#panel').style.display = ''; $('#qmini').classList.add('show'); }
+  /* 找出和題目最相關的一句字幕：題目、正解、解析的雙字詞與字幕重疊最多者；題目可用 cap: 句序 指定 */
+  const plain = s => String(s || '').replace(/<[^>]+>/g, '').replace(/\s+/g, '');
+  const STOP = new Set(['下列', '何者', '哪一', '一個', '正確', '錯誤', '敘述', '什麼', '為何', '多少', '下列', '的是', '屬於', '關於', '不是', '是什', '哪個', '主要']);
+  function bestCap(c, q) {
+    const caps = c.captions || []; if (!caps.length) return -1; if (Number.isInteger(q.cap)) return Math.min(q.cap, caps.length - 1);
+    const grams = (s, w, m) => { s = plain(s).replace(/[，。、：；！？（）「」『』\s,.:;!?()]/g, '|'); for (let i = 0; i < s.length - 1; i++) { const g = s.substr(i, 2); if (g.includes('|') || STOP.has(g)) continue; m.set(g, Math.max(m.get(g) || 0, w)); } return m; };
+    const key = new Map(); grams(q.q, 1, key); grams(q.ex, 2, key); grams(q.opts[q.ans], 3, key);
+    let best = 0, bs = -1; caps.forEach(([, s, sy], k) => { const tx = plain(s) + plain(sy); let sc = 0; key.forEach((w, g) => { if (tx.includes(g)) sc += w; }); if (sc > bs) { bs = sc; best = k; } });
+    return bs >= 4 ? best : 0;
+  }
+  function jumpToCap() {
+    const qi = qPend; if (qi < 0) return; const c = chs[qi], k = bestCap(c, c.quiz); if (k < 0) return;
+    minimizeQuiz(); if (ci !== qi) go(qi, false); $('#qmini').classList.add('show'); if (c.loop) return;  /* 互動段：回到畫面自己操作 */
+    const at = c.captions[k][0];
+    seekTo(Math.max(0, at)); muteCap = false; lastCap = ''; stopAt = nextMark(c, at + 1e-3); setPlay(true);
+  }
   function showQuiz() {
+    qPend = ci; miniOff(); $('#qready').classList.remove('show');
     if (document.body.classList.contains('embed')) $('#panel').style.display = 'none';  /* 嵌入時讓出空間給小問題 */
     const q = chs[ci].quiz; setPlay(false); $('#quiz').classList.add('show');
-    $('#qq').textContent = q.q; $('#qe').textContent = ''; $('#qgo').style.display = 'none';
+    $('#qq').textContent = q.q; $('#qe').textContent = ''; $('#qgo').style.display = 'none'; $('#qjump').style.display = 'none';
+    { const c = chs[ci], k = bestCap(c, q); $('#qjump').textContent = c.loop ? '🖐 回去操作這段' : k > 0 ? `🔎 跳到相關說明（第 ${k + 1} 句字幕）` : '🔎 從這段開頭重看'; }
     $('#qo').innerHTML = q.opts.map((o, k) => `<button class="opt" data-k="${k}">${'ABCD'[k]}. ${o}</button>`).join('');
     $('#qo').onclick = e => {
       const b = e.target.closest('.opt'); if (!b || passed[ci]) return; const k = +b.dataset.k;
       if (firstOk[ci] === null) firstOk[ci] = (k === q.ans);
-      if (k === q.ans) { b.classList.add('right'); passed[ci] = true; $('#qe').textContent = '✔ 答對了！' + (q.ex || ''); $('#qgo').style.display = 'inline-block'; score(); }
-      else { b.classList.add('wrong'); $('#qe').textContent = '✘ 再想想看。' + (q.hint || '可以按「上一段」或點章節重看。'); }
+      if (k === q.ans) { b.classList.add('right'); passed[ci] = true; qPend = -1; miniOff(); $('#qjump').style.display = 'none'; $('#qe').textContent = '✔ 答對了！' + (q.ex || ''); $('#qgo').style.display = 'inline-block'; score(); }
+      else { b.classList.add('wrong'); $('#qe').textContent = '✘ 再想想看。' + (q.hint ? q.hint + ' ' : '') + '可以按下方按鈕回去看相關說明，或右上「📖 回去看這段」。'; if ((chs[ci].captions || []).length || chs[ci].loop) $('#qjump').style.display = 'inline-block'; }
     };
   }
   $('#qgo').onclick = () => { $('#quiz').classList.remove('show'); nextOrEnd(); };
+  $('#qback').onclick = minimizeQuiz; $('#qmini').onclick = openQuiz; $('#qjump').onclick = jumpToCap;
+  $('#qreplay').onclick = replaySeg; $('#qans').onclick = () => showQuiz();
   function nextOrEnd() {
     if (ci < chs.length - 1) { go(ci + 1, true); setPlay(true); }
     else { ended = true; setPlay(false); $('#endsc').textContent = `${score()} / ${chs.filter(c => c.quiz).length}`; $('#end').classList.add('show'); [...$('#list').children].forEach((li, k) => li.classList.toggle('ok', passed[k])); }
@@ -412,7 +447,8 @@ function Player(cfg) {
     const dt = Math.min(.1, (now - last) / 1000); last = now; const c = chs[ci];
     if (playing) { let nt = t + dt * speed;
       if (speaking && !c.loop && $('#tts').checked) { spoken += dt; const m = nextMark(c, t); if (nt >= m - .02 && spoken < spokenMax) nt = Math.max(t, m - .02); }
-      t = nt; if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } } }
+      t = nt; if (stopAt != null && t >= stopAt - .025 && !speaking) { stopAt = null; setPlay(false); const m = $('#qmini'); m.textContent = '👀 看完了？點這裡回到題目'; m.classList.add('show', 'pulse'); }
+      if (!c.loop && t >= c.dur) { t = c.dur; if (c.quiz && !passed[ci]) atEnd(); else { passed[ci] = true; nextOrEnd(); } } }
     // 字幕
     let cap = '', say = ''; (c.captions || []).forEach(([at, s, sy]) => { if (t >= at) { cap = s; say = sy; } });
     if (cap !== lastCap) { lastCap = cap; $('#cap').innerHTML = cap; if (cap && !muteCap) { try { speak(cap, say); } catch (e) { speaking = false; } } }
@@ -425,7 +461,7 @@ function Player(cfg) {
     requestAnimationFrame(frame);
   }
   // 互動章節：「完成本段」按鈕
-  window.finishLoop = () => { if (chs[ci].quiz && !passed[ci]) showQuiz(); else { passed[ci] = true; nextOrEnd(); } };
+  window.finishLoop = () => { if (chs[ci].quiz && !passed[ci]) { if (qPend === ci) openQuiz(); else showQuiz(); } else { passed[ci] = true; nextOrEnd(); } };
   window.__seek = (i, tt) => { go(i, false); t = tt; };
   if (cfg.activity) {
     const wrap = document.createElement('section'); wrap.id = 'actwrap'; document.querySelector('.wrap').append(wrap);
