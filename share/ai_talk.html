@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 融入教學：以《引擎原理》數位教材為例｜林慶泓</title><style>
+:root{--bg:#0b1220;--card:#131d33;--line:#26355a;--ink:#eef3fb;--mute:#9fb0cc;--acc:#ff8a3d;--teal:#3ccfbf;--bad:#ff6b6b;--ok:#3ddc97}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:#050a14;color:var(--ink);font-family:"Microsoft JhengHei","Noto Sans TC","PingFang TC",system-ui,sans-serif;overflow:hidden}
+#deck{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:center;}
+.slide{position:absolute;inset:0;background:var(--bg);padding:56px 72px 60px;display:none;flex-direction:column}
+.slide.on{display:flex}
+.kicker{color:var(--acc);font-weight:700;font-size:24px}
+.slide h2.t{font-size:52px;margin:8px 0 34px;line-height:1.2}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;padding-bottom:30px}
+.foot{position:absolute;left:72px;right:72px;bottom:22px;display:flex;justify-content:space-between;color:#5d6f92;font-size:17px}
+img{max-width:100%;border-radius:12px;border:1px solid var(--line);display:block}
+p{font-size:26px;line-height:1.55}.mut{color:var(--mute)}.acc{color:var(--acc)}.teal{color:var(--teal)}
+h3{font-size:30px;margin-bottom:12px;color:var(--acc)}small{font-size:20px;color:var(--mute)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}.g2w{display:grid;grid-template-columns:1.45fr 1fr;gap:40px;align-items:start}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}.g3 h3{margin-top:16px}.g3 p{font-size:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px}.card p{margin-bottom:14px}
+.cover{display:grid;grid-template-columns:1.1fr 1fr;gap:50px;align-items:center;height:100%}
+.cover h1{font-size:76px;line-height:1.15;margin:14px 0}.cover .kick{color:var(--acc);font-weight:700;font-size:26px}.cover .sub{font-size:40px;color:var(--mute)}
+.cover .tag{font-size:30px;color:var(--teal);font-weight:700;margin:36px 0}.cover .who{font-size:24px;line-height:1.7;color:var(--mute)}.cover .who b{color:var(--ink);font-size:30px}
+.cover p{font-size:22px;margin-top:14px}
+.rows .row{display:flex;gap:20px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin-bottom:16px}
+.rows p{font-size:26px}.dot{flex:none;width:76px;height:76px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;font-size:22px;display:grid;place-items:center}
+.quote{background:rgba(255,138,61,.1);border:1px solid rgba(255,138,61,.45);border-radius:16px;padding:24px 28px;font-size:30px;font-weight:700;color:var(--acc);line-height:1.5}
+.quote.sm{font-size:24px;color:var(--ink);font-weight:400;margin-bottom:22px}.quote.big2{font-size:42px;color:var(--ink);padding:48px 40px;line-height:1.6}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:22px}.stats div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px}
+.stats b{display:block;font-size:68px;color:var(--acc);line-height:1}.stats span{display:block;font-size:26px;font-weight:700;margin:8px 0 4px}
+.tl{display:flex;gap:6px;margin-bottom:26px}.tl .bar{background:#22304f;border-radius:8px;padding:12px 4px;text-align:center;font-weight:700;font-size:22px}.tl .bar.hot{background:var(--acc)}
+.tl small{display:block;text-align:center;margin-top:8px;font-size:18px}
+.g3b{display:grid;grid-template-columns:1fr 1fr .8fr;gap:28px;align-items:start}
+.demo{display:grid;grid-template-columns:420px 1fr;gap:36px;height:100%}
+.qr{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;text-align:center}.qr img{width:300px;margin:0 auto 14px;background:#fff;padding:10px}
+.qr b{font-size:26px}.qr ol{text-align:left;margin:16px 0 0 28px;font-size:21px;line-height:1.6;color:var(--mute)}
+.frame{border:1px solid var(--line);border-radius:14px;overflow:hidden;height:660px;background:#000}.frame iframe{width:100%;height:100%;border:0}
+.ph{cursor:pointer;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-size:30px;font-weight:700;color:var(--acc);text-align:center}
+.ph img{width:70%;opacity:.75}
+.cycle{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.cycle div{border-radius:16px;padding:22px;border:1px solid}
+.cycle .me{background:rgba(255,138,61,.1);border-color:rgba(255,138,61,.45)}.cycle .ai{background:rgba(60,207,191,.1);border-color:rgba(60,207,191,.45)}
+.cycle i{font-style:normal;display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--acc);color:#fff;font-weight:700;font-size:22px;vertical-align:middle}
+.cycle .ai i{background:var(--teal)}.cycle em{font-style:normal;font-size:18px;margin-left:10px;color:var(--mute)}.cycle b{display:block;font-size:32px;margin:12px 0 6px}.cycle p{font-size:20px;color:var(--mute)}
+.center{text-align:center}.center img{width:80%;margin:0 auto 18px}
+.kv div{display:flex;gap:24px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 26px;margin-bottom:14px;font-size:28px}
+.kv b{width:150px;flex:none}.kv .hot{border-color:rgba(255,138,61,.55);background:rgba(255,138,61,.08)}.kv .hot b{color:var(--acc)}
+figure{position:relative}.lb{position:absolute;left:0;top:-2px;padding:6px 18px;border-radius:10px 0 10px 0;font-weight:700;font-size:22px;color:#fff;z-index:2}.lb.bad{background:#c53030}.lb.ok{background:#23915c}
+.big{margin-top:30px;font-size:28px}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 30px;height:600px;display:flex;flex-direction:column}
+.ct{font-size:22px;color:var(--mute);margin-bottom:16px}.k1{color:var(--acc)}.k2{color:#94a3b8}
+.cols{flex:1;display:flex;gap:30px;align-items:stretch}.cols>div{flex:1;display:flex;flex-direction:column}
+.pair{flex:1;display:flex;gap:8px;align-items:flex-end;border-bottom:2px solid var(--line)}.pair div{flex:1;position:relative;border-radius:6px 6px 0 0}
+.b1{background:var(--acc)}.b2{background:#94a3b8}.pair span{position:absolute;top:-34px;left:0;right:0;text-align:center;font-size:24px;font-weight:700}
+.cols b{text-align:center;font-size:30px;margin-top:8px}
+.x{font-size:38px;font-weight:700;margin-bottom:26px;color:var(--ink)}.x::first-letter{color:var(--bad)}
+.try{margin-top:28px;background:rgba(255,138,61,.1);border:1px solid rgba(255,138,61,.45);border-radius:14px;padding:20px 26px;font-size:25px}
+.flow{display:flex;align-items:center;gap:14px;margin:30px 0 50px}.flow div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:36px 10px;text-align:center}
+.flow div.hot{border-color:rgba(255,138,61,.55)}.flow div.hot b{color:var(--acc)}.flow b{display:block;font-size:40px;margin-bottom:14px}.flow small{font-size:25px}.flow span{font-size:40px;color:#5d6f92}
+.pc{border-radius:16px;padding:30px 34px;border:1px solid}.pc{padding:36px 40px}.pc h3{font-size:36px;margin-bottom:22px}.pc p{margin-bottom:28px;font-size:26px;color:var(--mute)}.pc p b{color:var(--ink);font-size:31px}
+.pc.good{background:rgba(61,220,151,.07);border-color:rgba(61,220,151,.4)}.pc.good h3{color:var(--ok)}.pc.warn{background:rgba(255,107,107,.07);border-color:rgba(255,107,107,.4)}.pc.warn h3{color:var(--bad)}
+.tips div{display:grid;grid-template-columns:90px 1fr;column-gap:24px;margin-bottom:34px}.tips i{grid-row:span 2;font-style:normal;width:84px;height:84px;border-radius:50%;background:var(--acc);display:grid;place-items:center;font-size:40px;font-weight:700}
+.tips b{font-size:40px}.tips p{font-size:27px;color:var(--mute)}
+.qrs a{display:block;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:30px;text-align:center;color:var(--ink);text-decoration:none}
+.qrs img{width:280px;margin:0 auto 20px;background:#fff;padding:10px}.qrs b{display:block;font-size:32px;margin-bottom:10px}
+.qs{padding:40px}.qs p{font-size:34px;margin:30px 0}
+#nav{position:fixed;right:14px;top:10px;display:flex;gap:8px;z-index:20;opacity:.35}#nav:hover{opacity:1}
+#nav button{background:#1b2742;color:#cfe;border:1px solid #2c3d63;border-radius:8px;padding:6px 12px;font-size:15px;cursor:pointer}
+#notes{display:none;position:fixed;left:0;right:0;bottom:0;max-height:34vh;overflow:auto;background:#0f1729ee;border-top:2px solid var(--acc);padding:14px 22px 46px;white-space:pre-wrap;font-size:19px;line-height:1.6;z-index:15}
+body.n #notes{display:block}
+#help{position:fixed;left:14px;top:12px;color:#4d5f82;font-size:13px;z-index:20;opacity:0;transition:.3s}#help:hover{opacity:1}
+</style></head><body>
+<div id="deck">
+<section class="slide">
+<div class="cover">
+  <div>
+    <div class="kick">動力機械群科教師研習</div>
+    <h1>AI 人工智慧融入教學</h1>
+    <div class="sub">以《引擎原理》數位教材為例</div>
+    <div class="tag">AI 做得很快，但「對不對」要老師看</div>
+    <div class="who"><b>林慶泓 老師</b><br>國立臺東專科學校附設高職部　汽車科<br>2026 年 12 月 11 日｜高雄市立中正高工｜30 分鐘案例分享</div>
+  </div>
+  <div><img src="img/talk_engine.jpg" alt="引擎透視插圖"><p class="mut">📱 等一下會請大家用手機一起操作</p></div>
+</div><div class="foot"><span></span><span>1 / 16</span></div></section>
+<section class="slide"><div class="kicker">起點</div><h2 class="t">沒有一顆引擎的引擎課</h2><div class="body">
+<div class="g2">
+  <div class="rows">
+    <div class="row"><span class="dot">學生</span><p>32 位高一生，學習成就與動機偏低；課本字多、圖不會動，看不出零件怎麼連動</p></div>
+    <div class="row"><span class="dot">教室</span><p>沒有引擎實物、沒有剖面教具；只有學校平板，分組共用</p></div>
+    <div class="row"><span class="dot">計畫</span><p>高優計畫要求科技融入＋四學，寫進教案並實際上課</p></div>
+    <div class="quote">「既然沒有引擎可以拆，<br>那就把引擎畫出來，讓它在平板上動。」</div>
+  </div>
+  <img src="img/talk_class.jpg" alt="學生共用平板插圖">
+</div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>2 / 16</span></div></section>
+<section class="slide"><div class="kicker">成果</div><h2 class="t">七章、38 節課，全部上線</h2><div class="body">
+<div class="g2">
+  <a href="../index.html" target="_blank"><img src="img/home.jpg" alt="課程網站首頁"></a>
+  <div><div class="stats">
+    <div><b>38</b><span>支網頁動畫</span><small>分段、逐格、拉桿跳段</small></div>
+    <div><b>38</b><span>份上課簡報</span><small>四學時間軸、內嵌動畫</small></div>
+    <div><b>46</b><span>份站內測驗</span><small>成績自動進總表</small></div>
+    <div><b>7</b><span>份高優教案</span><small>附學習單與解答版</small></div>
+  </div><p class="mut">除了 AI 訂閱，網站、成績、語音都用免費方案</p></div>
+</div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>3 / 16</span></div></section>
+<section class="slide"><div class="kicker">一節課怎麼上</div><h2 class="t">50 分鐘，照四學走（第 4 節 四行程引擎）</h2><div class="body">
+<div class="tl"><div style="flex:3"><div class="bar">準備<br>3 分</div><small>分組、角色</small></div><div style="flex:5"><div class="bar">導學<br>5 分</div><small>車子發不動？</small></div><div style="flex:10"><div class="bar hot">自學<br>10 分</div><small>平板看動畫<br>每段小問題</small></div><div style="flex:12"><div class="bar">導學<br>12 分</div><small>老師整理觀念</small></div><div style="flex:8"><div class="bar">共學<br>8 分</div><small>輪流操作<br>說明、記錄</small></div><div style="flex:7"><div class="bar hot">互學<br>7 分</div><small>全班挑戰<br>即時排名</small></div><div style="flex:5"><div class="bar">評量<br>5 分</div><small>每人隨堂測驗</small></div></div>
+<div class="g3b">
+  <img src="img/demo_v3.jpg" alt="V3 動畫"><img src="img/teacher.jpg" alt="教師大螢幕">
+  <div><h3>動畫要放進流程</h3><p>光放給學生看不會變成學習。先預測、再觀察、再討論，最後每人自己作答。</p></div>
+</div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>4 / 16</span></div></section>
+<section class="slide"><div class="kicker">現場示範 ①</div><h2 class="t">請拿出手機：掃碼打開四行程動畫</h2><div class="body">
+<div class="demo">
+  <div class="qr"><img src="img/talk_qr_v3.png" alt="V3 QR Code"><b>V3 四行程引擎透視動畫</b><ol><li>按 ▶ 播放第 1 段</li><li>看完會停住：可「再看一次」或「回答問題」</li><li>回答這一題（答錯沒關係）</li></ol></div>
+  <div class="frame"><div class="ph" data-src="../V3_%E5%9B%9B%E8%A1%8C%E7%A8%8B%E5%BC%95%E6%93%8E%E9%80%8F%E8%A6%96%E5%8B%95%E7%95%AB.html?embed=1">▶ 點這裡在簡報內開啟動畫<br><small>（網路不穩時，可改看截圖）</small><img src="img/after_qflow.jpg" alt="段末停住畫面"></div></div>
+</div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>5 / 16</span></div></section>
+<section class="slide"><div class="kicker">分工</div><h2 class="t">老師訂目標、AI 做草稿、老師核對再試教</h2><div class="body">
+<div class="g2w">
+  <div class="cycle"><div class="me"><i>1</i><em>老師</em><b>訂目標</b><p>學生卡在哪、下課要會什麼</p></div><div class="ai"><i>2</i><em>AI</em><b>交草稿</b><p>摘要、規畫、題目；不確定處列出來</p></div><div class="me"><i>3</i><em>老師</em><b>核對</b><p>對照課本：對不對、懂不懂</p></div><div class="ai"><i>4</i><em>AI</em><b>製作</b><p>依確認過的規畫做，再依回饋修改</p></div><div class="me"><i>5</i><em>老師</em><b>試教</b><p>自己先播、先操作、先作答</p></div><div class="me"><i>6</i><em>老師</em><b>再修</b><p>看學生的答案，改他還不懂的</p></div></div>
+  <div class="center"><img src="img/talk_team.jpg" alt="老師與 AI 協作"><h3>每一圈，判斷都在老師手上</h3></div>
+</div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>6 / 16</span></div></section>
+<section class="slide"><div class="kicker">交辦範例</div><h2 class="t">跟 AI 說清楚這 6 件事</h2><div class="body">
+<div class="g2w">
+  <div class="kv"><div><b>學生程度</b><span>高一汽車科，基礎較弱</span></div><div><b>下課要會</b><span>說出四行程的先後與作用</span></div><div><b>參考來源</b><span>我提供的課本指定頁碼</span></div><div><b>要做什麼</b><span>4 段解說，各附預測題與答錯提示</span></div><div class="hot"><b>限制</b><span>不要自加數值，先交規畫讓我確認</span></div><div class="hot"><b>怎麼核對</b><span>列出圖示、答案與課本的對照</span></div></div>
+  <div class="card"><h3>最後兩件最重要</h3><p><b>「先交規畫」</b><br>它動手前，你就能改方向</p><p><b>「列出對照」</b><br>核對時有依據，不靠感覺</p><p class="mut"><i>只說「幫我做一份漂亮的簡報」，通常得到好看但不能教的東西。</i></p></div>
+</div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>7 / 16</span></div></section>
+<section class="slide"><div class="kicker">老師把關 ①</div><h2 class="t">AI 畫得很專業，但零件怎麼帶動沒說清楚</h2><div class="body">
+<div class="g2"><figure><span class="lb bad">修正前</span><img src="img/before_pump.jpg" alt="修正前"></figure><figure><span class="lb ok">修正後</span><img src="img/after_pump.jpg" alt="修正後"></figure></div>
+<p class="big"><b>膜片式汽油泵：</b>第一版只有膜片和凸輪，看不出怎麼連動。補上「凸輪 → 搖臂 → 拉桿 → 膜片」後，吸油、送油的因果才清楚。</p></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>8 / 16</span></div></section>
+<section class="slide"><div class="kicker">老師把關 ②</div><h2 class="t">「答案好像都是 A？」請 AI 先統計再說</h2><div class="body">
+<div class="g2w">
+  <div class="chart"><div class="ct">177 題段末小問題的正確答案位置　<span class="k1">■ 調整前</span> <span class="k2">■ 調整後</span></div>
+  <div class="cols"><div><div class="pair"><div class="b1" style="height:92%"><span>92</span></div><div class="b2" style="height:49%"><span>49</span></div></div><b>A</b></div><div><div class="pair"><div class="b1" style="height:52%"><span>52</span></div><div class="b2" style="height:45%"><span>45</span></div></div><b>B</b></div><div><div class="pair"><div class="b1" style="height:24%"><span>24</span></div><div class="b2" style="height:44%"><span>44</span></div></div><b>C</b></div><div><div class="pair"><div class="b1" style="height:9%"><span>9</span></div><div class="b2" style="height:39%"><span>39</span></div></div><b>D</b></div></div></div>
+  <div><div class="quote sm"><small>老師原話</small><br>「答案好像都落在第 1 個選項，對嗎？……這是我的印象，真的情況還是要你確認。」</div>
+  <p><b>統計：</b>A 有 92 題、D 只有 9 題，用猜的也容易對</p><p><b>處理：</b>正確選項輪流放到 A～D，再逐題核對</p><p><b class="acc">重點：</b>老師的直覺要用數據驗證，別讓 AI 順著你說</p></div>
+</div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>9 / 16</span></div></section>
+<section class="slide"><div class="kicker">老師把關 ③　上課才發現</div><h2 class="t">一播完就跳出題目，學生只好用猜的</h2><div class="body">
+<div class="g2w"><figure><span class="lb bad">試教前</span><img src="img/before_qflow.jpg" alt="舊版：段末直接跳出題目"></figure>
+<div><div class="x">✕ 還沒看清楚就要作答</div><div class="x">✕ 題目蓋住整個畫面</div><div class="x">✕ 想回頭看也回不去</div><div class="card"><p class="mut">AI 自己檢查程式不會發現；只有在教室看學生用，才看得出來。</p></div></div></div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>10 / 16</span></div></section>
+<section class="slide"><div class="kicker">老師把關 ③　怎麼修＋現場示範 ②</div><h2 class="t">看完先停住、可以回頭看、答錯跳到說明</h2><div class="body">
+<div class="g3"><div><img src="img/after_qflow.jpg" alt="① 播完先停住"><h3 class="teal">① 播完先停住</h3><p class="mut">可「再看一次這段」，準備好再「回答問題」</p></div><div><img src="img/qflow_jump.jpg" alt="② 答錯有指引"><h3 class="teal">② 答錯有指引</h3><p class="mut">「🔎 跳到相關說明」直接跳到那句字幕</p></div><div><img src="img/talk_qflow_back.jpg" alt="③ 看完回題目"><h3 class="teal">③ 看完回題目</h3><p class="mut">播完那句自動停住，角落按鈕回到題目</p></div></div>
+<div class="try">📱 <b>請試試看：</b>剛才答錯的老師按「跳到相關說明」，答對的按「回去看這段」。只計首次答對的規則不變。</div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>11 / 16</span></div></section>
+<section class="slide"><div class="kicker">把經驗寫成規則</div><h2 class="t">修好一支，38 支一起改，下次不再犯</h2><div class="body">
+<div class="flow"><div><b>教室發現</b><small>學生用猜的</small></div><span>➜</span><div><b>修好 1 支</b><small>V3 先改先試</small></div><span>➜</span><div><b>38 支套用</b><small>全部動畫一次改</small></div><span>➜</span><div class="hot"><b>寫進規範</b><small>開發規範＋技能包</small></div></div>
+<div class="card wide"><h3>AI 時代老師很重要的工作</h3><p>把課堂上發現的問題，變成下一次的規則。以後不管是我、AI，還是其他老師用技能包做新課程，一開始就是新的做法。</p></div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>12 / 16</span></div></section>
+<section class="slide"><div class="kicker">誠實說</div><h2 class="t">對學習的幫助，和要注意的地方</h2><div class="body">
+<div class="g2"><div class="pc good"><h3>✔ 可能的幫助</h3><p><b>看得清楚</b><br>暫停、逐格、重看，把零件動作拆開來看</p><p><b>知道回哪看</b><br>答錯時直接指到相關的那句說明</p><p><b>課後接得上</b><br>補課包和課堂用同一套動畫與題目</p></div>
+<div class="pc warn"><h3>⚠ 要注意</h3><p><b>動畫會簡化，也可能畫錯</b><br>老師一定要對照課本，有實物時看實物</p><p><b>可重試、有排行，學生會想猜</b><br>請學生說理由，最後每人自己作答</p><p><b>要網路和平板</b><br>只給當節連結，準備紙本學習單備案</p></div></div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>13 / 16</span></div></section>
+<section class="slide"><div class="kicker">回去先試一節課</div><h2 class="t">給同業的三個建議</h2><div class="body">
+<div class="g2w"><div class="tips"><div><i>1</i><b>從一節課開始</b><p>選一個學生最常卡住的概念，不要一開始就想做整學期</p></div><div><i>2</i><b>讓 AI 先交規畫</b><p>確認了它才動手，並要它列出跟課本的對照</p></div><div><i>3</i><b>自己先試教</b><p>真正的問題，常常要上課看學生用了才看得到</p></div></div>
+<div class="quote big2">AI 讓我們做得快；<br>做得對、教得會，<br><span class="acc">還是老師的專業。</span></div></div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>14 / 16</span></div></section>
+<section class="slide"><div class="kicker">資源</div><h2 class="t">三個入口，拍照或掃碼帶回去</h2><div class="body">
+<div class="g3 qrs"><a href="../index.html" target="_blank"><img src="img/talk_qr_site.png" alt="課程網站 QR"><b>課程網站</b><small>上課用：簡報、動畫、測驗</small></a><a href="https://www.youtube.com/@shifu-dongji" target="_blank"><img src="img/talk_qr_yt.png" alt="YouTube 頻道 QR"><b>YouTube 頻道</b><small>學生課後補課：師傅開講・動機秒懂教室</small></a><a href="index.html" target="_blank"><img src="img/talk_qr_share.png" alt="教師分享頁 QR"><b>教師分享頁</b><small>教案、學習單（Word 可下載）、開發歷程</small></a></div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>15 / 16</span></div></section>
+<section class="slide"><div class="kicker">交流</div><h2 class="t">您的課裡，哪一個概念最需要「動起來」？</h2><div class="body">
+<div class="g2w"><div class="card qs"><h3>想一想</h3><p>① 學生最常卡住的是哪個概念？</p><p>② 你會先請 AI 幫你做哪一份教材？</p><p>③ 怎麼確認每位學生真的學會了？</p></div>
+<div><img src="img/talk_yt.jpg" alt="YouTube 頻道"><h2 style="margin-top:24px">謝謝聆聽</h2><p class="mut">林慶泓　國立臺東專科學校附設高職部 汽車科</p></div></div></div><div class="foot"><span>AI 融入教學｜以《引擎原理》數位教材為例　林慶泓</span><span>16 / 16</span></div></section>
+</div>
+<div id="notes"></div>
+<div id="help">← → 換頁　N 講稿　F 全螢幕</div>
+<div id="nav"><button id="pv">◀</button><button id="nb">講稿</button><button id="fb">全螢幕</button><button id="nx">▶</button></div>
+<script>
+const NOTES=["【0:30｜累計 0:00–0:30】\n各位老師午安，我是臺東專科學校附設高職部汽車科的林慶泓。\n今天用 30 分鐘，分享我這一年用 AI 做《引擎原理》數位教材的經驗。重點不是工具有多厲害，而是「老師在哪裡把關」。\n等一下會請大家拿出手機一起操作兩次，先準備好。","【1:30｜累計 0:30–2:00】\n先講為什麼要自己做。\n我的班上是 32 位高一學生，學習成就和動機都偏低；課本字多、圖不會動，學生看不出零件怎麼連動。\n教室沒有引擎實物、也沒有剖面教具，只有學校的平板，要分組共用。\n加上高優計畫要求科技融入和四學。所以我的想法很簡單：既然沒有引擎可以拆，那就把引擎畫出來，讓它在平板上動。","【1:00｜累計 2:00–3:00】\n這是現在的成果：七章、38 節課全部上線。\n每節課都有一支網頁動畫、一份上課簡報、一個補課包；測驗做在網站裡，共 46 份，成績自動進總表；另外還有 7 份高優教案和學習單。\n除了 AI 訂閱，網站放 GitHub Pages、成績用 Firebase 免費方案，幾乎零成本。\n但今天不談數量，我要談的是：這些東西「怎麼做對」。","【1:30｜累計 3:00–4:30】\n先看一節課怎麼用。以第 4 節「四行程引擎」為例，50 分鐘照四學走：\n導學先問「早上車子發不動，可能少了什麼？」引起動機；\n自學 10 分鐘，各組用平板看動畫，每段看完有小問題；\n老師導學整理觀念；共學時三人輪流操作、說明、記錄；\n互學是全班同步的挑戰賽，大螢幕即時排名；最後每個人自己做隨堂測驗。\n動畫不是放給學生看就好，它要放進這個流程裡，才會變成學習。","【3:00｜累計 4:30–7:30】\n請大家拿出手機，掃這個 QR Code，打開「四行程引擎透視動畫」。\n（等 30 秒）\n請按播放，看第一段「認識汽缸各部位」。看完它會停住，先不要急著作答——你可以選「再看一次」，也可以按「我懂了，回答問題」。\n請大家回答這一題。答錯沒關係，等一下第 11 頁會用到。\n（現場若網路不穩：改看投影的截圖，我直接操作一次。）","【1:30｜累計 7:30–9:00】\n這些東西不是 AI 一次做出來的。我和 AI 的分工是一個循環：\n一、老師訂目標：學生卡在哪、下課要會什麼。\n二、AI 交草稿：摘要、規畫、題目，不確定的地方列出來。\n三、老師核對：對照課本，看對不對、順序學生能不能懂。\n四、AI 依確認過的規畫製作。\n五、老師自己先播、先操作、先作答，再帶學生試用。\n六、看學生的答案再修。\n每一圈，判斷都在老師手上。","【2:00｜累計 9:00–11:00】\n很多老師問：要怎麼跟 AI 講？我的經驗是說清楚這六件事。\n以四行程為例：學生是高一汽車科、基礎較弱；下課要會說出四行程的順序和作用；參考我給的課本頁碼；做 4 段解說，每段附預測題和答錯提示；不要自己加數值，先交規畫給我確認；最後列出圖示、答案和課本的對照表。\n最後兩件事最重要：「先交規畫」讓你在它動手前就能改方向；「列出對照」讓你核對有依據。\n只說「幫我做一份漂亮的簡報」，通常得到的是好看但不能教的東西。","【1:30｜累計 11:00–12:30】\n第一個把關案例：膜片式汽油泵。\nAI 第一版只畫了膜片和凸輪，看起來很專業，但學生看不出凸輪怎麼帶動膜片。\n我截圖指出位置、說明應該怎麼動，請 AI 先複述它的理解再改。\n改完是完整機構：凸輪推搖臂、搖臂拉拉桿、拉桿帶膜片，吸油、送油都看得到。\n老師檢查的不是畫面漂不漂亮，而是因果和連動對不對。學生會照著畫面記，畫錯就是教錯。","【1:30｜累計 12:30–14:00】\n第二個案例比較不一樣，是「感覺」。\n我做題目時一直覺得，段末小問題的答案好像常常是 A。我請 AI 不要附和我，先統計。\n結果 177 題裡，A 有 92 題、D 只有 9 題——學生用猜的也容易答對。\n調整後四個選項差不多平均，但我還是要求逐題核對，確定答案沒有跑掉。\n這裡的重點是：老師的直覺很重要，但要請 AI 用數據驗證，不要讓它順著你說。","【1:00｜累計 14:00–15:00】\n第三個案例，是上課用了才發現的。\n原本的設計是：每段動畫一播完，題目就直接跳出來。\n試教時我看到：學生還沒看清楚就要作答，只好用猜的；題目蓋住整個畫面，想回去看也回不去。\n這個問題，AI 自己檢查程式不會發現，只有在教室看學生用，才看得出來。","【3:00｜累計 15:00–18:00】\n我把問題描述給 AI，請它提方案，最後三個一起做：\n第一，播完先停住，學生可以「再看一次」，準備好再按「回答問題」；\n第二，作答時可按「回去看這段」，畫面角落留一個「回到題目」按鈕；\n第三，答錯會出現「跳到相關說明」，直接跳到對應的那句字幕，播完那句自動停住，提醒回到題目。\n請大家用手機試試看：剛才那題如果答錯，按「跳到相關說明」；答對的老師，可以按「回去看這段」。\n（等 1 分鐘）\n只計第一次答對的規則不變，所以學生不會因為可以回頭看就亂猜。","【1:00｜累計 18:00–19:00】\n改完一支動畫還不夠。這次的修改，38 支動畫一次全部套用，並寫進我的「開發規範」和「技能包」範本。\n以後不管是我、AI，還是其他老師用技能包做新課程，一開始就是新的做法，不會再犯同樣的錯。\n這是我覺得 AI 時代老師最重要的工作之一：把課堂上發現的問題，變成下一次的規則。","【2:00｜累計 19:00–21:00】\n誠實講優點和限制。\n優點：動畫可以暫停、逐格、重看，看不清楚的動作能拆開；答錯知道回哪裡看；課後補課和課堂用同一套教材。\n限制：動畫是簡化的，也可能畫錯，所以老師一定要核對；有排行榜和重試，學生可能只想猜答案，要請他說理由；網路和平板是前提，要準備紙本學習單備案。\n小組答對不代表每個人都會，最後一定要有個人作答。","【2:00｜累計 21:00–23:00】\n如果各位回去想試，我的建議是三件事：\n第一，從一節課開始，選一個學生最常卡住的概念，不要一開始就想做整個學期。\n第二，讓 AI 先交規畫，你確認了它才動手；並要求它列出跟課本的對照。\n第三，自己先試教，再看學生怎麼用。真正的問題，常常是上課才看得到。\nAI 讓我們做得快，但做得對、教得會，還是老師的專業。","【1:00｜累計 23:00–24:00】\n這三個入口給大家參考，可以拍照或掃碼：\n課程網站，上課用；YouTube 頻道「師傅開講・動機秒懂教室」，學生課後補課；分享頁有我的教案、學習單和開發歷程，Word 檔可以下載改成自己的課。","【4:00＋緩衝｜累計 24:00–30:00】\n最後想請教大家一個問題：您的課裡，哪一個概念最需要「動起來」給學生看？\n歡迎現場分享，或會後找我交流。謝謝大家。"];
+const sl=[...document.querySelectorAll('.slide')],deck=document.getElementById('deck'),nt=document.getElementById('notes');
+let cur=Math.min(sl.length-1,Math.max(0,(parseInt(location.hash.slice(1))||1)-1));
+function fit(){const s=Math.min(innerWidth/1600,innerHeight/900);deck.style.transform='translate(-50%,-50%) scale('+s+')';}
+function show(i){cur=Math.max(0,Math.min(sl.length-1,i));sl.forEach((s,j)=>s.classList.toggle('on',j===cur));nt.textContent=NOTES[cur]||'';history.replaceState(null,'','#'+(cur+1));}
+addEventListener('resize',fit);fit();show(cur);
+if(/notes/.test(location.search))document.body.classList.add('n');
+addEventListener('keydown',e=>{if(e.target.tagName==='IFRAME')return;
+ if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(cur+1);}
+ else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(cur-1);}
+ else if(e.key==='n'||e.key==='N')document.body.classList.toggle('n');
+ else if(e.key==='f'||e.key==='F')fs();
+ else if(e.key==='Home')show(0);else if(e.key==='End')show(sl.length-1);});
+function fs(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}
+pv.onclick=()=>show(cur-1);nx.onclick=()=>show(cur+1);nb.onclick=()=>document.body.classList.toggle('n');fb.onclick=fs;
+document.querySelectorAll('.ph').forEach(p=>p.onclick=()=>{p.outerHTML='<iframe src="'+p.dataset.src+'" title="四行程引擎透視動畫" allow="autoplay"></iframe>';});
+</script></body></html>
